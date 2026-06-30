@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
 import '../../design/tokens/typography.dart';
 import '../../design/widgets/initial_avatar.dart';
 import '../../design/widgets/secondary_button.dart';
+import '../dev/dev_flags.dart';
 
 /// 마이페이지. 로그인 사용자 기본 정보(이름·역할) + 로그아웃.
 /// 구독/충전이 필요하면 web_bridge 로 웹을 연다(앱 내 결제 없음).
@@ -48,6 +51,14 @@ class MyPageScreen extends StatelessWidget {
               ],
             ),
             const Spacer(),
+            // ★ 개발 전용 — 출시 빌드에서는 노출되지 않는다(데이터 점검 진입).
+            if (kDevToolsEnabled) ...<Widget>[
+              TextButton(
+                onPressed: () => context.go(EntryGuard.devS3),
+                child: const Text('S3 데이터 점검 (개발용)'),
+              ),
+              const SizedBox(height: 8),
+            ],
             // 설정 영역(하단): 로그아웃은 기존 AuthService.signOut() 재사용.
             if (signedIn)
               SecondaryButton(

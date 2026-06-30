@@ -5,6 +5,7 @@ import '../features/auth/blocked_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/dev/dev_flags.dart';
+import '../features/dev/s3_data_inspector.dart';
 import '../features/dev/widget_gallery.dart';
 import 'entry_guard.dart';
 import 'home_shell.dart';
@@ -43,6 +44,11 @@ class AppRouter {
         GoRoute(
           path: EntryGuard.devGallery,
           builder: (context, state) => const WidgetGallery(),
+        ),
+      if (kDevToolsEnabled)
+        GoRoute(
+          path: EntryGuard.devS3,
+          builder: (context, state) => const S3DataInspector(),
         ),
     ],
   );

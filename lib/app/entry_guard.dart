@@ -16,6 +16,7 @@ class EntryGuard {
   static const String home = '/home';
   static const String blocked = '/blocked';
   static const String devGallery = '/dev/gallery';
+  static const String devS3 = '/dev/s3';
 
   /// 게스트가 접근 가능한 하단 탭 인덱스.
   /// (0 질문방 · 1 커뮤니티 · 2 멘토찾기 · 3 알림 · 4 마이페이지)
@@ -31,7 +32,7 @@ class EntryGuard {
     required String location,
   }) {
     // dev 라우트는 가드 제외(개발 빌드 한정으로만 등록됨).
-    if (location == devGallery) return null;
+    if (location.startsWith('/dev/')) return null;
 
     switch (access) {
       case AccessState.loading:

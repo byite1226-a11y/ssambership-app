@@ -7,6 +7,6 @@ class MentorsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyScreen(title: '멘토 찾기', subtitle: '준비 중입니다.');
+    return const EmptyScreen(title: '멘토 찾기');
   }
 }

@@ -7,6 +7,6 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyScreen(title: '알림', subtitle: '준비 중입니다.');
+    return const EmptyScreen(title: '알림');
   }
 }

@@ -7,6 +7,6 @@ class QuestionRoomScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyScreen(title: '질문방', subtitle: '준비 중입니다.');
+    return const EmptyScreen(title: '질문방');
   }
 }

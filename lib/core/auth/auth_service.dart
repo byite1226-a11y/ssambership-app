@@ -31,6 +31,7 @@ class AuthService extends ChangeNotifier {
   bool _bootstrapping = true;
   bool _guest = false;
   AppRole _role = AppRole.guest;
+  String _displayName = '';
   AccountState _account = AccountState.unknown;
   Entitlement _entitlement = Entitlement.none;
   StreamSubscription<AuthState>? _authSub;
@@ -41,6 +42,23 @@ class AuthService extends ChangeNotifier {
   AppRole get currentRole => _role;
   AccountState get accountState => _account;
   Entitlement get entitlement => _entitlement;
+
+  /// 화면 표시용 이름(nickname 우선, 없으면 full_name, 둘 다 없으면 빈 문자열).
+  /// 하드코딩하지 않는다 — users 프로필에 없으면 빈 값.
+  String get displayName => _displayName;
+
+  /// 역할 표시용 한글 라벨(영문 코드 노출 금지). 학생·멘토 외에는 빈 문자열.
+  String get roleLabel {
+    switch (_role) {
+      case AppRole.student:
+        return '학생';
+      case AppRole.mentor:
+        return '멘토';
+      case AppRole.admin:
+      case AppRole.guest:
+        return '';
+    }
+  }
 
   SupabaseClient? get _client => SupabaseInit.clientOrNull;
   Session? get _session => _client?.auth.currentSession;
@@ -114,6 +132,7 @@ class AuthService extends ChangeNotifier {
     }
     final String userId = session.user.id;
     _role = await _readRole(client, userId);
+    _displayName = await _readDisplayName(client, userId);
     _account = await AccountStatusReader.fetch(client, userId);
     if (_role == AppRole.student) {
       _entitlement = await EntitlementReader.fetchForStudent(client, userId);
@@ -124,6 +143,7 @@ class AuthService extends ChangeNotifier {
 
   void _resetProfile() {
     _role = AppRole.guest;
+    _displayName = '';
     _account = AccountState.unknown;
     _entitlement = Entitlement.none;
   }
@@ -147,6 +167,22 @@ class AuthService extends ChangeNotifier {
       }
     } catch (_) {
       return AppRole.guest;
+    }
+  }
+
+  /// 표시용 이름 read(RLS: 본인 행만). nickname 우선, 없으면 full_name, 둘 다 없으면 ''.
+  Future<String> _readDisplayName(SupabaseClient client, String userId) async {
+    try {
+      final Map<String, dynamic>? row = await client
+          .from('users')
+          .select('nickname, full_name')
+          .eq('id', userId)
+          .maybeSingle();
+      final String nickname = (row?['nickname'] as String?)?.trim() ?? '';
+      if (nickname.isNotEmpty) return nickname;
+      return (row?['full_name'] as String?)?.trim() ?? '';
+    } catch (_) {
+      return '';
     }
   }
 

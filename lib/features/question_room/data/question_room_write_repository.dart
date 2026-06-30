@@ -71,6 +71,18 @@ class QuestionRoomWriteRepository {
     return QuestionMessage.fromMap(row);
   }
 
+  /// 학생이 답변을 확인 처리(status → 'confirmed'). RLS(방 참여자)로 허용된다.
+  /// 보통 answered 상태에서 호출하지만 검증은 호출부에서 한다.
+  Future<QuestionThread> confirmThread(String threadId) async {
+    final Map<String, dynamic> row = await _client
+        .from('question_threads')
+        .update(<String, dynamic>{'status': 'confirmed'})
+        .eq('id', threadId)
+        .select()
+        .single();
+    return QuestionThread.fromMap(row);
+  }
+
   /// 내 연결노트 추가/수정. 본인(author_id=현재 사용자) 행만 다룬다.
   /// 같은 방에 내 노트가 있으면 body 갱신, 없으면 새 행 삽입.
   /// author_role 은 현재 사용자 역할에서 채운다(남의 노트는 RLS가 차단).

@@ -1,0 +1,80 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// 멘토별 구독 요약(읽기 전용). ★ S2 구독 레이어 — 질문방 레포가 아니다.
+///
+/// 질문방 화면의 '잔여/다음 갱신일'은 질문방 데이터가 아니라 구독에서 가져온다.
+/// - isActive: subscriptions.status == 'active'
+/// - nextRenewal: current_period_end (없으면 next_billing_at)
+/// - remaining: 주간 문항 수가 미확정(plan_constants 값 비움 + DB에 잔여 컬럼 없음)이라
+///   현재는 null(미정). 확정되면 채운다. 게이팅은 isActive 로 한다(미정이면 활성=가능).
+class SubscriptionSummary {
+  const SubscriptionSummary({
+    required this.mentorId,
+    required this.isActive,
+    this.planTier,
+    this.nextRenewal,
+    this.remaining,
+  });
+
+  final String mentorId;
+  final bool isActive;
+  final String? planTier;
+  final DateTime? nextRenewal;
+  final int? remaining;
+
+  /// 질문 가능 여부. 활성 구독 + (잔여 미정이거나 1개 이상).
+  bool get canAsk => isActive && (remaining == null || remaining! > 0);
+}
+
+/// subscriptions 읽기 전용 리더(RLS: 당사자만). 멘토별 1건으로 요약.
+class SubscriptionReader {
+  SubscriptionReader._();
+
+  /// 학생의 모든 구독을 멘토별로 요약. 같은 멘토에 여러 건이면 active 우선,
+  /// 그다음 갱신일이 늦은 것을 택한다.
+  static Future<Map<String, SubscriptionSummary>> fetchForStudent(
+    SupabaseClient client,
+    String studentId,
+  ) async {
+    final List<Map<String, dynamic>> rows = await client
+        .from('subscriptions')
+        .select(
+            'mentor_id, status, plan_tier, current_period_end, next_billing_at')
+        .eq('student_id', studentId);
+
+    final Map<String, SubscriptionSummary> byMentor =
+        <String, SubscriptionSummary>{};
+    for (final Map<String, dynamic> r in rows) {
+      final String? mentorId = r['mentor_id'] as String?;
+      if (mentorId == null) continue;
+      final bool isActive = (r['status'] as String?)?.trim() == 'active';
+      final SubscriptionSummary s = SubscriptionSummary(
+        mentorId: mentorId,
+        isActive: isActive,
+        planTier: (r['plan_tier'] as String?)?.trim(),
+        nextRenewal:
+            _time(r['current_period_end']) ?? _time(r['next_billing_at']),
+        remaining: null, // 주간 문항수 미확정 → 미정
+      );
+      final SubscriptionSummary? prev = byMentor[mentorId];
+      if (prev == null || _isBetter(s, prev)) {
+        byMentor[mentorId] = s;
+      }
+    }
+    return byMentor;
+  }
+
+  static bool _isBetter(SubscriptionSummary a, SubscriptionSummary b) {
+    if (a.isActive != b.isActive) return a.isActive; // active 우선
+    final DateTime ar =
+        a.nextRenewal ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final DateTime br =
+        b.nextRenewal ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return ar.isAfter(br); // 갱신일 늦은 것
+  }
+
+  static DateTime? _time(Object? v) {
+    if (v is String && v.isNotEmpty) return DateTime.tryParse(v)?.toLocal();
+    return null;
+  }
+}

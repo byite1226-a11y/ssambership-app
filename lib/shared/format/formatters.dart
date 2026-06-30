@@ -9,4 +9,25 @@ class Formatters {
   static String koreanDate(DateTime dt) {
     return '${dt.year}년 ${dt.month}월 ${dt.day}일';
   }
+
+  /// 짧은 날짜(M/D). 갱신일 등 칩/캡션용.
+  static String shortDate(DateTime dt) => '${dt.month}/${dt.day}';
+
+  /// 상대 시간(방금/N분 전/N시간 전/N일 전/그 이전은 날짜). 채팅·목록 활동시각용.
+  static String relativeKorean(DateTime dt, {DateTime? now}) {
+    final DateTime ref = now ?? DateTime.now();
+    final Duration d = ref.difference(dt);
+    if (d.inSeconds < 60) return '방금';
+    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
+    if (d.inHours < 24) return '${d.inHours}시간 전';
+    if (d.inDays < 7) return '${d.inDays}일 전';
+    return koreanDate(dt);
+  }
+
+  /// 시:분(24h). 채팅 말풍선 시각용.
+  static String hourMinute(DateTime dt) {
+    final String hh = dt.hour.toString().padLeft(2, '0');
+    final String mm = dt.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
 }

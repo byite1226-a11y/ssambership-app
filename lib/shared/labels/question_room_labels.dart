@@ -8,25 +8,25 @@ import '../../features/question_room/data/models/question_thread.dart';
 class QuestionRoomLabels {
   QuestionRoomLabels._();
 
-  /// 스레드 상태 한글 라벨.
-  /// pending/answered/confirmed 는 확정 라벨.
-  /// open/closed/archived 는 우선 잠정(기획 확정 시 교체).
+  /// 스레드 상태 한글 라벨 — 웹 실제 화면 기준(직역 금지).
+  /// pending=답변 대기, answered=진행 중(‘답변 완료’ 아님), confirmed=답변 완료.
+  /// open/closed/archived 는 사용자에게 영문 노출 없이 내부 취급(중립 라벨).
   static String threadStatus(ThreadStatus status) {
     switch (status) {
       case ThreadStatus.pending:
         return '답변 대기';
       case ThreadStatus.answered:
-        return '답변 완료';
+        return '진행 중';
       case ThreadStatus.confirmed:
-        return '확인 완료';
+        return '답변 완료';
       case ThreadStatus.open:
-        return '진행 중'; // 잠정
+        return '진행 중'; // 내부 기본값 — answered와 동일 취급
       case ThreadStatus.closed:
-        return '종료'; // 잠정
+        return '종료';
       case ThreadStatus.archived:
-        return '보관됨'; // 잠정
+        return '보관';
       case ThreadStatus.unknown:
-        return '상태 미상';
+        return '확인 중';
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app/app.dart';
+import 'core/auth/auth_service.dart';
 import 'core/supabase/supabase_client.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/push/push_service.dart';
@@ -21,6 +22,9 @@ Future<void> main() async {
 
   // Supabase 초기화(자격값이 있을 때만).
   await SupabaseInit.ensureInitialized();
+
+  // 인증/세션 부팅: 세션 복원 + 프로필(role·계정상태·구독) 로드 + auth 변화 구독.
+  await AuthService.instance.bootstrap();
 
   // 딥링크/푸시 골격 초기화(자리).
   await DeepLinkService.instance.initialize();

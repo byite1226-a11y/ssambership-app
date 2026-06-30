@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
-import '../features/question_room/question_room_screen.dart';
+import 'package:go_router/go_router.dart';
+
+import '../core/auth/auth_service.dart';
 import '../features/community/community_screen.dart';
 import '../features/mentors/mentors_screen.dart';
-import '../features/notifications/notifications_screen.dart';
 import '../features/mypage/mypage_screen.dart';
+import '../features/notifications/notifications_screen.dart';
+import '../features/question_room/question_room_screen.dart';
 import '../shared/constants/app_constants.dart';
+import 'entry_guard.dart';
 
 /// 하단 탭 5개 셸(질문방·커뮤니티·멘토찾기·알림·마이페이지).
-/// 각 탭은 '빈 화면'. role(student/mentor/admin) 분기 자리만 둔다.
+///
+/// 게스트(둘러보기)는 커뮤니티·멘토찾기만 접근 가능.
+/// 질문방·알림·마이페이지를 누르면 "로그인이 필요해요" 안내와 함께 로그인 화면으로 보낸다.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -16,9 +22,8 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+  late int _index;
 
-  // role 분기 자리: 멘토/관리자는 일부 탭 구성이 달라질 수 있음(후속에서 분기).
   static const List<Widget> _pages = <Widget>[
     QuestionRoomScreen(),
     CommunityScreen(),
@@ -36,13 +41,28 @@ class _HomeShellState extends State<HomeShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // 게스트는 접근 가능한 탭(멘토 찾기=2)에서 시작.
+    _index = AuthService.instance.isGuest ? 2 : 0;
+  }
+
+  void _onSelect(int i) {
+    if (AuthService.instance.isGuest && !EntryGuard.isTabAllowedForGuest(i)) {
+      context.go('${EntryGuard.login}?notice=login_required');
+      return;
+    }
+    setState(() => _index = i);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(AppConstants.bottomTabLabels[_index])),
       body: IndexedStack(index: _index, children: _pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (int i) => setState(() => _index = i),
+        onDestinationSelected: _onSelect,
         destinations: <NavigationDestination>[
           for (int i = 0; i < _pages.length; i++)
             NavigationDestination(

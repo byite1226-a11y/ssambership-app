@@ -1,16 +1,51 @@
 import '../core/auth/auth_service.dart';
 
-/// 진입 가드(자리). 라우팅 redirect 에서 사용.
-/// S0: 골격만 — 온보딩/로그인 통과 후 홈. 실제 세션 검사·role 분기는 후속.
+/// 진입 가드: AccessState → 가야 할 경로. router.redirect 에서 사용한다.
+///
+/// 분기 요약:
+/// - loading  → /splash
+/// - loggedOut→ /login (보호 경로 직접 접근 시에도 로그인으로)
+/// - guest    → /home(제한 탭) + /login 접근 허용
+/// - full     → /home
+/// - blocked  → /blocked (banned/suspended/상태불명/관리자)
 class EntryGuard {
   EntryGuard._();
 
-  /// 로그인 필요 여부(자리). 지금은 항상 통과시켜 빈 화면 흐름만 확인.
-  static bool get requiresLogin => false;
+  static const String splash = '/splash';
+  static const String login = '/login';
+  static const String home = '/home';
+  static const String blocked = '/blocked';
+  static const String devGallery = '/dev/gallery';
 
-  /// role 기반 시작 경로(자리). 후속에서 student/mentor/admin 분기.
-  static String homePathForRole(AppRole role) {
-    // TODO: 멘토/관리자 전용 시작 화면 분기.
-    return '/home';
+  /// 게스트가 접근 가능한 하단 탭 인덱스.
+  /// (0 질문방 · 1 커뮤니티 · 2 멘토찾기 · 3 알림 · 4 마이페이지)
+  /// → 커뮤니티(1)·멘토찾기(2)만 허용. 나머지는 로그인 필요.
+  static const Set<int> guestAllowedTabs = <int>{1, 2};
+
+  static bool isTabAllowedForGuest(int index) =>
+      guestAllowedTabs.contains(index);
+
+  /// redirect 결정. null = 현재 위치 유지.
+  static String? redirect({
+    required AccessState access,
+    required String location,
+  }) {
+    // dev 라우트는 가드 제외(개발 빌드 한정으로만 등록됨).
+    if (location == devGallery) return null;
+
+    switch (access) {
+      case AccessState.loading:
+        return location == splash ? null : splash;
+      case AccessState.loggedOut:
+        return location == login ? null : login;
+      case AccessState.guest:
+        // 게스트는 홈(제한 탭)과 로그인 화면만.
+        if (location == home || location == login) return null;
+        return home;
+      case AccessState.full:
+        return location == home ? null : home;
+      case AccessState.blocked:
+        return location == blocked ? null : blocked;
+    }
   }
 }

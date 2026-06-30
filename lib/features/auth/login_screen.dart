@@ -1,30 +1,215 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../app/entry_guard.dart';
+import '../../core/auth/auth_service.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../design/tokens/typography.dart';
+import '../../design/widgets/primary_button.dart';
+import '../../design/widgets/secondary_button.dart';
+import '../../shared/constants/app_constants.dart';
+import '../dev/dev_flags.dart';
 
-/// 로그인(자리). 회원가입 폼은 앱에서 제외(흔적 없이) — 로그인 골격만.
-/// 실제 인증 연동은 후속 세션. 지금은 탭 화면으로 진입하는 버튼만.
-class LoginScreen extends StatelessWidget {
+/// 로그인 화면. 이메일+비밀번호 로그인 / 둘러보기(게스트) / 웹 가입 안내(자리).
+///
+/// ★ 컴패니언 앱: 회원가입 폼 없음(가입은 웹). 결제·가격 UI 없음(Commerce-Zero).
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _email = TextEditingController();
+  final TextEditingController _password = TextEditingController();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await AuthService.instance.signInWithPassword(
+        email: _email.text,
+        password: _password.text,
+      );
+      // 성공 시 router redirect 가 /home 또는 /blocked 로 이동시킨다.
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = _friendly(e.message));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = '로그인 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _friendly(String raw) {
+    final String m = raw.toLowerCase();
+    if (m.contains('invalid login')) return '이메일 또는 비밀번호가 올바르지 않아요.';
+    if (m.contains('email not confirmed')) return '이메일 인증이 완료되지 않았어요.';
+    return '로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.';
+  }
+
+  void _browse() {
+    AuthService.instance.enterAsGuest();
+    context.go(EntryGuard.home);
+  }
+
+  void _openWebSignUp() {
+    // 웹 가입 자리 — 웹 URL 미확정이라 지금은 안내만 한다(web_bridge 연결은 후속).
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('회원가입은 웹에서 진행돼요. (링크 준비 중)'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String? notice =
+        GoRouterState.of(context).uri.queryParameters['notice'];
+    final bool loginRequired = notice == 'login_required';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('로그인')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Text('로그인 화면(자리)', style: AppTypography.title),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => context.go('/home'),
-              style: FilledButton.styleFrom(backgroundColor: ColorTokens.accent),
-              child: const Text('둘러보기'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const Text(
+                    AppConstants.appDisplayName,
+                    style: AppTypography.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    '질문 멘토링, 모바일에서',
+                    style: AppTypography.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                  if (loginRequired) ...<Widget>[
+                    const SizedBox(height: 18),
+                    const _NoticeBanner(),
+                  ],
+                  const SizedBox(height: 28),
+                  TextField(
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const <String>[
+                      AutofillHints.email,
+                      AutofillHints.username,
+                    ],
+                    textInputAction: TextInputAction.next,
+                    style: AppTypography.body,
+                    decoration: _decoration('이메일'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _password,
+                    obscureText: true,
+                    autofillHints: const <String>[AutofillHints.password],
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _signIn(),
+                    style: AppTypography.body,
+                    decoration: _decoration('비밀번호'),
+                  ),
+                  if (_error != null) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: ColorTokens.danger,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  PrimaryButton(
+                    label: _loading ? '로그인 중…' : '로그인',
+                    onPressed: _loading ? null : _signIn,
+                  ),
+                  const SizedBox(height: 10),
+                  SecondaryButton(
+                    label: '둘러보기',
+                    onPressed: _loading ? null : _browse,
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _openWebSignUp,
+                    child: const Text(
+                      '아직 회원이 아니신가요? 웹에서 가입',
+                      style: TextStyle(color: ColorTokens.secondary),
+                    ),
+                  ),
+                  // ★ 개발 전용 — 출시 빌드에서는 노출되지 않는다.
+                  if (kDevToolsEnabled)
+                    TextButton(
+                      onPressed: () => context.go(EntryGuard.devGallery),
+                      child: const Text('위젯 갤러리 (개발용)'),
+                    ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: AppTypography.caption,
+        filled: true,
+        fillColor: ColorTokens.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      );
+}
+
+/// '로그인이 필요해요' 안내 배너(보호 탭을 게스트가 눌렀을 때).
+class _NoticeBanner extends StatelessWidget {
+  const _NoticeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: ColorTokens.elevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ColorTokens.border),
+      ),
+      child: const Row(
+        children: <Widget>[
+          Icon(Icons.info_outline, size: 18, color: ColorTokens.accent),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text('로그인이 필요해요', style: AppTypography.body),
+          ),
+        ],
       ),
     );
   }

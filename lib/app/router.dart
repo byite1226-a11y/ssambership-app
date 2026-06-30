@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/dev/dev_flags.dart';
+import '../features/dev/widget_gallery.dart';
 import 'home_shell.dart';
 
 /// 라우팅 골격: 온보딩 → 로그인 → 홈(하단 탭 5개).
@@ -23,6 +25,12 @@ class AppRouter {
         path: '/home',
         builder: (context, state) => const HomeShell(),
       ),
+      // ★ 개발 전용 — 출시(release) 빌드에서는 등록되지 않는다(kDevToolsEnabled=false).
+      if (kDevToolsEnabled)
+        GoRoute(
+          path: '/dev/gallery',
+          builder: (context, state) => const WidgetGallery(),
+        ),
     ],
   );
 }

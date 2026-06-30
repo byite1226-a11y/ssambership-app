@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
-import '../../../design/widgets/app_card.dart';
 import '../../../shared/format/formatters.dart';
 import '../data/models/connection_note.dart';
 import '../data/models/question_thread.dart';
@@ -11,6 +10,7 @@ import '../data/models/room.dart';
 import '../data/question_room_read_repository.dart';
 import 'connection_notes_screen.dart';
 import 'question_list_screen.dart';
+import 'widgets/entrance_card.dart';
 import 'widgets/thread_status_pill.dart';
 
 /// 멘토방 홈(2뎁스). 얇은 헤더 + 동등한 두 입구(질문/답변·연결노트) 미리보기.
@@ -86,7 +86,7 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
             children: <Widget>[
               _header(),
               const SizedBox(height: 16),
-              _EntranceCard(
+              EntranceCard(
                 icon: Icons.forum_outlined,
                 title: '질문 / 답변',
                 child: d.latestThread == null
@@ -109,7 +109,7 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
                 onTap: () => _openQuestions(),
               ),
               const SizedBox(height: 12),
-              _EntranceCard(
+              EntranceCard(
                 icon: Icons.sticky_note_2_outlined,
                 title: '연결노트',
                 child: d.latestMentorNote?.body?.trim().isNotEmpty == true
@@ -188,41 +188,3 @@ class _RoomHomeData {
   final ConnectionNote? latestMentorNote;
 }
 
-/// 동등 크기의 큰 입구 카드.
-class _EntranceCard extends StatelessWidget {
-  const _EntranceCard({
-    required this.icon,
-    required this.title,
-    required this.child,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(icon, color: ColorTokens.accent),
-              const SizedBox(width: 8),
-              Text(title, style: AppTypography.title),
-              const Spacer(),
-              const Icon(Icons.chevron_right, color: ColorTokens.muted),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: child),
-        ],
-      ),
-    );
-  }
-}

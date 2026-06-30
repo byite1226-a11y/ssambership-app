@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/supabase/supabase_client.dart';
-import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
-import '../data/models/question_message.dart';
-import '../data/models/question_thread.dart';
-import '../data/question_room_read_repository.dart';
-import '../data/question_room_write_repository.dart';
-import 'widgets/message_bubble.dart';
-import 'widgets/thread_status_pill.dart';
+import '../../../../core/supabase/supabase_client.dart';
+import '../../../../design/tokens/color_tokens.dart';
+import '../../../../design/tokens/typography.dart';
+import '../../data/models/question_message.dart';
+import '../../data/models/question_thread.dart';
+import '../../data/question_room_read_repository.dart';
+import '../../data/question_room_write_repository.dart';
+import '../widgets/message_bubble.dart';
+import '../widgets/thread_status_pill.dart';
 
-/// 채팅(3뎁스). 카카오톡식 말풍선(학생=우측/멘토=좌측) + 하단 입력창.
-/// 메시지는 append 전용 — 수정/삭제 없음.
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.thread, required this.mentorName});
+/// 멘토 답변 화면(3뎁스). 학생 채팅의 거울상 — 멘토=우측 / 학생=좌측(MessageBubble가 자동 처리).
+///
+/// ★ 멘토가 메시지를 보내면(append) '답변 대기(pending)' 스레드는 '진행 중(answered)'으로 전이된다.
+///   = "답변 전송". (학생이 확인하면 '답변 완료(confirmed)' — 역할이 분리돼 있다.)
+///   메시지는 append 전용(수정/삭제 없음).
+class MentorAnswerScreen extends StatefulWidget {
+  const MentorAnswerScreen({
+    super.key,
+    required this.thread,
+    required this.studentName,
+  });
 
   final QuestionThread thread;
-  final String mentorName;
+  final String studentName;
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<MentorAnswerScreen> createState() => _MentorAnswerScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
   final QuestionRoomReadRepository _read = const QuestionRoomReadRepository();
   final QuestionRoomWriteRepository _write =
       const QuestionRoomWriteRepository();
@@ -30,6 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scroll = ScrollController();
 
   late Future<List<QuestionMessage>> _future;
+  late ThreadStatus _status; // 전송에 따라 갱신(거울상 목록에서 즉시 반영)
   bool _sending = false;
 
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
@@ -37,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _status = widget.thread.status;
     _future = _read.messages(widget.thread.id);
   }
 
@@ -69,6 +78,16 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       await _write.appendMessage(threadId: widget.thread.id, body: body);
       _input.clear();
+      // 답변 전송 = 첫 답변이면 '답변 대기' → '진행 중' 전이.
+      if (_status == ThreadStatus.pending) {
+        try {
+          final QuestionThread updated =
+              await _write.markThreadAnswered(widget.thread.id);
+          if (mounted) setState(() => _status = updated.status);
+        } catch (_) {
+          // 전이 실패해도 메시지는 이미 전송됨 — 상태만 다음 새로고침에서 반영.
+        }
+      }
       await _reload();
     } catch (e) {
       if (mounted) {
@@ -89,17 +108,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String title = widget.thread.title?.trim().isNotEmpty == true
+        ? widget.thread.title!.trim()
+        : '질문';
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.thread.title?.trim().isNotEmpty == true
-              ? widget.thread.title!.trim()
-              : '질문',
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(widget.studentName,
+                style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
+            Text(title,
+                style: AppTypography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
         ),
         actions: <Widget>[
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Center(child: ThreadStatusPill(status: widget.thread.status)),
+            child: Center(child: ThreadStatusPill(status: _status)),
           ),
         ],
       ),
@@ -128,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _jumpToEnd();
                 if (messages.isEmpty) {
                   return Center(
-                    child: Text('첫 메시지를 남겨보세요.',
+                    child: Text('학생의 질문에 첫 답변을 남겨보세요.',
                         style: AppTypography.caption),
                   );
                 }
@@ -175,7 +202,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
                 decoration: InputDecoration(
-                  hintText: '메시지 입력',
+                  hintText: '답변 입력',
                   filled: true,
                   fillColor: ColorTokens.elevated,
                   border: OutlineInputBorder(
@@ -192,6 +219,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Icons.send,
                 color: _sending ? ColorTokens.muted : ColorTokens.accent,
               ),
+              tooltip: '답변 전송',
               onPressed: _sending ? null : _send,
             ),
           ],
@@ -200,4 +228,3 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-

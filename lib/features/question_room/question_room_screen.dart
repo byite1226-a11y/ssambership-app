@@ -14,16 +14,43 @@ import '../../shared/format/formatters.dart';
 import 'data/mentor_lookup_repository.dart';
 import 'data/models/room.dart';
 import 'data/question_room_read_repository.dart';
+import 'ui/mentor/mentor_inbox_screen.dart';
 import 'ui/mentor_room_home_screen.dart';
 import 'ui/widgets/subscribe_web.dart';
 
-/// 질문방 탭(1뎁스) = 내 멘토방 목록. HomeShell 이 AppBar/하단탭을 제공하므로
-/// 이 화면은 본문만 구성한다(자체 Scaffold 없음).
-class QuestionRoomScreen extends StatefulWidget {
+/// 질문방 탭(1뎁스). HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성(자체 Scaffold 없음).
+///
+/// ★ role 분기:
+///   - student → 내 멘토방 목록(S4).
+///   - mentor  → 받은 학생 목록(S5, [MentorInboxScreen]).
+///   - admin/guest → 차단(이 앱은 학생·멘토 전용).
+class QuestionRoomScreen extends StatelessWidget {
   const QuestionRoomScreen({super.key});
 
   @override
-  State<QuestionRoomScreen> createState() => _QuestionRoomScreenState();
+  Widget build(BuildContext context) {
+    switch (AuthService.instance.currentRole) {
+      case AppRole.mentor:
+        return const MentorInboxScreen();
+      case AppRole.student:
+        return const _StudentRoomList();
+      case AppRole.admin:
+      case AppRole.guest:
+        return const EmptyState(
+          icon: Icons.forum_outlined,
+          title: '질문방은 학생·멘토 전용이에요',
+          message: '학생 또는 멘토 계정으로 이용해 주세요.',
+        );
+    }
+  }
+}
+
+/// 학생용 1뎁스 = 내 멘토방 목록(카카오톡식). (S4)
+class _StudentRoomList extends StatefulWidget {
+  const _StudentRoomList();
+
+  @override
+  State<_StudentRoomList> createState() => _StudentRoomListState();
 }
 
 /// 목록 한 행에 필요한 묶음(방 + 멘토 표시명 + 구독 요약).
@@ -36,7 +63,7 @@ class _RoomItem {
   String get mentorName => mentor?.displayName ?? '멘토';
 }
 
-class _QuestionRoomScreenState extends State<QuestionRoomScreen> {
+class _StudentRoomListState extends State<_StudentRoomList> {
   final QuestionRoomReadRepository _repo = const QuestionRoomReadRepository();
   final MentorLookupRepository _mentors = const MentorLookupRepository();
 
@@ -72,15 +99,6 @@ class _QuestionRoomScreenState extends State<QuestionRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 멘토 계정 방어 — 멘토용 화면은 S5. 학생 질문방 목록을 멘토에게 띄우지 않는다.
-    if (AuthService.instance.currentRole == AppRole.mentor) {
-      return const EmptyState(
-        icon: Icons.forum_outlined,
-        title: '멘토 화면은 준비 중이에요',
-        message: '멘토용 질문방은 곧 제공돼요.',
-      );
-    }
-
     return Column(
       children: <Widget>[
         Padding(

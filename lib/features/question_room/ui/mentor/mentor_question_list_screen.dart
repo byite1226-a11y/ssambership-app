@@ -1,0 +1,214 @@
+import 'package:flutter/material.dart';
+
+import '../../../../data/mappings/subject_labels.dart';
+import '../../../../design/tokens/color_tokens.dart';
+import '../../../../design/tokens/typography.dart';
+import '../../../../design/widgets/chip_scroll.dart';
+import '../../../../design/widgets/empty_state.dart';
+import '../../data/models/question_thread.dart';
+import '../../data/models/room.dart';
+import '../../data/question_room_read_repository.dart';
+import '../../data/thread_status_counts.dart';
+import '../widgets/thread_card.dart';
+import 'mentor_answer_screen.dart';
+
+/// 멘토 질문 목록(3뎁스). ★ 멘토 고유: 상태 탭(답변 대기 / 진행 중 / 완료) + 과목 필터 + 정렬.
+/// 카드는 S4 ThreadCard 재사용(탭/필터/정렬만 추가). 카드 탭 → 답변 화면.
+class MentorQuestionListScreen extends StatefulWidget {
+  const MentorQuestionListScreen({
+    super.key,
+    required this.room,
+    required this.studentName,
+  });
+
+  final Room room;
+  final String studentName;
+
+  @override
+  State<MentorQuestionListScreen> createState() =>
+      _MentorQuestionListScreenState();
+}
+
+/// 상태 탭. 라벨/색은 ThreadStatusPill·라벨 유틸과 동일 매핑.
+enum _StatusTab { pending, inProgress, confirmed }
+
+class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
+  final QuestionRoomReadRepository _read = const QuestionRoomReadRepository();
+
+  late Future<List<QuestionThread>> _future;
+  _StatusTab _tab = _StatusTab.pending;
+  String? _subjectCode; // null = 전체
+  bool _newestFirst = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _read.threads(widget.room.id);
+  }
+
+  void _refresh() => setState(() => _future = _read.threads(widget.room.id));
+
+  bool _matchesTab(QuestionThread t) {
+    switch (_tab) {
+      case _StatusTab.pending:
+        return t.status == ThreadStatus.pending;
+      case _StatusTab.inProgress:
+        return t.status == ThreadStatus.answered ||
+            t.status == ThreadStatus.open;
+      case _StatusTab.confirmed:
+        return t.status == ThreadStatus.confirmed;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(widget.studentName,
+                style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
+            Text('질문 / 답변', style: AppTypography.body),
+          ],
+        ),
+      ),
+      body: FutureBuilder<List<QuestionThread>>(
+        future: _future,
+        builder:
+            (BuildContext context, AsyncSnapshot<List<QuestionThread>> snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('질문을 불러오지 못했어요.\n${snap.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: ColorTokens.danger)),
+              ),
+            );
+          }
+          final List<QuestionThread> all = snap.data ?? <QuestionThread>[];
+          final ThreadStatusCounts counts = ThreadStatusCounts.from(all);
+
+          // 과목 옵션(전체 + 데이터에 존재하는 과목 코드).
+          final List<String> subjectCodes = <String>[];
+          for (final QuestionThread t in all) {
+            final String? c = t.subject;
+            if (c != null && c.trim().isNotEmpty && !subjectCodes.contains(c)) {
+              subjectCodes.add(c);
+            }
+          }
+
+          // 필터 + 정렬.
+          final List<QuestionThread> visible = all.where((QuestionThread t) {
+            if (!_matchesTab(t)) return false;
+            if (_subjectCode != null && t.subject != _subjectCode) return false;
+            return true;
+          }).toList()
+            ..sort((QuestionThread a, QuestionThread b) => _newestFirst
+                ? b.updatedAt.compareTo(a.updatedAt)
+                : a.updatedAt.compareTo(b.updatedAt));
+
+          return Column(
+            children: <Widget>[
+              _statusTabs(counts),
+              _filterBar(subjectCodes),
+              const Divider(height: 1, color: ColorTokens.border),
+              Expanded(child: _list(visible, all.isEmpty)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _statusTabs(ThreadStatusCounts c) {
+    final List<String> labels = <String>[
+      '답변 대기 ${c.pending}',
+      '진행 중 ${c.inProgress}',
+      '완료 ${c.confirmed}',
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      child: ChipScroll(
+        labels: labels,
+        selectedIndex: _StatusTab.values.indexOf(_tab),
+        onSelected: (int i) =>
+            setState(() => _tab = _StatusTab.values[i]),
+      ),
+    );
+  }
+
+  Widget _filterBar(List<String> subjectCodes) {
+    // [전체] + 과목들. 인덱스 0 = 전체(null).
+    final List<String> labels = <String>[
+      '전체',
+      for (final String code in subjectCodes) subjectLabel(code),
+    ];
+    final int selected = _subjectCode == null
+        ? 0
+        : subjectCodes.indexOf(_subjectCode!) + 1;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 4, 8),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: ChipScroll(
+              labels: labels,
+              selectedIndex: selected < 0 ? 0 : selected,
+              onSelected: (int i) => setState(() {
+                _subjectCode = i == 0 ? null : subjectCodes[i - 1];
+              }),
+            ),
+          ),
+          IconButton(
+            tooltip: _newestFirst ? '최신순' : '오래된순',
+            icon: Icon(
+              _newestFirst ? Icons.south : Icons.north,
+              color: ColorTokens.secondary,
+              size: 20,
+            ),
+            onPressed: () => setState(() => _newestFirst = !_newestFirst),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _list(List<QuestionThread> visible, bool noThreadsAtAll) {
+    if (visible.isEmpty) {
+      return EmptyState(
+        icon: Icons.inbox_outlined,
+        title: noThreadsAtAll ? '아직 받은 질문이 없어요' : '이 조건의 질문이 없어요',
+        message: noThreadsAtAll
+            ? '학생이 질문하면 여기에 표시돼요.'
+            : '다른 탭이나 과목을 선택해 보세요.',
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      itemCount: visible.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (BuildContext context, int i) => ThreadCard(
+        thread: visible[i],
+        onOpen: () => _openAnswer(visible[i]),
+      ),
+    );
+  }
+
+  Future<void> _openAnswer(QuestionThread t) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MentorAnswerScreen(
+          thread: t,
+          studentName: widget.studentName,
+        ),
+      ),
+    );
+    if (mounted) _refresh(); // 답변/상태 전이 반영.
+  }
+}

@@ -3,12 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
-import '../../../design/widgets/app_badge.dart';
-import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../../../design/widgets/secondary_button.dart';
-import '../../../data/mappings/subject_labels.dart';
-import '../../../shared/format/formatters.dart';
 import '../data/models/question_thread.dart';
 import '../data/models/room.dart';
 import '../data/question_room_read_repository.dart';
@@ -17,7 +13,7 @@ import 'chat_screen.dart';
 import 'connection_notes_screen.dart';
 import 'new_question_screen.dart';
 import 'widgets/subscribe_web.dart';
-import 'widgets/thread_status_pill.dart';
+import 'widgets/thread_card.dart';
 
 /// 질문 영역(3뎁스). 스레드 카드 목록(최신순) + 새 질문 + 연결노트 플로팅.
 class QuestionListScreen extends StatefulWidget {
@@ -97,11 +93,14 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   itemCount: threads.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (BuildContext context, int i) => _ThreadCard(
+                  itemBuilder: (BuildContext context, int i) => ThreadCard(
                     thread: threads[i],
                     onOpen: () => _openChat(threads[i]),
-                    onConfirm: threads[i].status == ThreadStatus.answered
-                        ? () => _confirm(threads[i])
+                    bottomAction: threads[i].status == ThreadStatus.answered
+                        ? SecondaryButton(
+                            label: '답변 확인 완료',
+                            onPressed: () => _confirm(threads[i]),
+                          )
                         : null,
                   ),
                 );
@@ -188,65 +187,6 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-}
-
-class _ThreadCard extends StatelessWidget {
-  const _ThreadCard({
-    required this.thread,
-    required this.onOpen,
-    this.onConfirm,
-  });
-
-  final QuestionThread thread;
-  final VoidCallback onOpen;
-  final VoidCallback? onConfirm;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onOpen,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  thread.title?.trim().isNotEmpty == true
-                      ? thread.title!.trim()
-                      : '(제목 없음)',
-                  style: AppTypography.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              ThreadStatusPill(status: thread.status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: <Widget>[
-              AppBadge(label: subjectLabel(thread.subject), tinted: true),
-              if (thread.isWrongAnswer) ...<Widget>[
-                const SizedBox(width: 6),
-                const AppBadge(label: '오답노트'),
-              ],
-              const Spacer(),
-              Text(
-                Formatters.relativeKorean(thread.updatedAt),
-                style: AppTypography.caption,
-              ),
-            ],
-          ),
-          if (onConfirm != null) ...<Widget>[
-            const SizedBox(height: 12),
-            SecondaryButton(label: '답변 확인 완료', onPressed: onConfirm),
-          ],
-        ],
-      ),
-    );
   }
 }
 

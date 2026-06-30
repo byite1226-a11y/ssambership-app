@@ -43,6 +43,18 @@ class QuestionRoomReadRepository {
     return rows.map(QuestionThread.fromMap).toList();
   }
 
+  /// 여러 방의 질문 스레드를 한 번에(최신순). 멘토 받은-학생 목록의 상태 요약용.
+  /// roomIds 가 비면 쿼리 없이 빈 리스트.
+  Future<List<QuestionThread>> threadsForRooms(List<String> roomIds) async {
+    if (roomIds.isEmpty) return <QuestionThread>[];
+    final List<Map<String, dynamic>> rows = await _client
+        .from('question_threads')
+        .select('*')
+        .inFilter('mentor_student_room_id', roomIds)
+        .order('updated_at', ascending: false);
+    return rows.map(QuestionThread.fromMap).toList();
+  }
+
   /// 스레드의 메시지 목록(대화 순서 = created_at 오름차순).
   Future<List<QuestionMessage>> messages(String threadId) async {
     final List<Map<String, dynamic>> rows = await _client

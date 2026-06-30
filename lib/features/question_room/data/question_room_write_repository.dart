@@ -83,6 +83,21 @@ class QuestionRoomWriteRepository {
     return QuestionThread.fromMap(row);
   }
 
+  /// 멘토가 답변을 보내며 스레드를 '진행 중'으로 전이(status → 'answered').
+  /// ★ 의미: 멘토가 답변 메시지를 남기면 '답변 대기(pending)' → '진행 중(answered)'.
+  ///   학생이 확인하면 confirmThread 로 '답변 완료(confirmed)'가 된다(역할 분리).
+  ///   RLS상 멘토(방 참여자)가 question_threads.status UPDATE 가능함을 확인했다.
+  ///   보통 pending 에서 호출하지만(answered/confirmed 면 호출부가 전이를 생략) 검증은 호출부.
+  Future<QuestionThread> markThreadAnswered(String threadId) async {
+    final Map<String, dynamic> row = await _client
+        .from('question_threads')
+        .update(<String, dynamic>{'status': 'answered'})
+        .eq('id', threadId)
+        .select()
+        .single();
+    return QuestionThread.fromMap(row);
+  }
+
   /// 내 연결노트 추가/수정. 본인(author_id=현재 사용자) 행만 다룬다.
   /// 같은 방에 내 노트가 있으면 body 갱신, 없으면 새 행 삽입.
   /// author_role 은 현재 사용자 역할에서 채운다(남의 노트는 RLS가 차단).

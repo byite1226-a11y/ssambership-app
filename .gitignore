@@ -1,0 +1,21 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+.pub-cache/
+.pub/
+pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# 비밀값: 출시 시 원격 production 키는 커밋하지 말 것.
+# (현재 .env 는 로컬 개발용 공개 키만 담고 있어 커밋해 둔다. 운영키 도입 시 아래 주석 해제)
+# .env

@@ -1,0 +1,32 @@
+name: ssambership_app
+description: "쌤버십 모바일 앱 — 기존 웹(Next.js)의 컴패니언. 읽기 중심·Commerce-Zero(앱 내 결제 없음)."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 백엔드: 기존 웹과 공유하는 Supabase 1개 (앱은 읽기 중심)
+  supabase_flutter: ^2.5.0
+
+  # 라우팅 골격
+  go_router: ^14.2.0
+
+  # .env 로딩 (URL/anon key는 코드에 하드코딩하지 않는다)
+  flutter_dotenv: ^5.1.0
+
+  # web_bridge: 결제/구독이 필요할 때 '웹 페이지'만 연다 (앱에서 결제하지 않음)
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env

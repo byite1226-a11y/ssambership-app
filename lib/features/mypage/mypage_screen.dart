@@ -3,72 +3,134 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
+import '../../design/tokens/color_tokens.dart';
 import '../../design/tokens/typography.dart';
-import '../../design/widgets/initial_avatar.dart';
-import '../../design/widgets/secondary_button.dart';
 import '../dev/dev_flags.dart';
+import 'data/mypage_models.dart';
+import 'data/mypage_repository.dart';
+import 'ui/sections/cash_section.dart';
+import 'ui/sections/mentor_dashboard_section.dart';
+import 'ui/sections/profile_section.dart';
+import 'ui/sections/settings_section.dart';
+import 'ui/sections/student_subscription_section.dart';
+import 'ui/sections/support_section.dart';
 
-/// 마이페이지. 로그인 사용자 기본 정보(이름·역할) + 로그아웃.
-/// 구독/충전이 필요하면 web_bridge 로 웹을 연다(앱 내 결제 없음).
-class MyPageScreen extends StatelessWidget {
-  const MyPageScreen({super.key});
+/// 마이페이지(보강) — 조회 중심 대시보드. role(student/mentor)별로 내용이 다르다.
+/// ★ Commerce-Zero: 결제·충전·정산 출금은 앱에서 실행하지 않고 '웹'으로만 연결한다.
+///   기존 S2(이름·역할·로그아웃)를 설정 섹션으로 통합한다.
+///
+/// HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성(자체 Scaffold 없음).
+class MyPageScreen extends StatefulWidget {
+  const MyPageScreen({
+    super.key,
+    this.loaderOverride,
+    this.onOpenQuestionsTab,
+  });
+
+  /// 테스트용 데이터 주입(실제 DB·네트워크 대신 mock). null 이면 실제 레포 사용.
+  final Future<MyPageData> Function()? loaderOverride;
+
+  /// '질문하러 가기' 등에서 질문방 탭으로 보내는 핸드오프(없으면 안내).
+  /// TODO(S11): HomeShell 탭 상태가 노출되면 실제 탭 전환으로 연결.
+  final VoidCallback? onOpenQuestionsTab;
+
+  @override
+  State<MyPageScreen> createState() => _MyPageScreenState();
+}
+
+class _MyPageScreenState extends State<MyPageScreen> {
+  final MyPageRepository _repo = const MyPageRepository();
+  late Future<MyPageData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = (widget.loaderOverride ?? _repo.load)();
+  }
+
+  void _goToQuestions() {
+    if (widget.onOpenQuestionsTab != null) {
+      widget.onOpenQuestionsTab!();
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('질문방 탭에서 질문할 수 있어요.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthService auth = AuthService.instance;
-    final String name = auth.displayName;
-    final String role = auth.roleLabel;
-    // 게스트(둘러보기)로 들어와도 깨지지 않게: 실제 세션 있을 때만 로그아웃 노출.
-    final bool signedIn = auth.isSignedIn;
-
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            // 프로필 헤더 — 이름/역할은 프로필에서 read(없으면 빈 값, 하드코딩 없음).
-            Row(
-              children: <Widget>[
-                InitialAvatar(name: name, size: 56),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        name.isNotEmpty ? name : '내 정보',
-                        style: AppTypography.title,
-                      ),
-                      if (role.isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 4),
-                        Text(role, style: AppTypography.caption),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            // ★ 개발 전용 — 출시 빌드에서는 노출되지 않는다(데이터 점검 진입).
-            if (kDevToolsEnabled) ...<Widget>[
-              TextButton(
-                onPressed: () => context.go(EntryGuard.devS3),
-                child: const Text('S3 데이터 점검 (개발용)'),
+      child: FutureBuilder<MyPageData>(
+        future: _future,
+        builder: (BuildContext context, AsyncSnapshot<MyPageData> snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('내 정보를 불러오지 못했어요.\n${snap.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: ColorTokens.danger)),
               ),
-              const SizedBox(height: 8),
-            ],
-            // 설정 영역(하단): 로그아웃은 기존 AuthService.signOut() 재사용.
-            if (signedIn)
-              SecondaryButton(
-                label: '로그아웃',
-                icon: Icons.logout,
-                onPressed: () => auth.signOut(),
-              ),
-          ],
-        ),
+            );
+          }
+          return _body(snap.data!);
+        },
       ),
     );
+  }
+
+  Widget _body(MyPageData data) {
+    final bool signedIn = AuthService.instance.isSignedIn;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      children: <Widget>[
+        ProfileSection(profile: data.profile),
+        const SizedBox(height: 20),
+        if (data.isMentor)
+          ..._mentorSections(data)
+        else
+          ..._studentSections(data),
+        SettingsSection(
+          onLogout: () => AuthService.instance.signOut(),
+          showLogout: signedIn,
+        ),
+        if (kDevToolsEnabled) ...<Widget>[
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton(
+              onPressed: () => context.go(EntryGuard.devS3),
+              child: Text('S3 데이터 점검 (개발용)',
+                  style: AppTypography.caption),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _studentSections(MyPageData data) {
+    return <Widget>[
+      StudentSubscriptionSection(
+        subscriptions: data.subscriptions,
+        onGoToQuestions: _goToQuestions,
+      ),
+      if (data.cash != null) CashSection(cash: data.cash!),
+      const SupportSection(),
+    ];
+  }
+
+  List<Widget> _mentorSections(MyPageData data) {
+    return <Widget>[
+      if (data.mentor != null)
+        MentorDashboardSection(
+          data: data.mentor!,
+          onGoToQuestions: _goToQuestions,
+        ),
+      const SupportSection(),
+    ];
   }
 }

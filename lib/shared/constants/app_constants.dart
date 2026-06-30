@@ -10,6 +10,10 @@ class AppConstants {
   /// 앱 표시명 (브랜드).
   static const String appDisplayName = '쌤버십';
 
+  /// 앱 표시 버전(마이페이지 설정 표기용). pubspec version 과 맞춘다.
+  /// TODO: package_info_plus 도입 시 런타임 값으로 대체(현재는 표시 전용 상수).
+  static const String appVersion = '0.1.0';
+
   /// 하단 탭 (학생 기준 5개). 영문 코드는 노출하지 않으며 라벨만 화면에 쓴다.
   static const List<String> bottomTabLabels = <String>[
     '질문방',

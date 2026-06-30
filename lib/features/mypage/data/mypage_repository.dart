@@ -1,0 +1,186 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/auth/auth_service.dart';
+import '../../../core/entitlement/subscription_summary.dart';
+import '../../../core/supabase/supabase_client.dart';
+import '../../../shared/errors/app_error.dart';
+import '../../question_room/data/mentor_lookup_repository.dart';
+import '../../question_room/data/models/question_thread.dart';
+import '../../question_room/data/models/room.dart';
+import '../../question_room/data/question_room_read_repository.dart';
+import '../../question_room/data/student_lookup_repository.dart';
+import '../../question_room/data/thread_status_counts.dart';
+import 'mypage_models.dart';
+
+/// 마이페이지 읽기 전용 레포지토리. ★ 어떤 mutate 도 하지 않는다(조회만).
+/// RLS(본인 행만)에 의존하고, 구독·멘토 조회는 기존 S2/S4 레이어를 재사용한다.
+class MyPageRepository {
+  const MyPageRepository();
+
+  final QuestionRoomReadRepository _rooms = const QuestionRoomReadRepository();
+  final MentorLookupRepository _mentors = const MentorLookupRepository();
+  final StudentLookupRepository _students = const StudentLookupRepository();
+
+  SupabaseClient get _client {
+    final SupabaseClient? c = SupabaseInit.clientOrNull;
+    if (c == null) {
+      throw const AppError('백엔드에 연결되어 있지 않아요.');
+    }
+    return c;
+  }
+
+  String get _uid {
+    final String? id = _client.auth.currentUser?.id;
+    if (id == null) throw const AppError('로그인이 필요해요.');
+    return id;
+  }
+
+  /// 화면 진입 시 1회 호출. 역할에 맞는 데이터를 모아 반환한다.
+  Future<MyPageData> load() async {
+    final AuthService auth = AuthService.instance;
+    final MyProfile profile = await _loadProfile(auth);
+
+    if (auth.currentRole == AppRole.mentor) {
+      return MyPageData(
+        role: AppRole.mentor,
+        profile: profile,
+        mentor: await _loadMentorDashboard(),
+      );
+    }
+
+    return MyPageData(
+      role: auth.currentRole,
+      profile: profile,
+      subscriptions: await _loadSubscriptions(),
+      cash: await _loadCash(),
+    );
+  }
+
+  Future<MyProfile> _loadProfile(AuthService auth) async {
+    String? email;
+    String? grade;
+    try {
+      final Map<String, dynamic>? row = await _client
+          .from('users')
+          .select('email, grade_level')
+          .eq('id', _uid)
+          .maybeSingle();
+      email = (row?['email'] as String?)?.trim();
+      grade = (row?['grade_level'] as String?)?.trim();
+    } catch (_) {
+      // 프로필 보강 read 실패는 치명적이지 않다 — 이름/역할만으로도 화면은 뜬다.
+    }
+    return MyProfile(
+      name: auth.displayName,
+      roleLabel: auth.roleLabel,
+      email: (email?.isEmpty ?? true) ? null : email,
+      grade: (grade?.isEmpty ?? true) ? null : grade,
+    );
+  }
+
+  /// 학생: 멘토별 구독 카드. 잔여수는 미확정 → null(상태로 표기).
+  Future<List<SubscriptionCardInfo>> _loadSubscriptions() async {
+    final Map<String, SubscriptionSummary> subs =
+        await SubscriptionReader.fetchForStudent(_client, _uid);
+    if (subs.isEmpty) return const <SubscriptionCardInfo>[];
+    final Map<String, MentorPublic> names = await _mentors.fetchMany(subs.keys);
+    final List<SubscriptionCardInfo> cards = <SubscriptionCardInfo>[
+      for (final SubscriptionSummary s in subs.values)
+        SubscriptionCardInfo(
+          mentorName: names[s.mentorId]?.displayName ?? '멘토',
+          isActive: s.isActive,
+          planTier: s.planTier,
+          nextRenewal: s.nextRenewal,
+          remaining: s.remaining, // 미확정이면 null
+        ),
+    ];
+    // 활성 구독 먼저, 그다음 멘토명 순.
+    cards.sort((SubscriptionCardInfo a, SubscriptionCardInfo b) {
+      if (a.isActive != b.isActive) return a.isActive ? -1 : 1;
+      return a.mentorName.compareTo(b.mentorName);
+    });
+    return cards;
+  }
+
+  /// 학생: 캐시 잔액 + 최근 내역(조회만). 지갑이 없으면 balance null.
+  Future<CashSummary> _loadCash() async {
+    int? balance;
+    try {
+      final Map<String, dynamic>? wallet = await _client
+          .from('cash_wallets')
+          .select('balance_cents')
+          .eq('user_id', _uid)
+          .maybeSingle();
+      final Object? v = wallet?['balance_cents'];
+      if (v is int) balance = v;
+      if (v is num) balance = v.toInt();
+    } catch (_) {
+      // 지갑 read 실패 → 잔액 미확인(비움). 날조하지 않는다.
+    }
+
+    final List<CashEntry> recent = <CashEntry>[];
+    try {
+      final List<Map<String, dynamic>> rows = await _client
+          .from('cash_ledger')
+          .select('delta_cents, created_at')
+          .eq('user_id', _uid)
+          .order('created_at', ascending: false)
+          .limit(5);
+      for (final Map<String, dynamic> r in rows) {
+        final Object? d = r['delta_cents'];
+        final int delta = d is int ? d : (d is num ? d.toInt() : 0);
+        recent.add(CashEntry(
+          deltaCents: delta,
+          createdAt: DateTime.tryParse('${r['created_at']}')?.toLocal() ??
+              DateTime.fromMillisecondsSinceEpoch(0),
+        ));
+      }
+    } catch (_) {
+      // 내역 read 실패 → 빈 목록.
+    }
+    return CashSummary(balanceCents: balance, recent: recent);
+  }
+
+  /// 멘토: 답변·정산 요약(조회만). 출금은 웹.
+  Future<MentorDashboard> _loadMentorDashboard() async {
+    final List<Room> rooms = await _rooms.myRooms();
+    final List<String> roomIds = rooms.map((Room r) => r.id).toList();
+    final List<QuestionThread> threads = await _rooms.threadsForRooms(roomIds);
+    final ThreadStatusCounts counts = ThreadStatusCounts.from(threads);
+
+    // 학생 이름 조회는 대시보드 수치엔 불필요하지만, 연결 학생 수는 방 수로 센다.
+    int? settlement;
+    try {
+      final List<Map<String, dynamic>> rows = await _client
+          .from('subscription_settlement_items')
+          .select('mentor_amount_cents, created_at')
+          .eq('mentor_id', _uid)
+          .order('created_at', ascending: false)
+          .limit(1);
+      if (rows.isNotEmpty) {
+        final Object? v = rows.first['mentor_amount_cents'];
+        if (v is int) settlement = v;
+        if (v is num) settlement = v.toInt();
+      }
+    } catch (_) {
+      // 정산 read 실패 → 표시 생략(null).
+    }
+
+    return MentorDashboard(
+      studentCount: rooms.length,
+      pendingAnswers: counts.pending,
+      latestSettlementCents: settlement,
+    );
+  }
+
+  /// 멘토: 구독 학생 이름 목록(선택 표시용, 조회만). 화면에서 필요 시 사용.
+  Future<List<String>> mentorStudentNames() async {
+    final List<Room> rooms = await _rooms.myRooms();
+    if (rooms.isEmpty) return const <String>[];
+    final Map<String, StudentPublic> names =
+        await _students.fetchMany(rooms.map((Room r) => r.studentId));
+    return <String>[
+      for (final Room r in rooms) names[r.studentId]?.displayName ?? '학생',
+    ];
+  }
+}

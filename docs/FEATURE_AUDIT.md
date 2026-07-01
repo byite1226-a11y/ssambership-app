@@ -28,15 +28,19 @@
 
 ## 2. 심각도 '높음' 요약 (먼저 볼 것)
 
-- **[A1] 질문 과목 선택지 필터 (오너 발견)** — 웹은 "그 질문방 멘토가 지정한 과목만" 후보로 뜨는데(없으면 전체 폴백), 앱은 항상 **전체 과목**을 드롭다운에 노출. → 학생이 멘토가 담당하지 않는 과목으로 질문을 태깅할 수 있음.
-- **[A2] 주간 질문 한도 강제** — 웹은 요금제 tier별 주간 한도(limited=4/standard=9/premium=999)를 계산해 초과 시 질문 생성을 **차단**. 앱은 `remaining`이 항상 null이고 `isActive`(활성 구독) 여부로만 게이팅 → 앱에서는 주간 한도 초과 질문이 **막히지 않을 수 있음**(DB단 강제 여부는 확인필요).
-- **[D1] 커뮤니티 게시판 카테고리 값 불일치** — 웹 카테고리 집합과 앱 카테고리 집합이 다름(웹 `all` ↔ 앱 `free` 등). 같은 카테고리 데이터가 양쪽에서 다르게 필터·표시될 수 있어 **데이터 정합성 위험**.
+> 상태(2026-07-02): **A1 해결 · A2 부분해결(앱 계층) · D1 미해결(우선순위 낮음)**.
+
+- **[A1] 질문 과목 선택지 필터 (오너 발견)** — ✅ **해결.** 앱이 방 멘토의 `teaching_subjects`로 과목 후보를 제한(빈 값이면 전체 폴백). 커밋 `f318308`.
+- **[A2] 주간 질문 한도 강제** — ⚠️ **부분해결(앱 계층).** 앱이 질문 생성 직전 `get_weekly_question_usage` RPC로 검사·차단·잔여표시. 커밋 `dcdf9a1`. **★출시 후 필수 보강**: 이는 클라이언트 검사라 앱 우회 직접 INSERT는 못 막음 → **DB에 `question_threads` INSERT 트리거로 서버측 한도 강제 필요(백엔드/동업자 담당).**
+- **[D1] 커뮤니티 게시판 카테고리 값 불일치** — 미해결. DB에 실데이터·CHECK 제약이 없어(확인 결과) 웹 상수를 표준으로 앱을 맞추는 방향. 우선순위 낮음, 별도 진행.
 
 ---
 
 ## 3. 질문작성 / 질문방  [직접확인]
 
-### [A1] 질문 과목 선택지 = 멘토 지정 과목만 (플래그십, 오너 발견)
+### [A1] 질문 과목 선택지 = 멘토 지정 과목만 (플래그십, 오너 발견)  — ✅ 해결(커밋 `f318308`)
+> **구현 요지**: `new_question_screen.dart`가 진입 시 `mentorTeachingSubjects(room.mentorId)`(mentor_profiles.teaching_subjects, 읽기전용)를 조회 → `restrictQuestionSubjectCodes()`(subject_labels.dart)로 앱이 아는 코드만 드롭다운 후보로 제한. 빈 값·미매핑·조회 실패 시 **전체 폴백**(빈 드롭다운 금지). DB 미변경. 단위 테스트 `test/data/subject_restrict_test.dart`.
+
 - **웹**: 질문 작성 폼이 `props.subjectOptions`(그 방 멘토가 지정한 과목)만 후보로 보여주고, 없을 때만 전체 카탈로그로 폴백.
   근거: `components/qna/QuestionRoomStudentThreadForm.tsx:76-110` (주석 "★질문방 멘토가 지정한 과목만 후보로(없으면 전체 폴백)"), `components/qna/QuestionRoomStudentDesignWorkspace.tsx:856`(subjectChipsRoom 주입).
 - **앱**: 과목 드롭다운을 `subjectLabels` **전체**로 채움(멘토 무관).
@@ -44,7 +48,11 @@
 - **차이**: 다름(조건부 필터 규칙 누락) · **심각도: 높음** · **난이도: 보통**
 - 비고: 앱 `NewQuestionScreen`은 현재 `Room`만 받고 멘토의 `teaching_subjects`를 갖고 있지 않음 → 방/멘토 과목을 화면까지 전달하는 경로 필요. **확인필요**: `mentor_student_rooms`/디렉터리에서 멘토 담당과목 조회 경로.
 
-### [A2] 주간 질문 한도(tier별) 강제
+### [A2] 주간 질문 한도(tier별) 강제  — ⚠️ 부분해결: 앱 계층(커밋 `dcdf9a1`)
+> **구현 요지**: `new_question_screen.dart`가 질문 INSERT '직전'에 `weeklyUsage(studentId, mentorId)` → RPC `get_weekly_question_usage`(읽기전용) 호출. `can_ask=false`면 생성 차단 + 담백한 문구(`WeeklyQuestionUsage.blockMessage`). 잔여는 `question_list_screen.dart` 질문바에 "이번 주 남은 질문 N개" 표시(프리미엄=‘질문 가능’). 한도 숫자(4/9/999)는 **재하드코딩하지 않고 RPC 반환값만** 사용. RPC 실패 시 판정 불가로 흐름을 막지 않음(보수적). 단위 테스트 `test/entitlement/weekly_question_usage_test.dart`.
+>
+> **★ 출시 후 필수 보강(백엔드/동업자 담당)**: 이 검사는 **클라이언트 검사**라 앱을 우회한 직접 INSERT는 못 막는다(현재 DB에 강제 트리거 없음 — 확인됨). 진짜 서버측 강제를 위해 **DB에 `question_threads` INSERT 트리거(또는 전용 RPC)로 주간 한도 강제**를 추가해야 한다. 이 앱 변경만으로는 우회 가능성이 남는다.
+
 - **웹**: tier별 한도 limited=4 / standard=9 / premium=999. 스레드 생성 시 `canAsk` 확인 후 초과면 차단(`WEEKLY_QUESTION_LIMIT_MESSAGE`).
   근거: `lib/qna/weeklyQuestionUsage.ts:14-19`(limitForTier), `lib/qna/questionThreadSubscriptionGuard.ts`(assertThreadCreationSubscriptionAllowed → usage.canAsk).
 - **앱**: `SubscriptionSummary.canAsk = isActive && (remaining==null || remaining>0)`인데 `remaining`은 **항상 null**로 세팅됨 → 사실상 `isActive`만으로 게이팅. 한도 개념 없음.
@@ -181,7 +189,8 @@
 
 > 앱은 **열람·댓글·반응·신고·내활동**만 하고 **글/숏폼 작성은 웹 전용**(설계, §7). 아래는 앱이 실제로 하는 기능 안에서의 차이.
 
-### [D1] 게시판 카테고리 값 불일치
+### [D1] 게시판 카테고리 값 불일치  — 미해결(우선순위 낮음, 별도 진행)
+> **확인 결과(DB)**: `community_posts.category`에 실데이터·CHECK/enum 제약이 사실상 없음 → 특정 저장값이 강제되지 않음. 방향: **웹 상수(all/study/school/career/college)를 표준으로 앱 라벨/필터를 정렬**(앱의 `free`는 실사용 확인 후 정리). 데이터 위험이 낮아 A1·A2보다 후순위.
 - **웹**: `all/study/school/career/college`.
   근거: `lib/community/communityBoardConstants.ts:1-8`.
 - **앱**: `study/school/free/college/career`(웹의 `all`↔앱의 `free` 등 매핑 상이).
@@ -317,7 +326,8 @@ HANDOFF.md §4 / 웹 CLAUDE.md 잠금값 기준, 아래는 **의도적으로 뺀
 
 ## 10. 오너 조치 우선순위(제안)
 
-- **먼저(높음)**: [A1] 과목 필터, [A2] 주간 한도 강제(먼저 §9-2 서버강제 여부 확인), [D1] 커뮤니티 카테고리 정합.
+- **완료**: [A1] 과목 필터(✅), [A2] 주간 한도 앱-계층 검사(⚠️ 부분 — DB 트리거 보강은 출시 후 백엔드 담당).
+- **먼저(높음, 남음)**: [A2] 서버측 강제(DB `question_threads` INSERT 트리거) 추가 — 백엔드/동업자. [D1] 커뮤니티 카테고리 정합(우선순위 낮음).
 - **다음(중간·쉬움부터)**: [C5] 요금제 라벨 상수 채우기, [D5] 댓글 상한, [D6] 계정활성 검사, [D7] 조회수 RPC, [A4] topic 필드, [C2] 캐시 라벨.
 - **정책 결정 필요**: [A3] 무료질문, [B6] 가격 기본값, [C1] 잔여수 표기(=plan_constants 확정), [E1] 알림 유형 확장, IQ 재검토.
 

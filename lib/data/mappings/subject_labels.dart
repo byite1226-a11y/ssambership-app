@@ -1,63 +1,140 @@
-/// 과목 코드(영문) → 한글 표시 매핑.
+/// 과목 정본(단일 소스) — 웹 `lib/subjects/subjectCatalog.ts` 와 code/label/parent 를 맞춘다.
 ///
-/// 화면에는 절대 영문 코드(math_calculus 등)를 노출하지 않는다.
-/// DB/서버에서 받은 코드를 이 매핑으로 한글 라벨로 바꿔 표시한다.
-/// (미정 코드는 [subjectLabel] 이 코드 대신 '기타/미분류'로 폴백)
+/// ★ 왜 이 어휘인가(실측): DB `mentor_profiles.teaching_subjects` 는 **한글 대분류 라벨**
+///   (예: `수학`,`영어`,`과학`)로 저장되고, `question_threads.subject` 는 **정본 코드**
+///   (예: `math`,`korean`,`english`)로 저장된다. 과거 이 파일은 이 둘 어디에도 없는
+///   제3의 코드(`math_common` 등)를 써서 A1 과목 제한이 항상 전체 폴백되었다(멘토 과목
+///   `수학`을 못 알아봄). 이제 웹 정본과 동일 어휘 + 라벨↔코드 정규화로 일치시킨다.
+///
+/// 화면에는 영문 코드를 노출하지 않는다 — 코드는 [subjectLabel] 로 한글 라벨화한다.
 library;
 
-const Map<String, String> subjectLabels = <String, String>{
-  // 수학
-  'math_common': '수학(공통)',
-  'math_algebra': '대수',
-  'math_calculus': '미적분',
-  'math_geometry': '기하',
-  'math_statistics': '확률과 통계',
-  // 국어
-  'korean_common': '국어(공통)',
-  'korean_reading': '독서',
-  'korean_literature': '문학',
-  'korean_grammar': '언어와 매체',
-  // 영어
-  'english_common': '영어(공통)',
-  'english_reading': '영어 독해',
-  'english_grammar': '영어 문법',
-  // 과학
-  'science_physics': '물리학',
-  'science_chemistry': '화학',
-  'science_biology': '생명과학',
-  'science_earth': '지구과학',
-  // 사회
-  'social_history': '한국사',
-  'social_geography': '지리',
-  'social_ethics': '생활과 윤리',
-  // TODO: 서버 과목 코드 카탈로그와 동기화하여 확장.
-};
-
-/// 코드 → 한글 라벨. 미정 코드는 화면에 코드 노출 대신 폴백 라벨.
-String subjectLabel(String? code) {
-  if (code == null || code.trim().isEmpty) return '미분류';
-  return subjectLabels[code] ?? '기타';
+class _Subject {
+  const _Subject(this.code, this.label, this.parent, this.sort);
+  final String code;
+  final String label;
+  final String? parent;
+  final int sort;
 }
 
-/// 질문 작성 시 노출할 과목 후보 코드.
+/// 웹 SUBJECT_CATALOG 와 1:1 (계층: 대분류 parent=null → 소분류 parent=대분류 code).
+const List<_Subject> _catalog = <_Subject>[
+  // 국어
+  _Subject('korean', '국어', null, 10),
+  _Subject('korean_speech_writing', '화법과작문', 'korean', 11),
+  _Subject('korean_language_media', '언어와매체', 'korean', 12),
+  _Subject('korean_reading', '독서', 'korean', 13),
+  _Subject('korean_literature', '문학', 'korean', 14),
+  // 영어(단일)
+  _Subject('english', '영어', null, 20),
+  // 수학
+  _Subject('math', '수학', null, 30),
+  _Subject('math_1', '수학Ⅰ', 'math', 31),
+  _Subject('math_2', '수학Ⅱ', 'math', 32),
+  _Subject('math_calculus', '미적분', 'math', 33),
+  _Subject('math_statistics', '확률과통계', 'math', 34),
+  _Subject('math_geometry', '기하', 'math', 35),
+  // 한국사(단일)
+  _Subject('korean_history', '한국사', null, 40),
+  // 사회
+  _Subject('social', '사회', null, 50),
+  _Subject('social_life_ethics', '생활과윤리', 'social', 51),
+  _Subject('social_ethics_thought', '윤리와사상', 'social', 52),
+  _Subject('social_korea_geo', '한국지리', 'social', 53),
+  _Subject('social_world_geo', '세계지리', 'social', 54),
+  _Subject('social_east_asia_history', '동아시아사', 'social', 55),
+  _Subject('social_world_history', '세계사', 'social', 56),
+  _Subject('social_economics', '경제', 'social', 57),
+  _Subject('social_politics_law', '정치와법', 'social', 58),
+  _Subject('social_culture', '사회문화', 'social', 59),
+  // 과학
+  _Subject('science', '과학', null, 60),
+  _Subject('science_physics_1', '물리학Ⅰ', 'science', 61),
+  _Subject('science_chemistry_1', '화학Ⅰ', 'science', 62),
+  _Subject('science_biology_1', '생명과학Ⅰ', 'science', 63),
+  _Subject('science_earth_1', '지구과학Ⅰ', 'science', 64),
+  _Subject('science_physics_2', '물리학Ⅱ', 'science', 65),
+  _Subject('science_chemistry_2', '화학Ⅱ', 'science', 66),
+  _Subject('science_biology_2', '생명과학Ⅱ', 'science', 67),
+  _Subject('science_earth_2', '지구과학Ⅱ', 'science', 68),
+  // 단일 대분류
+  _Subject('essay', '논술·글쓰기', null, 70),
+  _Subject('career', '진로·입시', null, 80),
+  _Subject('etc', '기타', null, 99),
+];
+
+final Map<String, _Subject> _byCode = <String, _Subject>{
+  for (final _Subject s in _catalog) s.code: s,
+};
+final Map<String, String> _labelToCode = <String, String>{
+  for (final _Subject s in _catalog) s.label: s.code,
+};
+
+/// 레거시/자유입력 라벨 → 정본 code (웹 LEGACY_LABEL_TO_CODE 와 동일 흡수).
+const Map<String, String> _legacyLabelToCode = <String, String>{
+  '사회·역사': 'social',
+  '사회/역사': 'social',
+  '역사': 'korean_history',
+  '한국사': 'korean_history',
+  '미적분': 'math',
+  '확률과통계': 'math',
+  '확률과 통계': 'math',
+  '수학Ⅰ': 'math',
+  '수학 I': 'math',
+  '수학Ⅱ': 'math',
+  '수학 II': 'math',
+  '기하': 'math',
+  '대수': 'math',
+  '물리': 'science',
+  '화학': 'science',
+};
+
+/// code → 한글 라벨 맵(정본). 외부 호환용(코드 집합 열람).
+final Map<String, String> subjectLabels = <String, String>{
+  for (final _Subject s in _catalog) s.code: s.label,
+};
+
+/// 임의 입력(정본 code / 현재 라벨 / 레거시 라벨) → 정본 code. 못 찾으면 null.
+String? normalizeSubjectCode(String? input) {
+  if (input == null) return null;
+  final String t = input.trim();
+  if (t.isEmpty) return null;
+  if (_byCode.containsKey(t)) return t;
+  return _labelToCode[t] ?? _legacyLabelToCode[t];
+}
+
+/// 코드/라벨 → 화면용 한글 라벨.
 ///
-/// 멘토의 담당 과목(mentor_profiles.teaching_subjects, 코드 배열) 중 **앱이 한글
-/// 라벨을 아는 코드만** 후보로 제한한다(영문 코드/‘기타’ 남발 방지). 하나도 없으면
-/// (빈 값·전부 미매핑·조회 실패) **전체 과목으로 폴백**한다 — 웹과 동일하게
-/// "멘토 지정 과목이 있으면 제한, 없으면 전체 허용"이며 절대 빈 드롭다운으로 막지 않는다.
+/// 정본 코드·한글 라벨은 정본 라벨로, 미매핑이지만 이미 한글(자유 라벨: 예 `코딩`)이면
+/// 그대로 표시한다(웹 getSubjectLabel 과 동일 관용). 영문 등 미매핑 코드는 '기타'로 폴백해
+/// 화면에 영문 코드가 새지 않게 한다. 빈 값은 '미분류'.
+String subjectLabel(String? code) {
+  final String t = code?.trim() ?? '';
+  if (t.isEmpty) return '미분류';
+  final String? norm = normalizeSubjectCode(t);
+  if (norm != null) return _byCode[norm]!.label;
+  // 미매핑: 한글 등 비ASCII 문자가 있으면 이미 사람이 읽는 라벨 → 그대로. 아니면 '기타'.
+  final bool hasNonAscii = t.runes.any((int r) => r > 0x7f);
+  return hasNonAscii ? t : '기타';
+}
+
+/// 질문 작성 시 노출할 과목 후보 코드(A1 — 멘토 담당 과목만).
 ///
-/// ★ 새 매핑을 만들지 않고 기존 [subjectLabels] 만 재사용한다. (subject_labels 는
-///   서버 subjects 카탈로그의 부분 집합 — 상단 TODO 참고. 확장되면 제한 범위도 넓어진다.)
+/// 멘토의 `teaching_subjects`(한글 라벨 `수학` 또는 코드 `math` 혼재 가능)를 정본 코드로
+/// 정규화한다. 정규화 안 되는 자유 라벨(예 `코딩`)은 **버리지 않고** 그 값 그대로 후보에
+/// 남겨 멘토의 실제 과목이 드롭다운에 뜨게 한다. 순서 유지·중복 제거. 멘토가 과목을 하나도
+/// 지정하지 않았을 때만(빈 입력) **전체 과목으로 폴백**한다 — 웹과 동일하게 "지정 과목이
+/// 있으면 제한, 없으면 전체 허용"이며 절대 빈 드롭다운으로 막지 않는다.
 List<String> restrictQuestionSubjectCodes(List<String> mentorTeachingCodes) {
-  final List<String> known = <String>[];
+  final List<String> out = <String>[];
   final Set<String> seen = <String>{};
-  for (final String c in mentorTeachingCodes) {
-    final String code = c.trim();
-    if (code.isEmpty || seen.contains(code)) continue;
-    if (subjectLabels.containsKey(code)) {
-      seen.add(code);
-      known.add(code);
-    }
+  for (final String raw in mentorTeachingCodes) {
+    final String t = raw.trim();
+    if (t.isEmpty) continue;
+    final String code = normalizeSubjectCode(t) ?? t; // 자유 라벨은 원값 유지
+    if (seen.add(code)) out.add(code);
   }
-  return known.isNotEmpty ? known : subjectLabels.keys.toList();
+  if (out.isNotEmpty) return out;
+  // 멘토 미지정 → 전체 폴백(정본 카탈로그 전체, sort 순).
+  return subjectLabels.keys.toList();
 }

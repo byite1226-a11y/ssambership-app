@@ -86,10 +86,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Widget _body(MyPageData data) {
     final bool signedIn = AuthService.instance.isSignedIn;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: <Widget>[
         ProfileSection(profile: data.profile),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         if (data.isMentor)
           ..._mentorSections(data)
         else

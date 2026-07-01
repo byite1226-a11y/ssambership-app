@@ -40,7 +40,7 @@ class StudentSubscriptionSection extends StatelessWidget {
             )
           else
             for (int i = 0; i < subscriptions.length; i++) ...<Widget>[
-              if (i > 0) const Divider(height: 20, color: ColorTokens.border),
+              if (i > 0) const Divider(height: 16, color: ColorTokens.border),
               _SubCard(info: subscriptions[i]),
             ],
           const SizedBox(height: 12),

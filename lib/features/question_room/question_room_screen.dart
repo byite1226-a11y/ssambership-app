@@ -166,9 +166,9 @@ class _StudentRoomListState extends State<_StudentRoomList> {
           );
         }
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (BuildContext context, int i) =>
               _RoomTile(item: items[i], onOpen: () => _open(items[i])),
         );
@@ -198,43 +198,61 @@ class _RoomTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SubscriptionSummary? sub = item.sub;
+    // 구독 상태칩·갱신일은 넘칠 수 있어 Wrap 으로 자연스럽게 줄바꿈(정보 유지, 배치만 정돈).
+    final List<Widget> meta = <Widget>[
+      if (sub != null)
+        StatusPill(
+          label: sub.isActive ? '구독 중' : '구독 만료',
+          tone: sub.isActive ? StatusTone.success : StatusTone.warning,
+        ),
+      if (sub?.nextRenewal != null)
+        Text(
+          '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',
+          style: AppTypography.caption,
+        ),
+    ];
     return AppCard(
       onTap: onOpen,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           InitialAvatar(name: item.mentorName, size: 48),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(item.mentorName, style: AppTypography.body),
-                const SizedBox(height: 6),
+                // 멘토명 + 마지막 활동시각(채팅목록식): 이름과 시각을 한 줄에 정렬.
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: <Widget>[
-                    if (sub != null)
-                      StatusPill(
-                        label: sub.isActive ? '구독 중' : '구독 만료',
-                        tone: sub.isActive
-                            ? StatusTone.success
-                            : StatusTone.warning,
+                    Expanded(
+                      child: Text(
+                        item.mentorName,
+                        style: AppTypography.body,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    if (sub?.nextRenewal != null) ...<Widget>[
-                      const SizedBox(width: 8),
-                      Text(
-                        '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',
-                        style: AppTypography.caption,
-                      ),
-                    ],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      Formatters.relativeKorean(item.room.updatedAt),
+                      style: AppTypography.caption,
+                    ),
                   ],
                 ),
+                if (meta.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: meta,
+                  ),
+                ],
               ],
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            Formatters.relativeKorean(item.room.updatedAt),
-            style: AppTypography.caption,
           ),
         ],
       ),

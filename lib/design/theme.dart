@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tokens/color_tokens.dart';
+import 'tokens/typography.dart';
 
 /// 토큰 → ThemeData 빌드. 화면은 raw 색 대신 Theme/토큰을 참조한다.
 class AppTheme {
@@ -28,6 +29,8 @@ class AppTheme {
         foregroundColor: ColorTokens.primary,
         elevation: 0,
         centerTitle: false,
+        // 탭·화면 제목 위계를 앱 전역에서 일관되게(기존 타이포 토큰 재사용, 색 미변경).
+        titleTextStyle: AppTypography.titleLarge,
       ),
     );
   }

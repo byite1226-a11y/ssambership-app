@@ -1,4 +1,5 @@
 import '../../../core/auth/auth_service.dart';
+import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../shared/constants/plan_constants.dart';
 
 /// 마이페이지 뷰모델(읽기 전용 조합). 화면은 이 데이터만 보고 그린다(role-aware).
@@ -52,6 +53,7 @@ class SubscriptionCardInfo {
     this.planTier,
     this.nextRenewal,
     this.remaining,
+    this.usage,
   });
 
   final String mentorName;
@@ -63,6 +65,10 @@ class SubscriptionCardInfo {
 
   /// 잔여 질문수. ★ 미확정이면 null → 숫자 대신 구독 상태로 표기(S4와 동일).
   final int? remaining;
+
+  /// A2: 주간 질문 사용량(RPC `get_weekly_question_usage`). 있으면 "주 N개·잔여 X/N"
+  /// 표시에 쓰고, 없으면(조회 실패·미구독) 상태 문구로 폴백한다.
+  final WeeklyQuestionUsage? usage;
 
   /// 구독 상태 한글(요금제명 미확정이므로 상태로 표기).
   String get statusLabel => isActive ? '구독 중' : '구독 만료';

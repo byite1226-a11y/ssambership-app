@@ -90,11 +90,13 @@ class _SubCard extends StatelessWidget {
             if (info.nextRenewal != null)
               Text('다음 갱신 ${Formatters.shortDate(info.nextRenewal!)}',
                   style: AppTypography.caption),
-            // 잔여 질문수: 확정값 있으면 숫자, 없으면 상태로(날조 금지).
+            // 주간 질문 한도·잔여(웹 데스크탑 기준): "주 N개 질문 · 잔여 X/N"
+            // (프리미엄=주 무제한 질문). RPC 값이 있을 때만, 없으면 기존 상태 문구로 폴백.
             Text(
-              info.remaining != null
-                  ? '남은 질문 ${info.remaining}개'
-                  : (info.isActive ? '구독 상태로 질문 가능' : '구독이 필요해요'),
+              info.usage?.planQuotaLabel ??
+                  (info.remaining != null
+                      ? '남은 질문 ${info.remaining}개'
+                      : (info.isActive ? '구독 상태로 질문 가능' : '구독이 필요해요')),
               style: AppTypography.caption,
             ),
           ],

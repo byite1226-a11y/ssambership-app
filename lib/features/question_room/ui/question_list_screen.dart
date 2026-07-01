@@ -70,13 +70,18 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('질문 / 답변')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openNotes,
-        icon: const Icon(Icons.sticky_note_2_outlined),
-        label: const Text('연결노트'),
-        backgroundColor: ColorTokens.surface,
-        foregroundColor: ColorTokens.accent,
+      // 연결노트는 상단 액션으로 둔다 — 하단 '질문하기' 바와 겹치지 않도록(플로팅 제거).
+      appBar: AppBar(
+        title: const Text('질문 / 답변'),
+        actions: <Widget>[
+          TextButton.icon(
+            onPressed: _openNotes,
+            icon: const Icon(Icons.sticky_note_2_outlined, size: 20),
+            label: const Text('연결노트'),
+            style: TextButton.styleFrom(foregroundColor: ColorTokens.accent),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: Column(
         children: <Widget>[
@@ -101,10 +106,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                 final List<QuestionThread> threads =
                     snap.data ?? <QuestionThread>[];
                 if (threads.isEmpty) {
-                  return _EmptyQuestions(
-                    canAsk: _canAsk,
-                    onAsk: _openNewQuestion,
-                  );
+                  return const _EmptyQuestions();
                 }
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -147,7 +149,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                     const SizedBox(height: 8),
                   ],
                   PrimaryButton(
-                    label: '+ 질문하기',
+                    label: '+ 새로운 질문하기',
                     onPressed: _busy ? null : _openNewQuestion,
                   ),
                 ],
@@ -220,10 +222,9 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
 }
 
 /// 질문 0개 빈 상태 — 웹 기준 3단계 안내.
+/// ★ 질문 CTA 버튼은 두지 않는다 — 하단 고정 바(_askBar)의 '+ 새로운 질문하기' 하나로 통일(중복 제거).
 class _EmptyQuestions extends StatelessWidget {
-  const _EmptyQuestions({required this.canAsk, required this.onAsk});
-  final bool canAsk;
-  final VoidCallback onAsk;
+  const _EmptyQuestions();
 
   @override
   Widget build(BuildContext context) {
@@ -242,9 +243,6 @@ class _EmptyQuestions extends StatelessWidget {
         const SizedBox(height: 14),
         Text('연결노트로 기록이 쌓여요',
             style: AppTypography.caption, textAlign: TextAlign.center),
-        const SizedBox(height: 18),
-        if (canAsk)
-          PrimaryButton(label: '+ 새로운 질문하기', onPressed: onAsk, expand: false),
       ],
     );
   }

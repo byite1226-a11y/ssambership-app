@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/entitlement/subscription_summary.dart';
+import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/errors/app_error.dart';
 import '../../question_room/data/mentor_lookup_repository.dart';
@@ -84,6 +85,14 @@ class MyPageRepository {
         await SubscriptionReader.fetchForStudent(_client, _uid);
     if (subs.isEmpty) return const <SubscriptionCardInfo>[];
     final Map<String, MentorPublic> names = await _mentors.fetchMany(subs.keys);
+    // A2: 멘토별 주간 질문 사용량(RPC). ★ 한도값 재하드코딩 없이 RPC 반환만 사용.
+    //     실패하면 null → 카드가 기존 상태 문구로 조용히 폴백(흐름 안 막음).
+    final Map<String, WeeklyQuestionUsage?> usageByMentor =
+        <String, WeeklyQuestionUsage?>{};
+    await Future.wait(subs.keys.map((String mentorId) async {
+      usageByMentor[mentorId] =
+          await _rooms.weeklyUsage(studentId: _uid, mentorId: mentorId);
+    }));
     final List<SubscriptionCardInfo> cards = <SubscriptionCardInfo>[
       for (final SubscriptionSummary s in subs.values)
         SubscriptionCardInfo(
@@ -92,6 +101,7 @@ class MyPageRepository {
           planTier: s.planTier,
           nextRenewal: s.nextRenewal,
           remaining: s.remaining, // 미확정이면 null
+          usage: usageByMentor[s.mentorId],
         ),
     ];
     // 활성 구독 먼저, 그다음 멘토명 순.

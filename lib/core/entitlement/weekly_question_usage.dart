@@ -39,6 +39,15 @@ class WeeklyQuestionUsage {
     return '이번 주 남은 질문 $remaining개';
   }
 
+  /// 마이페이지 구독 카드용 '플랜 기준' 라벨. ★ RPC 반환값만 사용(한도 재하드코딩 없음).
+  /// 프리미엄(사실상 무제한)은 "주 무제한 질문", 그 외 "주 N개 질문 · 잔여 X/N".
+  /// 한도 정보가 없으면 null(표시 생략).
+  String? get planQuotaLabel {
+    if (!hasQuota) return null;
+    if (isEffectivelyUnlimited) return '주 무제한 질문';
+    return '주 $limit개 질문 · 잔여 $remaining/$limit';
+  }
+
   /// 한도 초과 차단 시 담백한 안내 문구.
   String get blockMessage {
     final String count = hasQuota ? ' (사용 $used/$limit)' : '';

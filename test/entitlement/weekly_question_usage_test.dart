@@ -65,4 +65,24 @@ void main() {
     expect(WeeklyQuestionUsage.fromRpc(null), isNull);
     expect(WeeklyQuestionUsage.fromRpc(<Object?>[1, 2, 3]), isNull);
   });
+
+  group('planQuotaLabel (마이페이지 구독 카드용, RPC 값만 사용)', () {
+    test('일반 플랜은 "주 N개 질문 · 잔여 X/N"', () {
+      final WeeklyQuestionUsage u = WeeklyQuestionUsage.fromRpc(
+          rpc(used: 3, limit: 9, remaining: 6, canAsk: true, tier: 'standard'))!;
+      expect(u.planQuotaLabel, '주 9개 질문 · 잔여 6/9');
+    });
+
+    test('프리미엄(limit 999)은 "주 무제한 질문"', () {
+      final WeeklyQuestionUsage u = WeeklyQuestionUsage.fromRpc(rpc(
+          used: 1, limit: 999, remaining: 998, canAsk: true, tier: 'premium'))!;
+      expect(u.planQuotaLabel, '주 무제한 질문');
+    });
+
+    test('한도 0(비구독)이면 null(표시 생략)', () {
+      final WeeklyQuestionUsage u =
+          WeeklyQuestionUsage.fromRpc(rpc(used: 0, limit: 0, canAsk: false))!;
+      expect(u.planQuotaLabel, isNull);
+    });
+  });
 }

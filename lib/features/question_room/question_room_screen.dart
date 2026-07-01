@@ -125,7 +125,8 @@ class _StudentRoomListState extends State<_StudentRoomList> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: SecondaryButton(
-              label: '질문방 구독하기',
+              // 구독 단위는 멘토-학생 쌍 → 문구를 '멘토 구독하기'로(웹 정본 기준).
+              label: '멘토 구독하기',
               icon: Icons.add,
               onPressed: () => openSubscribeWeb(context),
             ),

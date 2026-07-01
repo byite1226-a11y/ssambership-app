@@ -50,7 +50,7 @@ void main() {
 
     // 카테고리칩
     expect(find.text('전체'), findsOneWidget);
-    expect(find.text('학습'), findsWidgets); // 칩 + 카드 배지
+    expect(find.text('학습법'), findsWidgets); // 칩 + 카드 배지(웹 정본 라벨)
     // 글 카드
     expect(find.text('게시판 제목'), findsOneWidget);
     expect(find.text('7'), findsOneWidget); // 댓글수

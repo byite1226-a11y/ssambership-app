@@ -76,7 +76,7 @@ class _SubCard extends StatelessWidget {
             const SizedBox(width: 8),
             StatusPill(
               label: info.statusLabel,
-              tone: info.isActive ? StatusTone.success : StatusTone.warning,
+              tone: info.statusTone,
             ),
           ],
         ),

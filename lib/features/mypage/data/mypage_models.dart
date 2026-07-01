@@ -1,5 +1,7 @@
 import '../../../core/auth/auth_service.dart';
+import '../../../core/entitlement/subscription_status_display.dart';
 import '../../../core/entitlement/weekly_question_usage.dart';
+import '../../../design/widgets/status_pill.dart';
 import '../../../shared/constants/plan_constants.dart';
 
 /// 마이페이지 뷰모델(읽기 전용 조합). 화면은 이 데이터만 보고 그린다(role-aware).
@@ -50,6 +52,7 @@ class SubscriptionCardInfo {
   const SubscriptionCardInfo({
     required this.mentorName,
     required this.isActive,
+    this.status,
     this.planTier,
     this.nextRenewal,
     this.remaining,
@@ -58,6 +61,9 @@ class SubscriptionCardInfo {
 
   final String mentorName;
   final bool isActive;
+
+  /// 원본 상태값(표시 세분화용). null 이면 [isActive] 로 폴백.
+  final String? status;
 
   /// 내부 코드(limited|standard|premium). 화면엔 [planLabel] 로만.
   final String? planTier;
@@ -70,8 +76,13 @@ class SubscriptionCardInfo {
   /// 표시에 쓰고, 없으면(조회 실패·미구독) 상태 문구로 폴백한다.
   final WeeklyQuestionUsage? usage;
 
-  /// 구독 상태 한글(요금제명 미확정이므로 상태로 표기).
-  String get statusLabel => isActive ? '구독 중' : '구독 만료';
+  /// 구독 상태 한글(정본 세분화: 이용 중/결제 확인 필요/해지됨/만료됨/환불됨 등).
+  String get statusLabel =>
+      subscriptionStatusDisplay(status, isActive: isActive).label;
+
+  /// 상태 칩 톤(정본 매핑).
+  StatusTone get statusTone =>
+      subscriptionStatusDisplay(status, isActive: isActive).tone;
 
   /// 확정된 요금제 한글 라벨만 반환(미확정이면 null → 표시 생략, 날조 없음).
   String? get planLabel {

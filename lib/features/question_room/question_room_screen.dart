@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
+import '../../core/entitlement/subscription_status_display.dart';
 import '../../core/entitlement/subscription_summary.dart';
 import '../../core/entitlement/weekly_question_usage.dart';
 import '../../core/supabase/supabase_client.dart';
@@ -217,12 +218,12 @@ class _RoomTile extends StatelessWidget {
     final SubscriptionSummary? sub = item.sub;
     // 구독 상태칩·갱신일은 넘칠 수 있어 Wrap 으로 자연스럽게 줄바꿈(정보 유지, 배치만 정돈).
     final String? quotaLabel = item.usage?.planQuotaLabel;
+    final SubscriptionStatusDisplay? statusDisp = sub == null
+        ? null
+        : subscriptionStatusDisplay(sub.status, isActive: sub.isActive);
     final List<Widget> meta = <Widget>[
-      if (sub != null)
-        StatusPill(
-          label: sub.isActive ? '구독 중' : '구독 만료',
-          tone: sub.isActive ? StatusTone.success : StatusTone.warning,
-        ),
+      if (statusDisp != null)
+        StatusPill(label: statusDisp.label, tone: statusDisp.tone),
       // A2: 주간 잔여("주 N개 질문 · 잔여 X/N", 프리미엄=무제한). RPC 값 있을 때만.
       if (quotaLabel != null)
         Text(quotaLabel, style: AppTypography.caption),

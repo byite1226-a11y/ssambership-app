@@ -11,6 +11,7 @@ class SubscriptionSummary {
   const SubscriptionSummary({
     required this.mentorId,
     required this.isActive,
+    this.status,
     this.planTier,
     this.nextRenewal,
     this.remaining,
@@ -18,6 +19,10 @@ class SubscriptionSummary {
 
   final String mentorId;
   final bool isActive;
+
+  /// 원본 상태값(active/past_due/canceled/expired/pending/refunded/cancel_scheduled).
+  /// 표시 세분화용 — 화면엔 [subscriptionStatusDisplay] 로 한글 라벨만 노출한다.
+  final String? status;
   final String? planTier;
   final DateTime? nextRenewal;
   final int? remaining;
@@ -47,10 +52,12 @@ class SubscriptionReader {
     for (final Map<String, dynamic> r in rows) {
       final String? mentorId = r['mentor_id'] as String?;
       if (mentorId == null) continue;
-      final bool isActive = (r['status'] as String?)?.trim() == 'active';
+      final String? statusRaw = (r['status'] as String?)?.trim();
+      final bool isActive = statusRaw == 'active';
       final SubscriptionSummary s = SubscriptionSummary(
         mentorId: mentorId,
         isActive: isActive,
+        status: statusRaw,
         planTier: (r['plan_tier'] as String?)?.trim(),
         nextRenewal:
             _time(r['current_period_end']) ?? _time(r['next_billing_at']),

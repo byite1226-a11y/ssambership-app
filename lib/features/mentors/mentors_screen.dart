@@ -106,8 +106,10 @@ class _MentorsScreenState extends State<MentorsScreen> {
           children: <Widget>[
             if (subjects.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                // 좌우 여백은 ChipScroll 내부(스크롤 영역)로 넘겨 끝 칩이 잘리지 않게 한다.
+                padding: const EdgeInsets.only(bottom: 6),
                 child: ChipScroll(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   labels: <String>['전체', ...subjects],
                   // _subject 가 목록에 없으면 indexOf=-1 → +1=0 → '전체' 선택.
                   selectedIndex:

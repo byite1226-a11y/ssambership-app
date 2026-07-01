@@ -9,17 +9,22 @@ class ChipScroll extends StatelessWidget {
     required this.labels,
     required this.selectedIndex,
     required this.onSelected,
+    this.padding = const EdgeInsets.symmetric(horizontal: 4),
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
+  /// 가로 스크롤 영역의 안쪽 여백. 화면 가장자리까지 스크롤되며 끝 칩이 잘리지 않도록
+  /// 좌우 여백을 스크롤 영역 '안'에 둔다(부모가 좌우 패딩으로 감싸면 끝이 잘려 보임).
+  final EdgeInsetsGeometry padding;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: padding,
       child: Row(
         children: <Widget>[
           for (int i = 0; i < labels.length; i++)

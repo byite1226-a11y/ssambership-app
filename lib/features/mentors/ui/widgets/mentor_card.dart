@@ -31,7 +31,7 @@ class MentorCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               InitialAvatar(name: item.displayName, size: 48),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +53,7 @@ class MentorCard extends StatelessWidget {
                       ],
                     ),
                     if (school != null) ...<Widget>[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         school,
                         style: AppTypography.caption,
@@ -67,7 +67,7 @@ class MentorCard extends StatelessWidget {
             ],
           ),
           if (subjects.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _SubjectChips(subjects: subjects),
           ],
           if (intro != null && intro.isNotEmpty) ...<Widget>[
@@ -79,7 +79,7 @@ class MentorCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

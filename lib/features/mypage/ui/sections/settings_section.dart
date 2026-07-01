@@ -4,6 +4,7 @@ import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../../../shared/constants/app_constants.dart';
+import '../../data/notification_settings_repository.dart';
 import '../widgets/mypage_section.dart';
 
 /// 설정 섹션 — 알림 토글·약관/개인정보·앱 버전·로그아웃.
@@ -22,8 +23,39 @@ class SettingsSection extends StatefulWidget {
 }
 
 class _SettingsSectionState extends State<SettingsSection> {
-  // 알림 토글(기기 로컬 UI 상태). TODO: 알림 설정 백엔드 연동 시 영속화.
+  final NotificationSettingsRepository _settings =
+      const NotificationSettingsRepository();
+
+  // 알림 토글. 저장된 값이 있으면 로드해 초기화(없으면 기본 켜짐). 저장은 graceful.
   bool _notify = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotify();
+  }
+
+  Future<void> _loadNotify() async {
+    final bool? saved = await _settings.loadEnabled();
+    if (saved != null && mounted) setState(() => _notify = saved);
+  }
+
+  /// 토글 변경 → 로컬 즉시 반영 + 영속화 시도. 실패해도 로컬은 유지(앱 안 죽음).
+  Future<void> _onNotifyChanged(bool v) async {
+    setState(() {
+      _notify = v;
+      _saving = true;
+    });
+    final bool ok = await _settings.saveEnabled(v);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('알림 설정 저장은 준비 중이에요. (이 기기에서만 적용돼요)')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +71,7 @@ class _SettingsSectionState extends State<SettingsSection> {
                 Expanded(child: Text('알림 받기', style: AppTypography.body)),
                 Switch(
                   value: _notify,
-                  onChanged: (bool v) => setState(() => _notify = v),
+                  onChanged: _saving ? null : _onNotifyChanged,
                   activeThumbColor: ColorTokens.accent,
                 ),
               ],

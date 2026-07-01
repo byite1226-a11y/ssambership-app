@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/initial_avatar.dart';
 import '../../data/mypage_models.dart';
 
 /// 프로필 헤더(이름·역할·이메일·학년). 값이 없으면 비운다(하드코딩/날조 없음).
 class ProfileSection extends StatelessWidget {
-  const ProfileSection({super.key, required this.profile});
+  const ProfileSection({super.key, required this.profile, this.onEdit});
 
   final MyProfile profile;
+
+  /// 프로필 수정 진입(없으면 수정 버튼 비표시 — 예: 게스트).
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +44,13 @@ class ProfileSection extends StatelessWidget {
             ],
           ),
         ),
+        if (onEdit != null)
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: '프로필 수정',
+            color: ColorTokens.secondary,
+          ),
       ],
     );
   }

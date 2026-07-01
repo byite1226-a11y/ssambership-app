@@ -8,6 +8,7 @@ import '../../design/tokens/typography.dart';
 import '../dev/dev_flags.dart';
 import 'data/mypage_models.dart';
 import 'data/mypage_repository.dart';
+import 'ui/profile_edit_screen.dart';
 import 'ui/sections/cash_section.dart';
 import 'ui/sections/mentor_dashboard_section.dart';
 import 'ui/sections/profile_section.dart';
@@ -46,6 +47,17 @@ class _MyPageScreenState extends State<MyPageScreen> {
   void initState() {
     super.initState();
     _future = (widget.loaderOverride ?? _repo.load)();
+  }
+
+  Future<void> _openProfileEdit(MyProfile profile) async {
+    final bool? saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => ProfileEditScreen(profile: profile),
+      ),
+    );
+    if (saved == true && mounted) {
+      setState(() => _future = (widget.loaderOverride ?? _repo.load)());
+    }
   }
 
   void _goToQuestions() {
@@ -88,7 +100,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: <Widget>[
-        ProfileSection(profile: data.profile),
+        ProfileSection(
+          profile: data.profile,
+          // 게스트(비로그인)는 수정 불가 — 세션 있을 때만 수정 진입 노출.
+          onEdit: AuthService.instance.isSignedIn
+              ? () => _openProfileEdit(data.profile)
+              : null,
+        ),
         const SizedBox(height: 16),
         if (data.isMentor)
           ..._mentorSections(data)

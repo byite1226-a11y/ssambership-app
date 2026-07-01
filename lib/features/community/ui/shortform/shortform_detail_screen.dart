@@ -44,8 +44,26 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
     _likeCount = widget.post.likeCount;
     _comments =
         widget.read.comments(CommunityPostType.shortform, widget.post.id);
+    _loadReactionState();
     // 상세 진입 시 조회수 +1(진입당 1회). RPC 부재 시 조용히 무시.
     widget.write.incrementShortformView(widget.post.id);
+  }
+
+  /// 현재 사용자의 기존 숏폼 반응(좋아요/스크랩)을 로드해 초기 상태에 반영(게시판과 동일 패턴).
+  Future<void> _loadReactionState() async {
+    try {
+      final Set<String> liked = await widget.read
+          .myShortformReactionIds(CommunityWriteRepository.reactionLike);
+      final Set<String> scrap = await widget.read
+          .myShortformReactionIds(CommunityWriteRepository.reactionScrap);
+      if (!mounted) return;
+      setState(() {
+        _liked = liked.contains(widget.post.id);
+        _scrapped = scrap.contains(widget.post.id);
+      });
+    } catch (_) {
+      // 반응 상태 조회 실패는 화면을 막지 않는다(기본 미반응).
+    }
   }
 
   @override

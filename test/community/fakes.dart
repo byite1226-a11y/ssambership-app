@@ -47,6 +47,10 @@ class FakeCommunityRead extends CommunityReadRepository {
       <String>{};
 
   @override
+  Future<Set<String>> myShortformReactionIds(String reactionType) async =>
+      <String>{};
+
+  @override
   Future<MyActivity> myActivity() async => activity;
 }
 

@@ -81,6 +81,21 @@ class CommunityReadRepository {
     };
   }
 
+  /// 내가 특정 반응(type: like|scrap)을 남긴 숏폼 id 집합(숏폼 반응 상태 표시용).
+  Future<Set<String>> myShortformReactionIds(String reactionType) async {
+    final String? uid = _uid;
+    if (uid == null) return <String>{};
+    final List<Map<String, dynamic>> rows = await _client
+        .from('shortform_reactions')
+        .select('shortform_id')
+        .eq('user_id', uid)
+        .eq('type', reactionType);
+    return <String>{
+      for (final Map<String, dynamic> r in rows)
+        if (r['shortform_id'] != null) r['shortform_id'] as String,
+    };
+  }
+
   /// 내 활동: 내가 쓴 글 + 좋아요/스크랩한 글(읽기). 반응은 게시판 글 기준.
   Future<MyActivity> myActivity() async {
     final String? uid = _uid;

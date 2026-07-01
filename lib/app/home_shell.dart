@@ -8,6 +8,7 @@ import '../features/mypage/mypage_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/question_room/question_room_screen.dart';
 import '../shared/constants/app_constants.dart';
+import 'app_tabs.dart';
 import 'entry_guard.dart';
 
 /// 하단 탭 5개 셸(질문방·커뮤니티·멘토찾기·알림·마이페이지).
@@ -45,6 +46,22 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     // 게스트는 접근 가능한 탭(멘토 찾기=2)에서 시작.
     _index = AuthService.instance.isGuest ? 2 : 0;
+    // 알림 딥링크 등 앱 내 탭 전환 요청 수신.
+    TabNavigator.request.addListener(_onTabRequest);
+  }
+
+  @override
+  void dispose() {
+    TabNavigator.request.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  /// 탭 전환 요청 처리(딥링크). 처리 후 -1 로 되돌려 같은 탭 재요청도 감지.
+  void _onTabRequest() {
+    final int i = TabNavigator.request.value;
+    if (i < 0) return;
+    _onSelect(i);
+    TabNavigator.request.value = -1;
   }
 
   void _onSelect(int i) {

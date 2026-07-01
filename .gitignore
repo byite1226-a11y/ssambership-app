@@ -16,6 +16,14 @@ pubspec.lock
 # OS
 .DS_Store
 
-# 비밀값: 출시 시 원격 production 키는 커밋하지 말 것.
-# (현재 .env 는 로컬 개발용 공개 키만 담고 있어 커밋해 둔다. 운영키 도입 시 아래 주석 해제)
-# .env
+# 비밀값: 실제 .env 는 커밋하지 않는다(공개 저장소 유출 방지). 템플릿은 .env.example 사용.
+# (로컬 anon key 는 공개 데모 키지만, 원격 운영키 혼입/습관 방지를 위해 무시한다.)
+.env
+.env.local
+.env.*.local
+# 서명·푸시 비밀(모바일 빌드 시 생성될 수 있음) — 절대 커밋 금지.
+**/key.properties
+**/*.jks
+**/*.keystore
+**/google-services.json
+**/GoogleService-Info.plist

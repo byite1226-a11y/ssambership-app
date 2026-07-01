@@ -9,7 +9,7 @@ import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
 import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
-import 'widgets/mentor_subscribe_web.dart';
+import '../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 멘토 상세(열람 전용). 목록에서 받은 항목을 재사용하고, 평균 답변시간·구독 여부만
 /// 추가로 불러온다. CTA 는 구독 상태에 따라 [질문방으로]/[구독하기](웹 브릿지).
@@ -106,7 +106,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               }
               return PrimaryButton(
                 label: '구독하기',
-                onPressed: () => openMentorSubscribeWeb(context),
+                onPressed: () => openSubscribeWeb(context, mentorId: widget.item.id),
               );
             },
           ),

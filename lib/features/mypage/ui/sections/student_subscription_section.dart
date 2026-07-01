@@ -9,7 +9,7 @@ import '../../../../design/widgets/status_pill.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/mypage_models.dart';
 import '../widgets/mypage_section.dart';
-import '../widgets/mypage_web_bridge.dart';
+import '../../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 학생 구독 현황 섹션 — 멘토별 카드(요금제·갱신일·상태). "질문하러 가기"·"결제 관리(웹)".
 /// ★ 잔여 질문수 미확정이면 숫자 대신 구독 상태로만 표기(S4와 동일, 날조 금지).
@@ -53,7 +53,7 @@ class StudentSubscriptionSection extends StatelessWidget {
           SecondaryButton(
             label: '결제·구독 관리 (웹)',
             icon: Icons.open_in_new,
-            onPressed: () => openManagePaymentsWeb(context),
+            onPressed: () => openBillingManageWeb(context),
           ),
         ],
       ),

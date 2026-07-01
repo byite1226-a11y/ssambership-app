@@ -6,7 +6,7 @@ import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../data/mentor_models.dart';
-import 'mentor_subscribe_web.dart';
+import '../../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 멘토 목록 카드(열람 전용). 탭하면 상세로, '구독하기'는 웹 브릿지로 연결.
 class MentorCard extends StatelessWidget {
@@ -96,7 +96,7 @@ class MentorCard extends StatelessWidget {
               SecondaryButton(
                 label: '구독하기',
                 expand: false,
-                onPressed: () => openMentorSubscribeWeb(context),
+                onPressed: () => openSubscribeWeb(context, mentorId: item.id),
               ),
             ],
           ),

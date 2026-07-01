@@ -7,7 +7,7 @@ import '../../../../shared/format/formatters.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
 import '../widgets/mypage_section.dart';
-import '../widgets/mypage_web_bridge.dart';
+import '../../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 캐시 섹션 — 잔액·최근 내역 '조회만' + "충전하기(웹)". ★ 앱에서 결제/충전 실행 없음.
 class CashSection extends StatelessWidget {
@@ -46,7 +46,7 @@ class CashSection extends StatelessWidget {
           SecondaryButton(
             label: '충전하기 (웹)',
             icon: Icons.open_in_new,
-            onPressed: () => openWalletChargeWeb(context),
+            onPressed: () => openRechargeWeb(context),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/entitlement/subscription_summary.dart';
 import '../../core/supabase/supabase_client.dart';
+import '../../core/web_bridge/web_bridge_actions.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../design/tokens/typography.dart';
 import '../../design/widgets/app_card.dart';
@@ -16,7 +17,6 @@ import 'data/models/room.dart';
 import 'data/question_room_read_repository.dart';
 import 'ui/mentor/mentor_inbox_screen.dart';
 import 'ui/mentor_room_home_screen.dart';
-import 'ui/widgets/subscribe_web.dart';
 
 /// 질문방 탭(1뎁스). HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성(자체 Scaffold 없음).
 ///

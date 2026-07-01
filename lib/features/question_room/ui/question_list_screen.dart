@@ -12,7 +12,7 @@ import '../data/question_room_write_repository.dart';
 import 'chat_screen.dart';
 import 'connection_notes_screen.dart';
 import 'new_question_screen.dart';
-import 'widgets/subscribe_web.dart';
+import '../../../core/web_bridge/web_bridge_actions.dart';
 import 'widgets/thread_card.dart';
 
 /// 질문 영역(3뎁스). 스레드 카드 목록(최신순) + 새 질문 + 연결노트 플로팅.

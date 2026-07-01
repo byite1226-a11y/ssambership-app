@@ -39,7 +39,7 @@ class ChatInputBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+        padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
         decoration: const BoxDecoration(
           color: ColorTokens.surface,
           border: Border(top: BorderSide(color: ColorTokens.border)),
@@ -52,6 +52,7 @@ class ChatInputBar extends StatelessWidget {
               onRemove: onRemovePending,
             ),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
                 IconButton(
                   icon: const Icon(Icons.attach_file, color: ColorTokens.muted),

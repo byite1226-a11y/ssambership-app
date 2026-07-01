@@ -20,6 +20,16 @@ class MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color bg = mine ? ColorTokens.accent : ColorTokens.surface;
     final Color fg = mine ? ColorTokens.page : ColorTokens.primary;
+    // 말풍선 폭은 화면의 약 72% 로 제한 — 좁은 화면에서 자연스럽게 줄바꿈, 넓은 화면에서 과도하게 늘어나지 않음.
+    final double maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.72;
+    // 카카오톡식 '꼬리' — 보낸 쪽 아래 모서리만 각지게(내=우하단, 상대=좌하단).
+    const Radius r = Radius.circular(16);
+    final BorderRadius bubbleRadius = BorderRadius.only(
+      topLeft: r,
+      topRight: r,
+      bottomLeft: mine ? r : const Radius.circular(4),
+      bottomRight: mine ? const Radius.circular(4) : r,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -29,27 +39,27 @@ class MessageBubble extends StatelessWidget {
         children: <Widget>[
           if (mine)
             Padding(
-              padding: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.only(right: 6, bottom: 2),
               child: Text(Formatters.hourMinute(message.createdAt),
                   style: AppTypography.caption),
             ),
           Flexible(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 320),
+              constraints: BoxConstraints(maxWidth: maxBubbleWidth),
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: bg,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: bubbleRadius,
                 border: mine ? null : Border.all(color: ColorTokens.border),
               ),
               child: Text(message.body,
-                  style: AppTypography.body.copyWith(color: fg)),
+                  style: AppTypography.body.copyWith(color: fg, height: 1.35)),
             ),
           ),
           if (!mine)
             Padding(
-              padding: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.only(left: 6, bottom: 2),
               child: Text(Formatters.hourMinute(message.createdAt),
                   style: AppTypography.caption),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
 import '../../core/entitlement/subscription_summary.dart';
+import '../../core/entitlement/weekly_question_usage.dart';
 import '../../core/supabase/supabase_client.dart';
 import '../../core/web_bridge/web_bridge_actions.dart';
 import '../../design/tokens/color_tokens.dart';
@@ -53,12 +54,15 @@ class _StudentRoomList extends StatefulWidget {
   State<_StudentRoomList> createState() => _StudentRoomListState();
 }
 
-/// 목록 한 행에 필요한 묶음(방 + 멘토 표시명 + 구독 요약).
+/// 목록 한 행에 필요한 묶음(방 + 멘토 표시명 + 구독 요약 + 주간 사용량).
 class _RoomItem {
-  const _RoomItem({required this.room, this.mentor, this.sub});
+  const _RoomItem({required this.room, this.mentor, this.sub, this.usage});
   final Room room;
   final MentorPublic? mentor;
   final SubscriptionSummary? sub;
+
+  /// A2: 이 멘토와의 이번 주 질문 사용량(RPC). null = 미조회/실패 → 표시 생략.
+  final WeeklyQuestionUsage? usage;
 
   String get mentorName => mentor?.displayName ?? '멘토';
 }
@@ -86,11 +90,23 @@ class _StudentRoomListState extends State<_StudentRoomList> {
             SupabaseInit.clientOrNull!, studentId);
     final Map<String, MentorPublic> names =
         await _mentors.fetchMany(rooms.map((Room r) => r.mentorId));
+    // A2: 멘토별 주간 사용량(RPC). ★ 한도값 재하드코딩 없이 RPC 반환만. 실패는 null(표시 생략).
+    final Map<String, WeeklyQuestionUsage?> usageByMentor =
+        <String, WeeklyQuestionUsage?>{};
+    if (studentId != null) {
+      final Set<String> mentorIds =
+          rooms.map((Room r) => r.mentorId).toSet();
+      await Future.wait(mentorIds.map((String mentorId) async {
+        usageByMentor[mentorId] =
+            await _repo.weeklyUsage(studentId: studentId, mentorId: mentorId);
+      }));
+    }
     return rooms
         .map((Room r) => _RoomItem(
               room: r,
               mentor: names[r.mentorId],
               sub: subs[r.mentorId],
+              usage: usageByMentor[r.mentorId],
             ))
         .toList();
   }
@@ -200,12 +216,16 @@ class _RoomTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final SubscriptionSummary? sub = item.sub;
     // 구독 상태칩·갱신일은 넘칠 수 있어 Wrap 으로 자연스럽게 줄바꿈(정보 유지, 배치만 정돈).
+    final String? quotaLabel = item.usage?.planQuotaLabel;
     final List<Widget> meta = <Widget>[
       if (sub != null)
         StatusPill(
           label: sub.isActive ? '구독 중' : '구독 만료',
           tone: sub.isActive ? StatusTone.success : StatusTone.warning,
         ),
+      // A2: 주간 잔여("주 N개 질문 · 잔여 X/N", 프리미엄=무제한). RPC 값 있을 때만.
+      if (quotaLabel != null)
+        Text(quotaLabel, style: AppTypography.caption),
       if (sub?.nextRenewal != null)
         Text(
           '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',

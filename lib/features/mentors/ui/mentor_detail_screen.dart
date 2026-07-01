@@ -9,6 +9,7 @@ import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
 import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
+import '../../../app/app_tabs.dart';
 import '../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 멘토 상세(열람 전용). 목록에서 받은 항목을 재사용하고, 평균 답변시간·구독 여부만
@@ -116,12 +117,10 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
   }
 
   void _goToQuestionRoom(BuildContext context) {
-    // 질문방 '탭'(index 0)으로의 직접 전환은 HomeShell 탭 제어가 필요해 S5 머지 후 연결한다.
-    // TODO(S10): 질문방 탭 직접 전환 — HomeShell 탭 컨트롤러 노출 후 연결(S5 완료 후 합침).
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('질문방 탭에서 이어서 질문할 수 있어요.')),
-    );
+    // 루트(HomeShell)로 되돌아간 뒤 질문방 탭으로 전환 요청.
+    // TabNavigator(app_tabs) → HomeShell 이 수신해 탭 인덱스를 바꾼다(라우터 변경 불필요).
     Navigator.of(context).popUntil((Route<dynamic> r) => r.isFirst);
+    TabNavigator.go(AppTab.questionRoom);
   }
 }
 

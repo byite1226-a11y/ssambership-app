@@ -3,27 +3,42 @@ import 'package:flutter/material.dart';
 import '../../../../core/supabase/supabase_client.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
+import '../../data/attachments/attachment_upload.dart';
 import '../../data/models/question_message.dart';
 import '../../data/models/question_thread.dart';
 import '../../data/question_room_read_repository.dart';
 import '../../data/question_room_write_repository.dart';
-import '../widgets/message_bubble.dart';
+import '../../data/thread_messages_controller.dart';
+import '../../data/thread_realtime.dart';
+import '../widgets/chat_input_bar.dart';
+import '../widgets/live_message_list.dart';
 import '../widgets/thread_status_pill.dart';
 
-/// 멘토 답변 화면(3뎁스). 학생 채팅의 거울상 — 멘토=우측 / 학생=좌측(MessageBubble가 자동 처리).
+/// 멘토 답변 화면(3뎁스). 학생 채팅의 거울상 — 멘토=우측 / 학생=좌측(MessageBubble 자동 처리).
 ///
-/// ★ 멘토가 메시지를 보내면(append) '답변 대기(pending)' 스레드는 '진행 중(answered)'으로 전이된다.
-///   = "답변 전송". (학생이 확인하면 '답변 완료(confirmed)' — 역할이 분리돼 있다.)
-///   메시지는 append 전용(수정/삭제 없음).
+/// ★ 멘토가 메시지를 보내면(append) '답변 대기(pending)' → '진행 중(answered)' 전이("답변 전송").
+///   학생이 확인하면 '답변 완료(confirmed)' — 역할 분리. 메시지는 append 전용.
+///
+/// S6: Realtime 구독으로 학생 메시지를 즉시 반영(폴백: 전송 후/수동 재조회).
+///     첨부는 주입 포트(저장소 준비 시 동작).
 class MentorAnswerScreen extends StatefulWidget {
   const MentorAnswerScreen({
     super.key,
     required this.thread,
     required this.studentName,
+    this.imagePicker = const DisabledImagePicker(),
+    this.uploader = const SupabaseAttachmentUploader(),
+    this.realtimeFactory = _defaultRealtime,
   });
 
   final QuestionThread thread;
   final String studentName;
+  final ImagePickerPort imagePicker;
+  final AttachmentUploaderPort uploader;
+  final ThreadRealtimePort Function(String threadId) realtimeFactory;
+
+  static ThreadRealtimePort _defaultRealtime(String threadId) =>
+      SupabaseThreadRealtime(threadId);
 
   @override
   State<MentorAnswerScreen> createState() => _MentorAnswerScreenState();
@@ -34,11 +49,14 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
   final QuestionRoomWriteRepository _write =
       const QuestionRoomWriteRepository();
   final TextEditingController _input = TextEditingController();
-  final ScrollController _scroll = ScrollController();
 
-  late Future<List<QuestionMessage>> _future;
-  late ThreadStatus _status; // 전송에 따라 갱신(거울상 목록에서 즉시 반영)
+  late final ThreadRealtimePort _realtime;
+  late ThreadStatus _status;
+  ThreadMessagesController? _messages;
+  bool _loading = true;
+  Object? _loadError;
   bool _sending = false;
+  PickedImage? _pending;
 
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
 
@@ -46,64 +64,124 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
   void initState() {
     super.initState();
     _status = widget.thread.status;
-    _future = _read.messages(widget.thread.id);
+    _realtime = widget.realtimeFactory(widget.thread.id);
+    _load();
   }
 
   @override
   void dispose() {
     _input.dispose();
-    _scroll.dispose();
+    _messages?.dispose();
     super.dispose();
   }
 
-  Future<void> _reload() async {
-    final Future<List<QuestionMessage>> f = _read.messages(widget.thread.id);
-    setState(() => _future = f);
-    await f;
-    _jumpToEnd();
+  Future<void> _load() async {
+    try {
+      final List<QuestionMessage> msgs = await _read.messages(widget.thread.id);
+      if (!mounted) return;
+      setState(() {
+        _messages = ThreadMessagesController(msgs);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
   }
 
-  void _jumpToEnd() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) {
-        _scroll.jumpTo(_scroll.position.maxScrollExtent);
-      }
-    });
+  Future<void> _refresh() async {
+    final ThreadMessagesController? ctrl = _messages;
+    if (ctrl == null) return;
+    try {
+      final List<QuestionMessage> msgs = await _read.messages(widget.thread.id);
+      ctrl.resetTo(msgs);
+    } catch (_) {
+      // 무시 — 기존 목록 유지.
+    }
+  }
+
+  Future<void> _onThreadUpdate() async {
+    try {
+      final QuestionThread? t = await _read.threadById(widget.thread.id);
+      if (t != null && mounted) setState(() => _status = t.status);
+    } catch (_) {
+      // 무시.
+    }
   }
 
   Future<void> _send() async {
     final String body = _input.text.trim();
-    if (body.isEmpty || _sending) return;
+    final PickedImage? pending = _pending;
+    if ((body.isEmpty && pending == null) || _sending) return;
     setState(() => _sending = true);
     try {
-      await _write.appendMessage(threadId: widget.thread.id, body: body);
-      _input.clear();
-      // 답변 전송 = 첫 답변이면 '답변 대기' → '진행 중' 전이.
-      if (_status == ThreadStatus.pending) {
-        try {
-          final QuestionThread updated =
-              await _write.markThreadAnswered(widget.thread.id);
-          if (mounted) setState(() => _status = updated.status);
-        } catch (_) {
-          // 전이 실패해도 메시지는 이미 전송됨 — 상태만 다음 새로고침에서 반영.
+      QuestionMessage? sent;
+      if (body.isNotEmpty) {
+        sent = await _write.appendMessage(threadId: widget.thread.id, body: body);
+        _input.clear();
+        _messages?.add(sent);
+        // 답변 전송 = 첫 답변이면 '답변 대기' → '진행 중' 전이.
+        if (_status == ThreadStatus.pending) {
+          try {
+            final QuestionThread updated =
+                await _write.markThreadAnswered(widget.thread.id);
+            if (mounted) setState(() => _status = updated.status);
+          } catch (_) {
+            // 전이 실패해도 메시지는 이미 전송됨 — 상태는 다음 갱신에서 반영.
+          }
         }
       }
-      await _reload();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('전송에 실패했어요. ($e)')),
-        );
+      if (pending != null) {
+        await _uploadPending(pending, messageId: sent?.id);
       }
+    } catch (e) {
+      _showError('전송에 실패했어요. ($e)');
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _pending = null;
+        });
+      }
     }
   }
 
-  void _attachNotice() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('사진·파일 첨부는 곧 지원돼요. (준비 중)')),
-    );
+  Future<void> _uploadPending(PickedImage image, {String? messageId}) async {
+    if (!widget.uploader.isReady) {
+      _showError('이미지 첨부는 준비 중이에요. (저장소 설정 인수인계)');
+      return;
+    }
+    try {
+      await widget.uploader
+          .upload(threadId: widget.thread.id, messageId: messageId, image: image);
+      await _refresh();
+    } catch (e) {
+      _showError('이미지 첨부에 실패했어요. ($e)');
+    }
+  }
+
+  Future<void> _attach() async {
+    if (!widget.imagePicker.isAvailable) {
+      _showError('이미지 선택 기능은 준비 중이에요. (image_picker 인수인계)');
+      return;
+    }
+    final PickedImage? img = await widget.imagePicker.pickImage();
+    if (img == null) return;
+    final String? invalid = validatePickedImage(img);
+    if (invalid != null) {
+      _showError(invalid);
+      return;
+    }
+    if (mounted) setState(() => _pending = img);
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -120,10 +198,17 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
             Text(widget.studentName,
                 style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
             Text(title,
-                style: AppTypography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                style: AppTypography.body,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
           ],
         ),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: '새로고침',
+            onPressed: _refresh,
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(child: ThreadStatusPill(status: _status)),
@@ -132,99 +217,42 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       ),
       body: Column(
         children: <Widget>[
-          Expanded(
-            child: FutureBuilder<List<QuestionMessage>>(
-              future: _future,
-              builder: (BuildContext context,
-                  AsyncSnapshot<List<QuestionMessage>> snap) {
-                if (snap.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text('대화를 불러오지 못했어요.\n${snap.error}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: ColorTokens.danger)),
-                    ),
-                  );
-                }
-                final List<QuestionMessage> messages =
-                    snap.data ?? <QuestionMessage>[];
-                _jumpToEnd();
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text('학생의 질문에 첫 답변을 남겨보세요.',
-                        style: AppTypography.caption),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scroll,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (BuildContext context, int i) {
-                    final QuestionMessage m = messages[i];
-                    final bool mine = _uid != null && m.authorId == _uid;
-                    return MessageBubble(message: m, mine: mine);
-                  },
-                );
-              },
-            ),
+          Expanded(child: _list()),
+          ChatInputBar(
+            controller: _input,
+            hintText: '답변 입력',
+            sending: _sending,
+            onSend: _send,
+            onAttach: _attach,
+            sendTooltip: '답변 전송',
+            pendingImage: _pending,
+            onRemovePending: () => setState(() => _pending = null),
           ),
-          _inputBar(),
         ],
       ),
     );
   }
 
-  Widget _inputBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-        decoration: const BoxDecoration(
-          color: ColorTokens.surface,
-          border: Border(top: BorderSide(color: ColorTokens.border)),
+  Widget _list() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('대화를 불러오지 못했어요.\n$_loadError',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: ColorTokens.danger)),
         ),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.attach_file, color: ColorTokens.muted),
-              onPressed: _attachNotice,
-            ),
-            Expanded(
-              child: TextField(
-                controller: _input,
-                style: AppTypography.body,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-                decoration: InputDecoration(
-                  hintText: '답변 입력',
-                  filled: true,
-                  fillColor: ColorTokens.elevated,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                ),
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.send,
-                color: _sending ? ColorTokens.muted : ColorTokens.accent,
-              ),
-              tooltip: '답변 전송',
-              onPressed: _sending ? null : _send,
-            ),
-          ],
-        ),
-      ),
+      );
+    }
+    return LiveMessageList(
+      controller: _messages!,
+      realtime: _realtime,
+      currentUid: _uid,
+      emptyHint: '학생의 질문에 첫 답변을 남겨보세요.',
+      onThreadUpdate: _onThreadUpdate,
     );
   }
 }

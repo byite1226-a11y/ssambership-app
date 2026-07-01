@@ -55,6 +55,16 @@ class QuestionRoomReadRepository {
     return rows.map(QuestionThread.fromMap).toList();
   }
 
+  /// 스레드 1건의 최신 상태(실시간 상태 변경 후 재조회용). 없으면 null.
+  Future<QuestionThread?> threadById(String threadId) async {
+    final Map<String, dynamic>? row = await _client
+        .from('question_threads')
+        .select('*')
+        .eq('id', threadId)
+        .maybeSingle();
+    return row == null ? null : QuestionThread.fromMap(row);
+  }
+
   /// 스레드의 메시지 목록(대화 순서 = created_at 오름차순).
   Future<List<QuestionMessage>> messages(String threadId) async {
     final List<Map<String, dynamic>> rows = await _client

@@ -20,10 +20,18 @@ class ConnectionNotesScreen extends StatefulWidget {
     super.key,
     required this.room,
     required this.mentorName,
+    this.notesLoader,
+    this.onSaveNote,
   });
 
   final Room room;
   final String mentorName;
+
+  /// 노트 로더 오버라이드(테스트 주입). null 이면 실제 레포 조회.
+  final Future<List<ConnectionNote>> Function()? notesLoader;
+
+  /// 저장 오버라이드(테스트 주입). null 이면 실제 upsertMyNote(본인 author 행만).
+  final Future<void> Function(String body)? onSaveNote;
 
   @override
   State<ConnectionNotesScreen> createState() => _ConnectionNotesScreenState();
@@ -44,8 +52,11 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _read.notes(widget.room.id);
+    _future = _loadNotes();
   }
+
+  Future<List<ConnectionNote>> _loadNotes() =>
+      widget.notesLoader != null ? widget.notesLoader!() : _read.notes(widget.room.id);
 
   @override
   void dispose() {
@@ -55,7 +66,7 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
 
   Future<void> _reload() async {
     _seeded = false;
-    setState(() => _future = _read.notes(widget.room.id));
+    setState(() => _future = _loadNotes());
   }
 
   Future<void> _save() async {
@@ -63,7 +74,11 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
     if (body.isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
-      await _write.upsertMyNote(roomId: widget.room.id, body: body);
+      if (widget.onSaveNote != null) {
+        await widget.onSaveNote!(body);
+      } else {
+        await _write.upsertMyNote(roomId: widget.room.id, body: body);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('노트를 저장했어요.')),

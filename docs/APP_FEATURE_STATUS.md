@@ -7,6 +7,34 @@
 
 ---
 
+## 🆕 2026-07-02 구현 배치(부족 기능 12건) — 결과
+
+무인 배치로 아래를 구현·커밋(각 독립 커밋, 각 커밋 전 flutter test·analyze 통과). **DB·Storage 변경 0, color_tokens 미터치.**
+
+| # | 작업 | 상태 | 비고(인프라 의존) |
+|---|---|---|---|
+| 1 | 질문 이미지 첨부 | ✅ 선택 동작 / 업로드 graceful | **버킷 필요**: `question-attachments`(+방참여자 정책) 생성 후 `attachment_upload.dart:96 _storageReady=true` |
+| 2 | 알림 설정 토글 저장 | ✅ graceful | **컬럼 필요**: `users.notification_enabled`(bool)+본인 update RLS |
+| 3 | 프로필 수정 | ✅ 동작 | `users.nickname`·`grade_level` update(본인 RLS) — 이미 있으면 즉시 작동 |
+| 4 | 멘토찾기→질문방 탭 전환 | ✅ 동작 | TabNavigator 사용, 인프라 불필요 |
+| 5 | 커뮤니티 조회수 증분 | ✅ graceful | **RPC 필요/확인**: `increment_community_post_view`·`increment_shortform_post_view`(웹 사용중) |
+| 6 | 커뮤니티 페이징·무한스크롤 | ✅ 동작 | 게시판·숏폼 완성. 댓글은 repo 파라미터만 준비(UI는 기존) |
+| 7 | 숏폼 반응 초기 로드 | ✅ 동작 | `shortform_reactions` 조회 |
+| 8 | 질문방 목록 주간 잔여 표시 | ✅ 동작 | RPC `get_weekly_question_usage` |
+| 9 | 연결노트 진입 위치 | ✅ 이미 충족 | 오너 체크포인트(AppBar 라벨 버튼)+허브 EntranceCard. 별도 커밋 없음 |
+| 10 | 구독 status 세분화 | ✅ 동작 | 정본 라벨(이용 중/결제 확인 필요/해지됨/만료됨/환불됨/대기 중). 표시만 |
+| 11 | 커뮤니티 라벨·순서 정본 | ✅ 동작 | study='학습법', 순서 study·school·career·college·free |
+| 12 | 알림 딥링크·분류 정본 | ✅ 동작(분류) | 정본 키워드 관대 매칭. 딥링크는 탭 라우팅(푸시 인프라 미접촉) |
+
+### ★ 오너가 Supabase에서 만들어야 할 인프라(아침에 바로) — 이 배치가 '준비되면 자동 작동'하도록 짜둠
+1. **[작업1] Storage 버킷 `question-attachments`** + '방 참여자만 read/write' 정책 → 생성 후 `lib/features/question_room/data/attachments/attachment_upload.dart:96` 의 `_storageReady=false→true`. (버킷명은 웹과 통일할 것 — 다르면 같은 파일 `bucket` 상수도 수정.)
+2. **[작업2] `users.notification_enabled` boolean 컬럼** + 본인 update RLS → 알림 토글이 자동 영속화. (컬럼명은 `notification_settings_repository.dart:16 column` 상수와 일치시킬 것.)
+3. **[작업5] 조회수 증분 RPC 존재 확인**: `increment_community_post_view(p_post_id)`·`increment_shortform_post_view(p_post_id)`. 웹이 이미 사용 중이라 있을 가능성 높음 — 없으면 조회수만 안 오름(앱은 조용히 무시, 안 죽음).
+4. **[작업8·A2] RPC `get_weekly_question_usage(p_student_id,p_mentor_id)`** 존재·정상 동작(이미 A2에서 사용). + (선택)서버측 한도 강제 트리거는 별건.
+5. **[참고] 프로필/설정/첨부는 모두 graceful** — 위 인프라가 없어도 앱은 죽지 않고 "준비 중"/로컬 유지로 동작한다.
+
+---
+
 ## ★ 먼저: 미완·깨짐 요약 (출시 전 판단할 것)
 
 **하드 '깨짐(에러·크래시)'은 0건.** 코어 Q&A 루프(질문 작성→답변→확인)와 조회 기능들은 실제 Supabase에 연결되어 작동한다.

@@ -55,6 +55,30 @@ class QuestionRoomReadRepository {
     return rows.map(QuestionThread.fromMap).toList();
   }
 
+  /// 방 멘토의 담당 과목 코드 목록(mentor_profiles.teaching_subjects, text[]).
+  ///
+  /// 질문 작성 시 과목 후보 제한(A1)용. 공개 프로필 필드만 읽는다.
+  /// 없거나 조회 실패면 빈 리스트 → 호출부가 전체 과목으로 폴백한다(빈 드롭다운 금지).
+  Future<List<String>> mentorTeachingSubjects(String mentorId) async {
+    try {
+      final Map<String, dynamic>? row = await _client
+          .from('mentor_profiles')
+          .select('teaching_subjects')
+          .eq('user_id', mentorId)
+          .maybeSingle();
+      final Object? raw = row?['teaching_subjects'];
+      if (raw is List) {
+        return raw
+            .map((Object? e) => e?.toString().trim() ?? '')
+            .where((String s) => s.isNotEmpty)
+            .toList();
+      }
+      return <String>[];
+    } catch (_) {
+      return <String>[]; // 조회 실패 → 전체 폴백
+    }
+  }
+
   /// 스레드 1건의 최신 상태(실시간 상태 변경 후 재조회용). 없으면 null.
   Future<QuestionThread?> threadById(String threadId) async {
     final Map<String, dynamic>? row = await _client

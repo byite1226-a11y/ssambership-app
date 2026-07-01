@@ -6,6 +6,7 @@ import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/models/question_thread.dart';
 import '../data/models/room.dart';
+import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
 
 /// 새 질문 작성. 제목·내용·과목(선택) → 스레드 생성 + 첫 메시지 append.
@@ -22,11 +23,29 @@ class NewQuestionScreen extends StatefulWidget {
 class _NewQuestionScreenState extends State<NewQuestionScreen> {
   final QuestionRoomWriteRepository _write =
       const QuestionRoomWriteRepository();
+  final QuestionRoomReadRepository _read = const QuestionRoomReadRepository();
   final TextEditingController _title = TextEditingController();
   final TextEditingController _body = TextEditingController();
 
   String? _subjectCode; // null = 선택 안 함
+
+  /// 방 멘토의 담당 과목 코드. null = 로딩 전(드롭다운 잠금), 로드 후 후보 제한 근거.
+  List<String>? _mentorCodes;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMentorSubjects();
+  }
+
+  /// 방 멘토(teaching_subjects)를 읽어 과목 후보를 제한한다(A1). 실패/빈값이면 전체 폴백.
+  Future<void> _loadMentorSubjects() async {
+    final List<String> codes =
+        await _read.mentorTeachingSubjects(widget.room.mentorId);
+    if (!mounted) return;
+    setState(() => _mentorCodes = codes);
+  }
 
   @override
   void dispose() {
@@ -98,10 +117,16 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
   }
 
   Widget _subjectPicker() {
+    // 로딩 전(_mentorCodes==null)에는 잠가 두어, 로드 후 후보에서 빠질 값이
+    // 미리 선택되는 문제를 막는다. 로드되면 멘토 담당 과목으로 제한(없으면 전체 폴백).
+    final bool loaded = _mentorCodes != null;
+    final List<String> codes = loaded
+        ? restrictQuestionSubjectCodes(_mentorCodes!)
+        : const <String>[];
     final List<DropdownMenuItem<String?>> items = <DropdownMenuItem<String?>>[
       const DropdownMenuItem<String?>(value: null, child: Text('선택 안 함')),
-      for (final MapEntry<String, String> e in subjectLabels.entries)
-        DropdownMenuItem<String?>(value: e.key, child: Text(e.value)),
+      for (final String code in codes)
+        DropdownMenuItem<String?>(value: code, child: Text(subjectLabel(code))),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -116,8 +141,12 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
           value: _subjectCode,
           dropdownColor: ColorTokens.surface,
           style: AppTypography.body,
+          hint: Text(loaded ? '선택 안 함' : '과목 불러오는 중…',
+              style: AppTypography.body),
           items: items,
-          onChanged: (String? v) => setState(() => _subjectCode = v),
+          // 로딩 중에는 비활성(onChanged=null) — 로드 후 제한된 후보로만 선택.
+          onChanged:
+              loaded ? (String? v) => setState(() => _subjectCode = v) : null,
         ),
       ),
     );

@@ -15,16 +15,24 @@ void main() {
     }
   });
 
-  test('구독·결제 유형으로 분류', () {
+  test('구독·결제 유형으로 분류(웹 정본 키워드 포함)', () {
     for (final String t in <String>[
       'subscription_renewed',
       'payment_succeeded',
       'billing_reminder',
       'subscription_expiring',
+      'wallet_charged',
+      'cash_topup',
+      'pay_completed',
     ]) {
       expect(classifyNotificationType(t), NotificationKind.subscription,
           reason: t);
     }
+  });
+
+  test('qna 유형도 질문방으로 분류', () {
+    expect(classifyNotificationType('qna_new_answer'),
+        NotificationKind.questionRoom);
   });
 
   test('CR·환불·IQ 는 other(앱 범위 밖) — subscription_refund 도 환불 우선', () {

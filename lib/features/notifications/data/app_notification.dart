@@ -37,16 +37,20 @@ NotificationKind classifyNotificationType(String? type) {
     return NotificationKind.other;
   }
 
-  // 구독·결제.
+  // 구독·결제(웹 정본 키워드: subscri/billing/payment/pay/wallet/cash/renew).
   if (t.contains('subscription') ||
       t.contains('billing') ||
       t.contains('payment') ||
+      t.contains('pay') ||
+      t.contains('wallet') ||
+      t.contains('cash') ||
       t.contains('renew')) {
     return NotificationKind.subscription;
   }
 
-  // 질문방(스레드·메시지·답변·연결노트).
+  // 질문방(웹 정본: question/qna/thread/answer/message/room/note).
   if (t.contains('question') ||
+      t.contains('qna') ||
       t.contains('thread') ||
       t.contains('answer') ||
       t.contains('message') ||

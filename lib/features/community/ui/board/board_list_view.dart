@@ -22,20 +22,82 @@ class BoardListView extends StatefulWidget {
 }
 
 class _BoardListViewState extends State<BoardListView> {
-  late Future<List<BoardPost>> _future;
+  static const int _pageSize = 20;
+
+  final ScrollController _scroll = ScrollController();
+  final List<BoardPost> _posts = <BoardPost>[];
   String? _category; // null = 전체
+  bool _initialLoading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  Object? _error;
 
   @override
   void initState() {
     super.initState();
-    _future = widget.read.boards();
+    _scroll.addListener(_onScroll);
+    _loadFirst();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scroll.position.pixels >=
+        _scroll.position.maxScrollExtent - 300) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadFirst() async {
+    setState(() {
+      _initialLoading = true;
+      _error = null;
+      _posts.clear();
+      _hasMore = true;
+    });
+    try {
+      final List<BoardPost> page = await widget.read
+          .boards(category: _category, limit: _pageSize, offset: 0);
+      if (!mounted) return;
+      setState(() {
+        _posts.addAll(page);
+        _hasMore = page.length == _pageSize;
+        _initialLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e;
+        _initialLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _initialLoading) return;
+    setState(() => _loadingMore = true);
+    try {
+      final List<BoardPost> page = await widget.read.boards(
+          category: _category, limit: _pageSize, offset: _posts.length);
+      if (!mounted) return;
+      setState(() {
+        _posts.addAll(page);
+        _hasMore = page.length == _pageSize;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false); // 추가 로드 실패는 조용히(기존 목록 유지).
+    }
   }
 
   void _selectCategory(String? code) {
-    setState(() {
-      _category = code;
-      _future = widget.read.boards(category: code);
-    });
+    _category = code;
+    _loadFirst();
   }
 
   @override
@@ -61,45 +123,47 @@ class _BoardListViewState extends State<BoardListView> {
                 i == 0 ? null : communityCategoryOptions[i - 1].key),
           ),
         ),
-        Expanded(
-          child: FutureBuilder<List<BoardPost>>(
-            future: _future,
-            builder:
-                (BuildContext context, AsyncSnapshot<List<BoardPost>> snap) {
-              if (snap.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snap.hasError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('글을 불러오지 못했어요.\n${snap.error}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: ColorTokens.danger)),
-                  ),
-                );
-              }
-              final List<BoardPost> posts = snap.data ?? <BoardPost>[];
-              if (posts.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.forum_outlined,
-                  title: '아직 글이 없어요',
-                  message: '이 분류에는 글이 없어요.',
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
-                itemCount: posts.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (BuildContext context, int i) => BoardPostCard(
-                  post: posts[i],
-                  onOpen: () => _open(posts[i]),
-                ),
-              );
-            },
-          ),
-        ),
+        Expanded(child: _body()),
       ],
+    );
+  }
+
+  Widget _body() {
+    if (_initialLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('글을 불러오지 못했어요.\n$_error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: ColorTokens.danger)),
+        ),
+      );
+    }
+    if (_posts.isEmpty) {
+      return const EmptyState(
+        icon: Icons.forum_outlined,
+        title: '아직 글이 없어요',
+        message: '이 분류에는 글이 없어요.',
+      );
+    }
+    return ListView.separated(
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+      itemCount: _posts.length + (_hasMore ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (BuildContext context, int i) {
+        if (i >= _posts.length) {
+          // 다음 페이지 로딩 인디케이터(끝에 도달 시 자동 로드).
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return BoardPostCard(post: _posts[i], onOpen: () => _open(_posts[i]));
+      },
     );
   }
 

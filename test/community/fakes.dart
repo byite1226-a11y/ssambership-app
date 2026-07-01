@@ -17,19 +17,29 @@ class FakeCommunityRead extends CommunityReadRepository {
   final MyActivity activity;
 
   @override
-  Future<List<BoardPost>> boards({String? category}) async {
-    if (category == null) return boardsList;
-    return boardsList
-        .where((BoardPost p) => p.category == category)
-        .toList();
+  Future<List<BoardPost>> boards(
+      {String? category, int? limit, int offset = 0}) async {
+    final List<BoardPost> all = category == null
+        ? boardsList
+        : boardsList.where((BoardPost p) => p.category == category).toList();
+    if (limit == null) return all;
+    final int start = offset.clamp(0, all.length);
+    final int end = (offset + limit).clamp(0, all.length);
+    return all.sublist(start, end);
   }
 
   @override
-  Future<List<ShortformPost>> shortforms() async => shortformsList;
+  Future<List<ShortformPost>> shortforms({int? limit, int offset = 0}) async {
+    if (limit == null) return shortformsList;
+    final int start = offset.clamp(0, shortformsList.length);
+    final int end = (offset + limit).clamp(0, shortformsList.length);
+    return shortformsList.sublist(start, end);
+  }
 
   @override
   Future<List<CommunityComment>> comments(
-          CommunityPostType type, String postId) async =>
+          CommunityPostType type, String postId,
+          {int? limit, int offset = 0}) async =>
       commentsList;
 
   @override

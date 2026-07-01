@@ -20,7 +20,8 @@ class CommunityReadRepository {
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
 
   /// 게시판 글 목록(공개=published, 최신순). category 지정 시 그 분류만.
-  Future<List<BoardPost>> boards({String? category}) async {
+  /// [limit] 지정 시 [offset]부터 그만큼만(페이징). null 이면 전체(하위 호환).
+  Future<List<BoardPost>> boards({String? category, int? limit, int offset = 0}) async {
     dynamic q = _client
         .from('community_posts')
         .select('*')
@@ -28,33 +29,40 @@ class CommunityReadRepository {
     if (category != null && category.isNotEmpty) {
       q = q.eq('category', category);
     }
-    final List<Map<String, dynamic>> rows =
-        await q.order('created_at', ascending: false);
+    q = q.order('created_at', ascending: false);
+    if (limit != null) q = q.range(offset, offset + limit - 1);
+    final List<Map<String, dynamic>> rows = await q;
     return rows.map(BoardPost.fromMap).toList();
   }
 
-  /// 숏폼 목록(공개=published, 최신순).
-  Future<List<ShortformPost>> shortforms() async {
-    final List<Map<String, dynamic>> rows = await _client
+  /// 숏폼 목록(공개=published, 최신순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
+  Future<List<ShortformPost>> shortforms({int? limit, int offset = 0}) async {
+    dynamic q = _client
         .from('shortform_posts')
         .select('*')
         .eq('status', 'published')
         .order('created_at', ascending: false);
+    if (limit != null) q = q.range(offset, offset + limit - 1);
+    final List<Map<String, dynamic>> rows = await q;
     return rows.map(ShortformPost.fromMap).toList();
   }
 
-  /// 글/숏폼의 댓글(공개=visible, 대화순=오름차순).
+  /// 글/숏폼의 댓글(공개=visible, 대화순=오름차순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
   Future<List<CommunityComment>> comments(
     CommunityPostType type,
-    String postId,
-  ) async {
-    final List<Map<String, dynamic>> rows = await _client
+    String postId, {
+    int? limit,
+    int offset = 0,
+  }) async {
+    dynamic q = _client
         .from('community_comments')
         .select('*')
         .eq('post_type', type.code)
         .eq('post_id', postId)
         .eq('status', 'visible')
         .order('created_at', ascending: true);
+    if (limit != null) q = q.range(offset, offset + limit - 1);
+    final List<Map<String, dynamic>> rows = await q;
     return rows.map(CommunityComment.fromMap).toList();
   }
 

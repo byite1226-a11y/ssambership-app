@@ -23,6 +23,9 @@ dependencies:
   # web_bridge: 결제/구독이 필요할 때 '웹 페이지'만 연다 (앱에서 결제하지 않음)
   url_launcher: ^6.3.0
 
+  # 질문 첨부: 갤러리에서 이미지 선택(업로드는 Storage 버킷 준비 시 동작 — graceful)
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

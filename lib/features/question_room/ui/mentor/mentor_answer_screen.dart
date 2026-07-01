@@ -4,6 +4,7 @@ import '../../../../core/supabase/supabase_client.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../data/attachments/attachment_upload.dart';
+import '../../data/attachments/device_image_picker.dart';
 import '../../data/models/question_message.dart';
 import '../../data/models/question_thread.dart';
 import '../../data/question_room_read_repository.dart';
@@ -26,7 +27,7 @@ class MentorAnswerScreen extends StatefulWidget {
     super.key,
     required this.thread,
     required this.studentName,
-    this.imagePicker = const DisabledImagePicker(),
+    this.imagePicker = const DeviceImagePicker(),
     this.uploader = const SupabaseAttachmentUploader(),
     this.realtimeFactory = _defaultRealtime,
   });

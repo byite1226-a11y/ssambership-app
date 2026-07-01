@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../data/mappings/subject_labels.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
@@ -60,6 +61,23 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
     if (body.isEmpty || _busy) return;
     setState(() => _busy = true);
     try {
+      // A2: INSERT '직전' 주간한도 검사(읽기전용 RPC). can_ask=false 면 생성 차단.
+      // ★ 한계: 이는 '클라이언트 검사'라 앱을 우회한 직접 INSERT는 못 막는다.
+      //   서버측 강제는 question_threads INSERT 트리거가 필요하다(출시 후 백엔드 보강).
+      //   RPC 실패(usage==null)면 판정 불가 → 흐름을 막지 않고 진행(보수적: DB도 미강제).
+      final WeeklyQuestionUsage? usage = await _read.weeklyUsage(
+        studentId: widget.room.studentId,
+        mentorId: widget.room.mentorId,
+      );
+      if (usage != null && !usage.canAsk) {
+        if (mounted) {
+          setState(() => _busy = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(usage.blockMessage)),
+          );
+        }
+        return;
+      }
       final QuestionThread thread = await _write.createThread(
         roomId: widget.room.id,
         title: title.isEmpty ? null : title,

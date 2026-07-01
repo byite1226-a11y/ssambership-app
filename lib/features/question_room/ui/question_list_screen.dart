@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entitlement/subscription_summary.dart';
+import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/primary_button.dart';
@@ -40,13 +41,29 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
   late Future<List<QuestionThread>> _future;
   bool _busy = false;
 
+  /// A2: 이번 주 질문 사용량(잔여 표시용). null = 미조회/실패 → 표시 생략.
+  WeeklyQuestionUsage? _usage;
+
   @override
   void initState() {
     super.initState();
     _future = _read.threads(widget.room.id);
+    _loadUsage();
   }
 
-  void _refresh() => setState(() => _future = _read.threads(widget.room.id));
+  void _refresh() {
+    setState(() => _future = _read.threads(widget.room.id));
+    _loadUsage();
+  }
+
+  /// 주간 사용량 조회(읽기전용). 실패해도 화면 흐름은 막지 않는다.
+  Future<void> _loadUsage() async {
+    final WeeklyQuestionUsage? u = await _read.weeklyUsage(
+      studentId: widget.room.studentId,
+      mentorId: widget.room.mentorId,
+    );
+    if (mounted) setState(() => _usage = u);
+  }
 
   bool get _canAsk => widget.sub?.canAsk ?? false;
 
@@ -114,14 +131,26 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
   }
 
   Widget _askBar() {
+    final String? remaining = _usage?.remainingLabel;
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: _canAsk
-            ? PrimaryButton(
-                label: '+ 질문하기',
-                onPressed: _busy ? null : _openNewQuestion,
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (remaining != null) ...<Widget>[
+                    Text(remaining,
+                        style: AppTypography.caption,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                  ],
+                  PrimaryButton(
+                    label: '+ 질문하기',
+                    onPressed: _busy ? null : _openNewQuestion,
+                  ),
+                ],
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/errors/app_error.dart';
 import 'models/connection_note.dart';
@@ -76,6 +77,28 @@ class QuestionRoomReadRepository {
       return <String>[];
     } catch (_) {
       return <String>[]; // 조회 실패 → 전체 폴백
+    }
+  }
+
+  /// 주간 질문 사용량(읽기 전용 RPC `get_weekly_question_usage`). A2 앱-계층 검사·표시용.
+  ///
+  /// 반환값(used/limit/remaining/can_ask)이 정본이다. 조회 실패/미인식 형태면 null →
+  /// 호출부는 흐름을 막지 않고(보수적 진행) 검사 없이 넘긴다(DB 미강제 한계 감안).
+  Future<WeeklyQuestionUsage?> weeklyUsage({
+    required String studentId,
+    required String mentorId,
+  }) async {
+    try {
+      final Object? data = await _client.rpc(
+        'get_weekly_question_usage',
+        params: <String, dynamic>{
+          'p_student_id': studentId,
+          'p_mentor_id': mentorId,
+        },
+      );
+      return WeeklyQuestionUsage.fromRpc(data);
+    } catch (_) {
+      return null; // 실패 → 판정 불가(호출부가 보수적으로 처리)
     }
   }
 

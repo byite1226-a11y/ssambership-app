@@ -46,6 +46,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
     _likeCount = widget.post.likeCount;
     _comments = widget.read.comments(CommunityPostType.board, widget.post.id);
     _loadReactionState();
+    // 상세 진입 시 조회수 +1(진입당 1회). RPC 부재 시 조용히 무시.
+    widget.write.incrementBoardView(widget.post.id);
   }
 
   @override

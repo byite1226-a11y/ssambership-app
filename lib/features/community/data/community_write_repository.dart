@@ -74,6 +74,26 @@ class CommunityWriteRepository {
     }
   }
 
+  /// 게시글 조회수 +1(상세 진입 시). 기존 RPC 사용. ★ RPC 부재/실패 시 조용히 무시(조회수만 안 오름).
+  Future<void> incrementBoardView(String postId) async {
+    try {
+      await _client.rpc('increment_community_post_view',
+          params: <String, dynamic>{'p_post_id': postId});
+    } catch (_) {
+      // 증분 RPC 미존재/권한 등 → 조용히 폴백(조회 자체엔 영향 없음).
+    }
+  }
+
+  /// 숏폼 조회수 +1(상세 진입 시). 기존 RPC 사용. ★ RPC 부재/실패 시 조용히 무시.
+  Future<void> incrementShortformView(String postId) async {
+    try {
+      await _client.rpc('increment_shortform_post_view',
+          params: <String, dynamic>{'p_post_id': postId});
+    } catch (_) {
+      // 조용한 폴백.
+    }
+  }
+
   /// 댓글 작성(본인). status='visible'. author_id 는 항상 현재 사용자.
   Future<CommunityComment> addComment({
     required CommunityPostType postType,

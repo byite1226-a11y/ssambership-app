@@ -44,6 +44,8 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
     _likeCount = widget.post.likeCount;
     _comments =
         widget.read.comments(CommunityPostType.shortform, widget.post.id);
+    // 상세 진입 시 조회수 +1(진입당 1회). RPC 부재 시 조용히 무시.
+    widget.write.incrementShortformView(widget.post.id);
   }
 
   @override

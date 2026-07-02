@@ -16,7 +16,8 @@
   - **색·디자인은 동업자 소관**: `lib/design/tokens/color_tokens.dart` 의 색 토큰은 **임시 placeholder hex**다. **통째로 갈아엎지 말고** 값만 확정해서 교체한다(구조·역할명 유지).
   - **표시 규칙**: 화면에 내부 DB명·UUID·이벤트 코드·딥링크 경로·영문 코드값 노출 금지(과목·상태 등은 한글 매핑 사용).
 - **위치**: 앱 = `C:\dev\ssambership_app`. 웹 = 별도 저장소(README 기준 `ssambership_web`), **DB(Supabase)는 앱과 공유**.
-- **완성 현황**: 하단 **5탭 전부** 구현(질문방·커뮤니티·멘토찾기·알림·마이페이지) + **위젯/로직 테스트 121개 전부 통과**(실제 DB·네트워크 없이 mock). `flutter analyze lib/` 에러 0.
+- **완성 현황**: 하단 **5탭 전부** 구현(질문방·커뮤니티·멘토찾기·알림·마이페이지) + **필기·주석 시리즈(S13~S15·첨부 퀵윈) 완료** + **위젯/로직 테스트 185개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0.
+  - 참고: 별도로 **pre-existing 실패 12건**이 있으나, 헤드리스 환경의 셰이더(`ink_sparkle.frag`/`FragmentProgram.fromAsset`) 이슈로 community·mypage 등에서 발생하며 **필기 시리즈와 무관함이 baseline 으로 검증**됐다. (기존 "121개 전부 통과" 문구는 이 사실로 대체.)
 
 ---
 
@@ -42,6 +43,55 @@
 
 ---
 
+## 2-B. 필기·주석 시리즈 (S13~S15 + 첨부 퀵윈)
+
+연결노트 필기와 첨부 이미지 주석 기능. 모두 `master` squash 머지 완료.
+
+| 세션 | 커밋 | 내용 |
+|---|---|---|
+| **S13** 공유 잉크 코어 | `2cdb650` | `lib/core/ink/` 5모듈(입력모드·문서봉투 `InkDocument`·좌표정합 `InkCoordinateMapper`·Storage 경로·scribble 어댑터). `scribble ^0.10.0+1` 도입 |
+| **S14-1** 필기 화면 | `b089e98` | `ink_note/` 풀스크린 필기 화면·캔버스·P0 툴바(펜/지우개·undo/redo·색 3·굵기 3·손가락 토글) |
+| **S14-2** 필기 저장 계층 | `8000006` | `ink_note_repository`(주입형 포트) + `ConnectionNote` 에 `inkPath`·`inkThumbPath` + 재편집 + 경로 규약 정합 수정 |
+| **첨부 퀵윈** | `c32d53f` | `attachment_upload` 버킷명 정정·경로 roomId 접두·`_storageReady=true` + `chat_screen`/`mentor_answer_screen` 배선 |
+| **S15** 첨부 이미지 주석 | `20840dc` | `scan_annotation/` 4모듈(화면·flattener·sketch 헬퍼·repository). 진입점 = 채팅 입력바의 **전송 전 이미지 미리보기 '주석 달기'** |
+
+### 모듈 지도
+```
+lib/core/ink/                     ← 공유 코어(필기·주석 공통). 시그니처 변경 금지·추가만.
+  ink_input_mode.dart               입력 모드(펜 전용/손가락 허용) 정책 단일 소스
+  ink_document.dart                 문서 봉투(canvas·sketch·inputMode·updatedAt) + JSON 직렬화
+  ink_coordinate_mapper.dart        ★ 이미지 기준 0..1 정규화 좌표 정합의 단일 소스
+  ink_storage_paths.dart            버킷·경로 규약(연결노트 필기 / 스캔 주석)
+  scribble_ink_adapter.dart         scribble 엔진 어댑터(생성/복원/내보내기/썸네일/입력모드)
+lib/features/question_room/ink_note/   ← 연결노트 필기(S14)
+  ink_note_screen.dart · ink_note_result.dart · widgets/(ink_canvas·ink_toolbar) · data/ink_note_repository.dart
+lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
+  scan_annotation_screen.dart · annotation_flattener.dart · annotation_sketch.dart · data/scan_annotation_repository.dart
+```
+
+### 저장 규약 (Supabase 실사 기준)
+| 용도 | 버킷 | 경로 | 정책 요건 |
+|---|---|---|---|
+| 질문방 첨부 | `question-room-attachments` | `{roomId}/{threadId}/{ts}_{name}` | `user_is_room_party_for_qra_path` — **경로 첫 세그먼트 = room UUID** |
+| 연결노트 필기 원본 | `connection-note-ink`(비공개) | `{roomId}/{authorId}/ink.json` | 방 참여자 insert/select/update, **첫 세그먼트=roomId** |
+| 연결노트 필기 썸네일 | `connection-note-ink` | `{roomId}/{authorId}/thumb.png` | (동일) |
+| 스캔 주석 원본(재편집용) | `scan-annotations` | `{roomId}/{attachmentId}/ink.json` | 방 참여자 insert/select/update, **첫 세그먼트=roomId** |
+| 스캔 주석 평탄화 PNG | (기존 첨부 파이프라인으로 전송) | — | 첨부와 동일 규약 |
+
+- `connection_notes` 에 `ink_path`·`ink_thumb_path`(nullable, 코멘트 포함) 컬럼 추가 — **웹 기존 코드 무영향**.
+- 필기·주석 스트로크는 화면 픽셀이 아니라 **이미지 기준 0..1 정규화 좌표**로 저장(저장 직전 `InkCoordinateMapper` normalize, 복원 시 denormalize). 기기·줌과 무관하게 첨삭 위치가 보존된다.
+
+### 재사용 원칙 (지뢰)
+- **`lib/core/ink/` 의 기존 API 시그니처는 변경 금지 — 추가만 허용.** S14·S15 는 이 코어를 소비만 했다.
+- **`InkToolbar`(S14) 는 주석 화면에서 그대로 재사용** — 수정 시 하위호환 유지하며 옵션 추가만.
+- **첨부 업로더(`SupabaseAttachmentUploader`)는 재구현 금지** — 주석 평탄화 PNG 전송도 이 기존 파이프라인을 호출한다.
+
+### 잔여 (다음 작업)
+- **실기기 스타일러스 QA(에뮬레이터 불가)**: 필압·팜리젝션·손가락 줌 공존·기기 간 좌표 정합·평탄화 정확도.
+- **백로그 — 이미지 뷰어(서명 URL 원본 보기)**: 현재 주석 진입점은 '전송 전' 미리보기뿐. 뷰어가 생기면 **전송된 첨부 메시지에서 주석 진입점** 추가 가능(S15 repository 는 이미 재편집 로드/저장 지원).
+
+---
+
 ## 3. 동업자가 할 일 (우선순위 순)
 
 각 항목: **왜 / 어디에 무엇을 / 하면 무엇이 켜지나** + 실제 코드 위치.
@@ -56,13 +106,13 @@
 - **구조**: 서비스 `lib/core/web_bridge/web_bridge.dart`(`WebBridge`, launcher 주입 가능), 화면 헬퍼 `web_bridge_actions.dart`(`openSubscribeWeb`/`openRechargeWeb`/`openBillingManageWeb`/`openPayoutManageWeb`/`openProfileEditWeb`). 모든 화면이 이 헬퍼만 호출한다(중복 없음).
 - **(선택) 웹→앱 복귀 딥링크**: 결제 완료 후 앱 복귀 스킴은 미구현(핵심은 "웹 열기"까지). 필요 시 앱 스킴 등록(모바일 빌드) + 콜백 라우트 설계.
 
-### 3-2. 이미지 첨부 (Storage 버킷 + image_picker)
-- **왜**: 질문방 채팅에 첨부 버튼·미리보기·업로드 코드는 완성됐지만 **저장소 버킷이 없고**, **이미지 선택기(image_picker)가 미도입**이라 실제 첨부는 보류 상태.
-- **어디에 무엇을**: `lib/features/question_room/data/attachments/attachment_upload.dart`
-  1. Supabase Storage에 **버킷 생성**(이름: `SupabaseAttachmentUploader.bucket = 'question-attachments'`, line 93 — 실제 확정 이름으로 맞출 것) + **"방 참여자만 read/write" 정책**. 그 뒤 `static const bool _storageReady = false;` **(line 96)** → `true`.
-  2. `pubspec.yaml` 에 `image_picker` 추가 + Android/iOS 권한 설정. `DisabledImagePicker`(line 61, `isAvailable=false`) 대신 실제 `ImagePickerPort` 구현을 화면에 주입.
-- **하면**: 첨부 버튼 → 이미지 선택 → 미리보기 → 업로드 + `question_attachments` 행 생성 → 채팅 표시(이미지 뷰어는 서명 URL 필요, 추가 구현).
-- **제약(고정)**: 업로드 제한 문구 `kAttachmentRestrictionText`(line 10, 교재 PDF 등 저작권 자료 금지), 최대 5MB(`kMaxAttachmentBytes`, line 23), 이미지 형식만. `question_attachments` 컬럼: `thread_id·message_id·storage_path·file_name·mime_type`.
+### 3-2. 이미지 첨부 — ✅ 연결 완료 (실사 정정)
+- **정정(중요)**: 기존 HANDOFF의 "`question-attachments` 버킷 없음 → 오너 생성 필요"는 **오기**였다. Supabase 실사 결과 **실제 버킷 `question-room-attachments` 가 방 참여자 정책과 함께 이미 존재**했고, **첨부 퀵윈(`c32d53f`)으로 앱 연결을 완료**했다.
+  - `attachment_upload.dart`: `bucket = 'question-room-attachments'`, `_storageReady = true`, 업로드 경로 **`{roomId}/{threadId}/{ts}_{name}`**(정책 `user_is_room_party_for_qra_path` — **첫 세그먼트 = room UUID** 요건 충족).
+  - 이미지 선택기: `DeviceImagePicker`(image_picker 기반, `isAvailable=true`)가 이미 `chat_screen`·`mentor_answer_screen` 기본으로 주입됨.
+- **동작**: 첨부 버튼 → 갤러리 선택 → 미리보기 → 업로드 + `question_attachments` 행 생성. (전송 전 미리보기에서 **'주석 달기'**(S15)로 진입 가능.)
+- **남은 것(백로그)**: **채팅에서 전송된 첨부 이미지 뷰어(서명 URL 원본 보기)** — 이게 생기면 전송된 메시지에서도 주석 진입점을 붙일 수 있다.
+- **제약(고정)**: 업로드 제한 문구 `kAttachmentRestrictionText`(교재 PDF 등 저작권 자료 금지), 최대 5MB(`kMaxAttachmentBytes`), 이미지 형식만. `question_attachments` 컬럼: `thread_id·message_id·storage_path·file_name·mime_type`.
 
 ### 3-3. 실시간(Realtime) publication 확인
 - **왜**: 채팅 실시간 구독 코드는 완성. Realtime **서비스는 가동 중**이나, 대상 테이블이 publication에 포함됐는지 미확인.
@@ -116,7 +166,8 @@
 
 ## 6. 검증·실행
 
-- **테스트**: `flutter test` → **121개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0. 코드 변경 후 이 둘을 유지할 것.
+- **테스트**: `flutter test` → **185개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0. 코드 변경 후 이 둘을 유지할 것.
+  - 별도 **pre-existing 실패 12건**은 헤드리스 환경 셰이더(`ink_sparkle.frag`/`FragmentProgram.fromAsset`) 이슈(community·mypage 등)로, 필기 시리즈와 무관함이 baseline 으로 검증됨. 실기기/정상 렌더 환경에선 영향 없음.
 - **로컬 실행**: 웹 서버 모드 권장 — `flutter run -d web-server --web-port 5599` (`http://127.0.0.1:5599`). `-d chrome` 직접 구동은 이 환경에서 불안정하니 지양(URL을 브라우저에 직접 붙여 확인).
 - **백엔드**: 개발은 **웹과 공유하는 로컬 Supabase**(`http://127.0.0.1:54321`). 앱 `.env` 의 `SUPABASE_URL` 이 웹 로컬 스택과 일치해야 함. URL은 플랫폼별 자동 분기(`lib/core/config/app_config.dart`: Android 에뮬 `10.0.2.2`, iOS/데스크탑 `127.0.0.1`, 실기기 `.env` `SUPABASE_URL_LAN`).
 - **로컬 테스트 계정**: **웹 시드에 정의됨**(앱 저장소엔 계정 목록 없음 — **정확한 값은 웹 시드/`users` 테이블에서 확인 필요**). 시드 사용자 예: 학생/멘토(가격설정·가격미설정 멘토, 시드멘토1~16)·관리자. 관리자로는 앱 로그인이 **차단**된다(정상). 오너 제공 예시 계정(예: `local.student@…`, `local.mentor.priced@…`)의 정확한 주소·비밀번호는 웹 시드 기준으로 확인.
@@ -132,11 +183,11 @@ lib/
   core/       supabase/ · config/(app_config) · auth/(AuthService·역할·계정상태) ·
               entitlement/(구독요약) · web_bridge/(★결제 동선 단일 소스) · push/(푸시 골격) · deeplink/
   design/     tokens/(color_tokens·typography) · widgets/(공통 10종)
-  features/   auth/ onboarding/ question_room/ community/ mentors/ notifications/ mypage/
+  features/   auth/ onboarding/ question_room/(+ink_note 필기) community/ mentors/ notifications/ mypage/ scan_annotation/(첨부 주석)
               (각 feature: data/ 모델·레포, ui/ 화면·위젯 — 한 파일에 안 몰기)
   shared/     constants/(app_constants·plan_constants) · format/(Formatters) · labels/ · errors/
   data/       mappings/(subject_labels 한글 매핑)
-test/         위젯·로직 테스트(121개, DB 비의존). 폴더: data/ widgets/ screens/ notifications/ web_bridge/ mypage/ community/ push/ labels/
+test/         위젯·로직 테스트(185개, DB 비의존). 폴더: data/ widgets/ screens/ notifications/ web_bridge/ mypage/ community/ push/ labels/ ink/ ink_note/ scan_annotation/
 ```
 
 - **탭 딥링크**: 알림 등에서 `TabNavigator.go(AppTab.questionRoom|myPage|…)`(`lib/app/app_tabs.dart`) → `HomeShell` 이 수신해 탭 전환. (정확한 thread 딥링크가 아니라 관련 **탭 이동** — 필요 시 개선 여지. `mentors`/`mypage` 상단의 `TODO(S10/S11)` 라우트 주석은 탭이 이미 HomeShell에 연결돼 있어 **실제 변경 불필요**한 참고 표시임.)
@@ -145,7 +196,7 @@ test/         위젯·로직 테스트(121개, DB 비의존). 폴더: data/ widg
 
 ### 인수인계 요약 (한 줄씩)
 1. `web_bridge_config.dart` `baseUrl` 채우기 → 결제 동선 즉시 켜짐.
-2. Storage 버킷 생성 + `_storageReady=true`, image_picker 도입 → 이미지 첨부 켜짐.
+2. ✅ 이미지 첨부 **연결 완료**(버킷 `question-room-attachments` 실존 + `_storageReady=true` + `DeviceImagePicker`) — 첨부 퀵윈. 남은 백로그: 전송된 첨부 이미지 뷰어(서명 URL).
 3. `supabase_realtime` publication에 질문 테이블 포함 → 실시간 켜짐(없어도 폴백 동작).
 4. Firebase 도입 + `device_tokens` DDL(`_tableExists=true`) + `send-push` 배포(`_deployed=true`) + `PushTrigger` 연결 → 푸시 켜짐.
 5. `color_tokens.dart` hex 확정.

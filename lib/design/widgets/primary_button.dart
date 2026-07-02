@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
+import '../tokens/dimens.dart';
 
 /// 주요 액션 버튼.
 /// ★ 강조색은 역할색(학생 파랑/멘토 초록)을 따른다 — AppAccent.of(context).
@@ -40,7 +41,8 @@ class PrimaryButton extends StatelessWidget {
         disabledBackgroundColor: ColorTokens.muted,
         disabledForegroundColor: ColorTokens.secondary,
         minimumSize: const Size(0, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.button)),
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
       ),
       child: child,

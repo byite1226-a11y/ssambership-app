@@ -11,10 +11,18 @@ import '../../data/models/question_message.dart';
 ///   학생 화면에선 학생=우측/멘토=좌측, 멘토 화면에선 멘토=우측/학생=좌측로
 ///   자동으로 '거울상'이 된다(author_id == 내 uid 기준).
 class MessageBubble extends StatelessWidget {
-  const MessageBubble({super.key, required this.message, required this.mine});
+  const MessageBubble({
+    super.key,
+    required this.message,
+    required this.mine,
+    this.attachments = const <Widget>[],
+  });
 
   final QuestionMessage message;
   final bool mine;
+
+  /// 이 메시지에 연결된 이미지 첨부 위젯(썸네일). 상위(LiveMessageList)가 만들어 넣는다.
+  final List<Widget> attachments;
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +61,22 @@ class MessageBubble extends StatelessWidget {
                 borderRadius: bubbleRadius,
                 border: mine ? null : Border.all(color: ColorTokens.border),
               ),
-              child: Text(message.body,
-                  style: AppTypography.body.copyWith(color: fg, height: 1.35)),
+              child: Column(
+                crossAxisAlignment:
+                    mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (message.body.isNotEmpty)
+                    Text(message.body,
+                        style: AppTypography.body
+                            .copyWith(color: fg, height: 1.35)),
+                  for (final Widget a in attachments) ...<Widget>[
+                    if (message.body.isNotEmpty || a != attachments.first)
+                      const SizedBox(height: 8),
+                    a,
+                  ],
+                ],
+              ),
             ),
           ),
           if (!mine)

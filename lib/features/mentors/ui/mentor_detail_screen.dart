@@ -51,7 +51,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
                 runSpacing: 6,
                 children: <Widget>[
                   for (final String s in m.subjects)
-                    AppBadge(label: s, tinted: true),
+                    AppBadge(label: s),
                 ],
               ),
             ),

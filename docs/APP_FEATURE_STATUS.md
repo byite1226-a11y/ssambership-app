@@ -35,16 +35,42 @@
 
 ---
 
+## 🆕 2026-07-02 필기·주석 시리즈(S13~S15·퀵윈) — 완료
+
+Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적용)로 인프라를 확인·정정하고 아래를 **완료**했다. 모두 `master` squash 머지.
+
+| 기능 | 상태 | 커밋 | 저장 규약 |
+|---|---|---|---|
+| **연결노트 필기**(캔버스·P0 툴바·저장·재편집) | ✅ 완전작동 | S13 `2cdb650`·S14-1 `b089e98`·S14-2 `8000006` | 버킷 `connection-note-ink`(비공개), `{roomId}/{authorId}/ink.json`·`thumb.png`. `connection_notes.ink_path`·`ink_thumb_path` 추가 |
+| **질문방 이미지 첨부 업로드** | ✅ 완전작동 | 퀵윈 `c32d53f` | 버킷 `question-room-attachments`(실존), `{roomId}/{threadId}/{ts}_{name}`, `_storageReady=true` |
+| **첨부 이미지 주석**(그리기·평탄화 전송·재편집 저장) | ✅ 완전작동 | S15 `20840dc` | 원본 `scan-annotations` `{roomId}/{attachmentId}/ink.json`, 평탄화 PNG는 기존 첨부 파이프라인으로 전송 |
+
+### 인프라 실사 정정 (기존 문서의 오기 바로잡음)
+- **[정정]** 기존 "`question-attachments` 버킷 없음, 오너 생성 필요"는 **오기** — 실제 버킷 **`question-room-attachments`** 가 방 참여자 정책(insert/select)과 함께 **이미 존재**했고 퀵윈으로 앱 연결 완료. 정책 `user_is_room_party_for_qra_path` 상 **경로 첫 세그먼트 = room UUID** 요건.
+- **신설**: 버킷 `connection-note-ink`(비공개) + 방 참여자 insert/select/update 정책.
+- **기존재 확인**: 버킷 `scan-annotations` + insert/select/update 정책 — S15가 재편집용 원본 저장에 사용.
+- **DB**: `connection_notes` 에 `ink_path`·`ink_thumb_path`(nullable, 코멘트 포함) 추가 — **웹 기존 코드 무영향**.
+
+### 테스트
+- `flutter test` 전체 **185개 통과**(mock/fake 주입). `flutter analyze` 에러 0.
+- 별도 **pre-existing 실패 12건**은 헤드리스 환경 셰이더(`ink_sparkle.frag`/`FragmentProgram.fromAsset`) 이슈(community·mypage 등)로, **필기 시리즈와 무관함이 baseline 으로 검증**됨.
+
+### 잔여(다음 작업)
+- **실기기 스타일러스 QA**(에뮬레이터 불가): 필압·팜리젝션·손가락 줌 공존·기기 간 좌표 정합·평탄화 정확도.
+- **백로그**: 전송된 첨부 이미지 뷰어(서명 URL) — 생기면 전송된 메시지에서 주석 진입점 추가 가능. pre-existing 12건. Supabase 어드바이저 기존 경고(예: `payout_runs` RLS 정책 부재 — 웹 소관 추정).
+
+---
+
 ## ★ 먼저: 미완·깨짐 요약 (출시 전 판단할 것)
 
 **하드 '깨짐(에러·크래시)'은 0건.** 코어 Q&A 루프(질문 작성→답변→확인)와 조회 기능들은 실제 Supabase에 연결되어 작동한다.
-문제는 **'보이지만 실제로는 안 되는' 기능 8종**과 **인프라 대기 스텁**이다.
+문제는 **'보이지만 실제로는 안 되는' 기능 7종**(기존 8종 중 채팅 첨부는 2026-07-02 퀵윈으로 해결)과 **인프라 대기 스텁**이다.
 
 ### 🔴 '보이지만 실제로는 안 되는' 기능 (사용자가 눌렀는데 반응 없음/저장 안 됨)
 | # | 기능 | 증상 | 근거 | 종류 |
 |---|---|---|---|---|
 | 1 | **구독/충전/결제·정산·프로필편집/약관 버튼** | 눌러도 웹 안 열리고 "준비 중" 스낵바만 | `web_bridge_config.dart:14` `baseUrl=''` | **오너 설정값**(URL 확정 시 즉시 동작) |
-| 2 | **채팅 이미지/파일 첨부** | 첨부 버튼 보이나 "준비 중(저장소/ image_picker 인수인계)" | `chat_screen.dart:149-164`, `mentor_answer_screen.dart:154-168`, `attachment_upload.dart:61,96` | **인프라**(Storage 버킷 + image_picker 패키지) |
+| 2 | ~~채팅 이미지 첨부~~ **✅ 해결** | 업로드 연결 완료(버킷 `question-room-attachments` 실존·`_storageReady=true`) | 퀵윈 `c32d53f`, `attachment_upload.dart` | 완료(전송된 이미지 뷰어만 백로그) |
 | 3 | **숏폼 영상 재생** | 재생 아이콘 보이나 눌러도 재생 안 됨(썸네일만) | `thumbnail_view.dart:6,29`, `shortform_card.dart:10`, `community_models.dart:67` | **인프라/패키지**(video player 미도입) |
 | 4 | **숏폼 좋아요/스크랩** | 토글은 되나 기존 반응 상태 미로드 → 항상 꺼진 것으로 보임 | `shortform_detail_screen.dart:42-47`(initState에 상태로드 없음) | **앱만** |
 | 5 | **커뮤니티 조회수** | "조회 N" 표시되나 글 진입해도 증가 안 함 | `community_read_repository.dart`(incrementView 부재) | **인프라**(증분 RPC) |
@@ -61,7 +87,7 @@
 
 ### 실질 출시 판단(핵심)
 - **가장 크리티컬(코어 수익 동선)**: #1 `baseUrl` 미설정 → 구독·충전·결제가 전부 "준비 중". 구독형 앱인데 **가입·구독 진입이 막힘**. URL만 확정하면 즉시 해제(앱 코드 한 곳). **출시 전 필수.**
-- **범위 의존**: 숏폼(#3 재생)·첨부(#2)를 출시 범위에 넣으면 그 기능은 미완 노출 → 범위 제외하거나 가려야 함.
+- **범위 의존**: 숏폼(#3 재생)을 출시 범위에 넣으면 미완 노출 → 범위 제외하거나 가려야 함. (첨부는 업로드 완료 — 전송된 원본 이미지 뷰어만 백로그.)
 - **UX 저하(비차단)**: 딥링크·조회수·숏폼반응·알림토글·페이징·푸시 — 코어 작동엔 지장 없음.
 
 ---
@@ -69,8 +95,8 @@
 ## 집계
 | 판정 | 건수 | 비고 |
 |---|---|---|
-| **완전작동** | 25 | 실제 Supabase 쿼리·배선 완결 |
-| **부분구현** | 7 | 일부만 동작(위 🔴 다수) |
+| **완전작동** | 28 | 실제 Supabase 쿼리·배선 완결 (+필기·주석·첨부 업로드 — 2026-07-02 필기 시리즈 반영) |
+| **부분구현** | 6 | 일부만 동작(위 🔴; 첨부 업로드는 완료로 이동) |
 | **미완·스텁** | 6 | 골격/인프라 대기(위 🟠) |
 | **깨짐** | 0 | 크래시·에러 없음 |
 
@@ -86,8 +112,10 @@
 | 질문 스레드 목록 | 완전작동 | `question_list_screen.dart:50`, `read_repository.dart:38-45` | 없음 | 앱 |
 | 질문작성+과목필터(A1)+주간한도(A2) | 완전작동 | `new_question_screen.dart:44-96`(mentorTeachingSubjects·weeklyUsage RPC·createThread INSERT) | 없음 | 앱(단, A2 서버강제는 DB 트리거 필요) |
 | 채팅·답변보기·실시간 | 완전작동 | `chat_screen.dart:91-128`, `thread_realtime.dart:27-87`(postgres_changes) | 실시간은 publication 필요, 미포함시 수동새로고침 폴백 | **인프라**(realtime publication) |
-| 첨부(이미지/파일) | 부분구현 | `attachment_upload.dart:61,96`(disabled), `chat_screen.dart:149-164`(준비중 안내), 표시 미연결 | 🔴 첨부 불가 | **인프라**(Storage 버킷+image_picker) |
+| 첨부(이미지) 업로드 | 완전작동 | `attachment_upload.dart`(`_storageReady=true`, 버킷 `question-room-attachments`), `chat_screen`·`mentor_answer_screen` 배선, `DeviceImagePicker` | 없음(전송된 원본 뷰어는 백로그) | 앱(퀵윈 `c32d53f`) |
 | 연결노트(읽기/쓰기) | 완전작동 | `connection_notes_screen.dart:58-97`(notes·upsertMyNote 실쿼리) | 없음 | 앱 |
+| 연결노트 **필기**(캔버스·P0 툴바·저장·재편집) | 완전작동 | `ink_note/`(S14), `ink_note_repository.dart` 주입형 포트 | 없음 | 앱(버킷 `connection-note-ink`) |
+| 첨부 이미지 **주석**(그리기·평탄화 전송·재편집 저장) | 완전작동 | `scan_annotation/`(S15), 진입점=`chat_input_bar` 전송 전 미리보기 '주석 달기' | 없음 | 앱(버킷 `scan-annotations`+기존 첨부 파이프라인) |
 | 답변 확인(confirm) | 완전작동 | `question_list_screen.dart:207-221`, `write_repository.dart:76-99`(UPDATE) | 없음 | 앱 |
 
 ### 2) 커뮤니티 (community)
@@ -143,7 +171,7 @@
 | 항목 | 필요 인프라 | 영향 기능 | 인수인계 문서 |
 |---|---|---|---|
 | 웹 도메인 확정 | `WebBridgeConfig.baseUrl` 설정값(오너) | 구독·충전·결제·정산·프로필편집·회원가입 | (S12) `web_bridge_config.dart` 주석 |
-| Storage 버킷 + image_picker | `question-attachments` 버킷 생성 + 패키지 도입 | 채팅 첨부 | (S6) `attachment_upload.dart` |
+| ~~Storage 버킷 + image_picker~~ **✅ 완료** | 버킷 `question-room-attachments` 실존·연결(퀵윈 `c32d53f`), `DeviceImagePicker` | 채팅 첨부·필기·주석 저장 | 완료 — 전송된 이미지 뷰어(서명 URL)만 백로그 |
 | Realtime publication | question_messages·question_threads를 `supabase_realtime`에 포함 | 실시간 채팅(미포함시 폴백) | (S6) `thread_realtime.dart:23` |
 | 숏폼 video player | video player 패키지 + 재생 배선 | 숏폼 영상 | `thumbnail_view.dart` |
 | 조회수 증분 RPC | `increment_*_view` RPC | 커뮤니티 조회수 | `community_*_repository` |

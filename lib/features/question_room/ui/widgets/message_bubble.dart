@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../shared/format/formatters.dart';
@@ -26,7 +27,7 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = mine ? ColorTokens.accent : ColorTokens.surface;
+    final Color bg = mine ? AppAccent.of(context).accent : ColorTokens.surface;
     final Color fg = mine ? ColorTokens.page : ColorTokens.primary;
     // 말풍선 폭은 화면의 약 72% 로 제한 — 좁은 화면에서 자연스럽게 줄바꿈, 넓은 화면에서 과도하게 늘어나지 않음.
     final double maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.72;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../data/attachments/attachment_upload.dart';
@@ -88,7 +89,7 @@ class ChatInputBar extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     Icons.send,
-                    color: sending ? ColorTokens.muted : ColorTokens.accent,
+                    color: sending ? ColorTokens.muted : AppAccent.of(context).accent,
                   ),
                   tooltip: sendTooltip,
                   onPressed: sending ? null : onSend,
@@ -146,8 +147,8 @@ class _AttachmentPreview extends StatelessWidget {
               ),
               if (onAnnotate != null)
                 IconButton(
-                  icon: const Icon(Icons.draw_outlined,
-                      size: 18, color: ColorTokens.accent),
+                  icon: Icon(Icons.draw_outlined,
+                      size: 18, color: AppAccent.of(context).accent),
                   tooltip: '주석 달기',
                   onPressed: onAnnotate,
                 ),

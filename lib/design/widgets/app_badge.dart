@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
 
 /// 작은 라벨(과목·플랜 등). 한글 라벨만 받는다(영문 코드값 노출 금지 — 호출부에서 매핑).
@@ -17,7 +18,7 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color base = tinted ? ColorTokens.accent : ColorTokens.secondary;
+    final Color base = tinted ? AppAccent.of(context).accent : ColorTokens.secondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -27,7 +28,7 @@ class AppBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: tinted ? ColorTokens.accent : ColorTokens.secondary,
+          color: tinted ? AppAccent.of(context).accent : ColorTokens.secondary,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),

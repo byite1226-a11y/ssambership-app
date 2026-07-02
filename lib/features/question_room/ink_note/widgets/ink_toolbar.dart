@@ -3,6 +3,7 @@ import 'package:scribble/scribble.dart';
 
 import '../../../../core/ink/ink_input_mode.dart';
 import '../../../../core/ink/scribble_ink_adapter.dart';
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 
 /// 하단 고정 P0 툴바(모바일 1차).
@@ -234,7 +235,7 @@ class _ToolIconButton extends StatelessWidget {
       icon: Icon(icon),
       tooltip: tooltip,
       onPressed: onPressed,
-      color: selected ? ColorTokens.accent : ColorTokens.primary,
+      color: selected ? AppAccent.of(context).accent : ColorTokens.primary,
       disabledColor: ColorTokens.muted,
       iconSize: 22,
       visualDensity: VisualDensity.compact,
@@ -272,7 +273,7 @@ class _ColorSwatch extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
               border: Border.all(
-                color: selected ? ColorTokens.accent : ColorTokens.border,
+                color: selected ? AppAccent.of(context).accent : ColorTokens.border,
                 width: selected ? 3 : 1.4,
               ),
             ),
@@ -311,7 +312,7 @@ class _WidthDot extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: selected ? ColorTokens.accent : Colors.transparent,
+              color: selected ? AppAccent.of(context).accent : Colors.transparent,
               width: 2,
             ),
           ),

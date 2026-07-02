@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/primary_button.dart';
@@ -60,7 +61,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                 dense: true,
                 value: r.key,
                 groupValue: _reason,
-                activeColor: ColorTokens.accent,
+                activeColor: AppAccent.of(context).accent,
                 onChanged: (String? v) =>
                     setState(() => _reason = v ?? _reason),
                 title: Text(r.value, style: AppTypography.body),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
 
 /// 가로 스크롤 칩 행(멘토 전환 칩 등). 활성 칩은 accent-tint, 비활성은 중립.
@@ -51,24 +52,23 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final RoleAccent ra = AppAccent.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: active
-              ? ColorTokens.accent.withOpacity(0.16)
-              : ColorTokens.surface,
+          color: active ? ra.accentSoft : ColorTokens.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: active ? ColorTokens.accent : ColorTokens.border,
+            color: active ? ra.accent : ColorTokens.border,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: active ? ColorTokens.accent : ColorTokens.secondary,
+            color: active ? ra.accent : ColorTokens.secondary,
             fontSize: 13,
             fontWeight: active ? FontWeight.w800 : FontWeight.w600,
           ),

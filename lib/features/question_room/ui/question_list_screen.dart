@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../core/entitlement/weekly_question_usage.dart';
+import '../../../design/role_accent.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/primary_button.dart';
@@ -78,7 +79,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
             onPressed: _openNotes,
             icon: const Icon(Icons.sticky_note_2_outlined, size: 20),
             label: const Text('연결노트'),
-            style: TextButton.styleFrom(foregroundColor: ColorTokens.accent),
+            style: TextButton.styleFrom(foregroundColor: AppAccent.of(context).accent),
           ),
           const SizedBox(width: 4),
         ],
@@ -285,8 +286,8 @@ class InitialAvatarLike extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Text(label,
-          style: const TextStyle(
-              color: ColorTokens.accent, fontWeight: FontWeight.w800)),
+          style: TextStyle(
+              color: AppAccent.of(context).accent, fontWeight: FontWeight.w800)),
     );
   }
 }

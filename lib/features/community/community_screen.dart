@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/role_accent.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../design/tokens/typography.dart';
 import 'data/community_read_repository.dart';
@@ -32,9 +33,9 @@ class CommunityScreen extends StatelessWidget {
         body: Column(
           children: <Widget>[
             TabBar(
-              labelColor: ColorTokens.accent,
+              labelColor: AppAccent.of(context).accent,
               unselectedLabelColor: ColorTokens.secondary,
-              indicatorColor: ColorTokens.accent,
+              indicatorColor: AppAccent.of(context).accent,
               labelStyle: AppTypography.body,
               tabs: const <Widget>[
                 Tab(text: '숏폼'),
@@ -56,7 +57,7 @@ class CommunityScreen extends StatelessWidget {
         floatingActionButton: Builder(
           builder: (BuildContext ctx) => FloatingActionButton.extended(
             backgroundColor: ColorTokens.surface,
-            foregroundColor: ColorTokens.accent,
+            foregroundColor: AppAccent.of(context).accent,
             onPressed: () => showWriteOnWebNotice(
               ctx,
               shortform: DefaultTabController.of(ctx).index == 0,

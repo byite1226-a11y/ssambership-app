@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../design/role_accent.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../scan_annotation/scan_annotation_screen.dart';
 import '../data/attachments/attachment_url_resolver.dart';
@@ -85,7 +86,7 @@ class _AttachmentViewerScreenState extends State<AttachmentViewerScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.draw_outlined, color: ColorTokens.accent),
+                : Icon(Icons.draw_outlined, color: AppAccent.of(context).accent),
             label: const Text('주석 달기'),
           ),
         ],

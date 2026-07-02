@@ -44,7 +44,7 @@ class _WidgetGalleryState extends State<WidgetGallery> {
           const SizedBox(height: 10),
           const SecondaryButton(label: '비활성', onPressed: null),
 
-          _section('멘토 맥락에서도 액션 = 스카이(역할색/초록 없음)'),
+          _section('역할색: 학생 파랑·멘토 초록(AppAccent)'),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

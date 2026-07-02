@@ -10,6 +10,7 @@ import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
 import '../data/thread_messages_controller.dart';
 import '../data/thread_realtime.dart';
+import '../../scan_annotation/scan_annotation_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/live_message_list.dart';
 import 'widgets/thread_status_pill.dart';
@@ -185,6 +186,30 @@ class _ChatScreenState extends State<ChatScreen> {
         .showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  /// 선택한(전송 전) 이미지에 주석 달기(S15). 완료 시 평탄화 PNG 가 새 첨부로
+  /// 전송되므로, 원본 대기 이미지는 지운다(중복 전송 방지).
+  Future<void> _annotatePending() async {
+    final PickedImage? img = _pending;
+    if (img == null) return;
+    final bool? sent = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => ScanAnnotationScreen(
+          background: img.bytes,
+          roomId: widget.thread.roomId,
+          threadId: widget.thread.id,
+        ),
+      ),
+    );
+    if (sent != true || !mounted) return;
+    setState(() => _pending = null);
+    await _refresh();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('주석을 첨부로 보냈어요.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -217,6 +242,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onAttach: _attach,
             pendingImage: _pending,
             onRemovePending: () => setState(() => _pending = null),
+            onAnnotate: _annotatePending,
           ),
         ],
       ),

@@ -19,6 +19,7 @@ class ChatInputBar extends StatelessWidget {
     this.sendTooltip = '전송',
     this.pendingImage,
     this.onRemovePending,
+    this.onAnnotate,
   });
 
   final TextEditingController controller;
@@ -33,6 +34,9 @@ class ChatInputBar extends StatelessWidget {
   /// 선택했지만 아직 안 보낸 이미지(미리보기). null 이면 미리보기 없음.
   final PickedImage? pendingImage;
   final VoidCallback? onRemovePending;
+
+  /// 선택 이미지에 '주석 달기'(S15). null 이면 주석 액션을 숨긴다(하위호환).
+  final VoidCallback? onAnnotate;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +54,7 @@ class ChatInputBar extends StatelessWidget {
             if (pendingImage != null) _AttachmentPreview(
               image: pendingImage!,
               onRemove: onRemovePending,
+              onAnnotate: onAnnotate,
             ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -99,10 +104,11 @@ class ChatInputBar extends StatelessWidget {
 
 /// 선택 이미지 미리보기 + 업로드 제한 문구 + 제거 버튼.
 class _AttachmentPreview extends StatelessWidget {
-  const _AttachmentPreview({required this.image, this.onRemove});
+  const _AttachmentPreview({required this.image, this.onRemove, this.onAnnotate});
 
   final PickedImage image;
   final VoidCallback? onRemove;
+  final VoidCallback? onAnnotate;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +144,13 @@ class _AttachmentPreview extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (onAnnotate != null)
+                IconButton(
+                  icon: const Icon(Icons.draw_outlined,
+                      size: 18, color: ColorTokens.accent),
+                  tooltip: '주석 달기',
+                  onPressed: onAnnotate,
+                ),
               IconButton(
                 icon: const Icon(Icons.close, size: 18, color: ColorTokens.muted),
                 tooltip: '첨부 제거',

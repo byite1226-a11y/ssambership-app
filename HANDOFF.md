@@ -16,8 +16,8 @@
   - **색·디자인은 동업자 소관**: `lib/design/tokens/color_tokens.dart` 의 색 토큰은 **임시 placeholder hex**다. **통째로 갈아엎지 말고** 값만 확정해서 교체한다(구조·역할명 유지).
   - **표시 규칙**: 화면에 내부 DB명·UUID·이벤트 코드·딥링크 경로·영문 코드값 노출 금지(과목·상태 등은 한글 매핑 사용).
 - **위치**: 앱 = `C:\dev\ssambership_app`. 웹 = 별도 저장소(README 기준 `ssambership_web`), **DB(Supabase)는 앱과 공유**.
-- **완성 현황**: 하단 **5탭 전부** 구현(질문방·커뮤니티·멘토찾기·알림·마이페이지) + **필기·주석 시리즈(S13~S15·첨부 퀵윈) 완료** + **위젯/로직 테스트 185개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0.
-  - 참고: 별도로 **pre-existing 실패 12건**이 있으나, 헤드리스 환경의 셰이더(`ink_sparkle.frag`/`FragmentProgram.fromAsset`) 이슈로 community·mypage 등에서 발생하며 **필기 시리즈와 무관함이 baseline 으로 검증**됐다. (기존 "121개 전부 통과" 문구는 이 사실로 대체.)
+- **완성 현황**: 하단 **5탭 전부** 구현(질문방·커뮤니티·멘토찾기·알림·마이페이지) + **필기·주석 시리즈(S13~S15·첨부 퀵윈·이미지 뷰어) 완료** + **위젯/로직 테스트 192개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0.
+  - 참고: **전체 통과다.** 과거 한때 실패하던 12건(community·mypage 등)은 코드 결함이 아니라 **헤드리스 컨테이너의 셰이더 캐시 미워밍 아티팩트**(`ink_sparkle.frag`/`FragmentProgram.fromAsset` — "Unsupported runtime stages format version. Expected 2, got 0")로 판명됐고, **현재 해소되어 전부 통과**(Flutter 3.44.4 불변 상태에서 확인). (기존 "121개 전부 통과" 문구는 이 사실로 대체.)
 
 ---
 
@@ -88,7 +88,7 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 
 ### 잔여 (다음 작업)
 - **실기기 스타일러스 QA(에뮬레이터 불가)**: 필압·팜리젝션·손가락 줌 공존·기기 간 좌표 정합·평탄화 정확도.
-- **백로그 — 이미지 뷰어(서명 URL 원본 보기)**: 현재 주석 진입점은 '전송 전' 미리보기뿐. 뷰어가 생기면 **전송된 첨부 메시지에서 주석 진입점** 추가 가능(S15 repository 는 이미 재편집 로드/저장 지원).
+- ~~이미지 뷰어(서명 URL) + 전송 후 주석 진입점~~ **✅ 완료(PR #8 `b1fb61a`)**: 채팅 말풍선 이미지 썸네일 + 전체화면 뷰어(줌·팬) + 뷰어에서 '주석 달기'로 전송된 이미지에 주석(S15 화면 재사용). 서명 URL은 `attachment_url_resolver.dart`(만료 1h·메모리 캐시).
 
 ---
 
@@ -111,7 +111,7 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
   - `attachment_upload.dart`: `bucket = 'question-room-attachments'`, `_storageReady = true`, 업로드 경로 **`{roomId}/{threadId}/{ts}_{name}`**(정책 `user_is_room_party_for_qra_path` — **첫 세그먼트 = room UUID** 요건 충족).
   - 이미지 선택기: `DeviceImagePicker`(image_picker 기반, `isAvailable=true`)가 이미 `chat_screen`·`mentor_answer_screen` 기본으로 주입됨.
 - **동작**: 첨부 버튼 → 갤러리 선택 → 미리보기 → 업로드 + `question_attachments` 행 생성. (전송 전 미리보기에서 **'주석 달기'**(S15)로 진입 가능.)
-- **남은 것(백로그)**: **채팅에서 전송된 첨부 이미지 뷰어(서명 URL 원본 보기)** — 이게 생기면 전송된 메시지에서도 주석 진입점을 붙일 수 있다.
+- **✅ 이미지 뷰어 완료(PR #8)**: 채팅 말풍선에 이미지 썸네일 표시 + 탭 시 전체화면 뷰어(서명 URL, 줌·팬) + 뷰어 '주석 달기'로 전송된 이미지에 주석까지 연결됐다. (`attachment_url_resolver.dart`·`attachment_viewer_screen.dart`·`message_image_attachment.dart`.)
 - **제약(고정)**: 업로드 제한 문구 `kAttachmentRestrictionText`(교재 PDF 등 저작권 자료 금지), 최대 5MB(`kMaxAttachmentBytes`), 이미지 형식만. `question_attachments` 컬럼: `thread_id·message_id·storage_path·file_name·mime_type`.
 
 ### 3-3. 실시간(Realtime) publication 확인
@@ -166,8 +166,8 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 
 ## 6. 검증·실행
 
-- **테스트**: `flutter test` → **185개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0. 코드 변경 후 이 둘을 유지할 것.
-  - 별도 **pre-existing 실패 12건**은 헤드리스 환경 셰이더(`ink_sparkle.frag`/`FragmentProgram.fromAsset`) 이슈(community·mypage 등)로, 필기 시리즈와 무관함이 baseline 으로 검증됨. 실기기/정상 렌더 환경에선 영향 없음.
+- **테스트**: `flutter test` → **192개 전부 통과**(실제 DB·네트워크 없이 mock/fake 주입). `flutter analyze lib/` 에러 0. 코드 변경 후 이 둘을 유지할 것.
+  - 과거 한때 실패하던 12건은 헤드리스 컨테이너의 **셰이더 캐시 미워밍 아티팩트**(`ink_sparkle.frag`/`FragmentProgram.fromAsset`)로 판명됐고 **현재 해소되어 전부 통과**(Flutter 3.44.4 불변 상태 확인). 실기기/정상 렌더 환경에선 애초에 무관.
 - **로컬 실행**: 웹 서버 모드 권장 — `flutter run -d web-server --web-port 5599` (`http://127.0.0.1:5599`). `-d chrome` 직접 구동은 이 환경에서 불안정하니 지양(URL을 브라우저에 직접 붙여 확인).
 - **백엔드**: 개발은 **웹과 공유하는 로컬 Supabase**(`http://127.0.0.1:54321`). 앱 `.env` 의 `SUPABASE_URL` 이 웹 로컬 스택과 일치해야 함. URL은 플랫폼별 자동 분기(`lib/core/config/app_config.dart`: Android 에뮬 `10.0.2.2`, iOS/데스크탑 `127.0.0.1`, 실기기 `.env` `SUPABASE_URL_LAN`).
 - **로컬 테스트 계정**: **웹 시드에 정의됨**(앱 저장소엔 계정 목록 없음 — **정확한 값은 웹 시드/`users` 테이블에서 확인 필요**). 시드 사용자 예: 학생/멘토(가격설정·가격미설정 멘토, 시드멘토1~16)·관리자. 관리자로는 앱 로그인이 **차단**된다(정상). 오너 제공 예시 계정(예: `local.student@…`, `local.mentor.priced@…`)의 정확한 주소·비밀번호는 웹 시드 기준으로 확인.
@@ -187,7 +187,7 @@ lib/
               (각 feature: data/ 모델·레포, ui/ 화면·위젯 — 한 파일에 안 몰기)
   shared/     constants/(app_constants·plan_constants) · format/(Formatters) · labels/ · errors/
   data/       mappings/(subject_labels 한글 매핑)
-test/         위젯·로직 테스트(185개, DB 비의존). 폴더: data/ widgets/ screens/ notifications/ web_bridge/ mypage/ community/ push/ labels/ ink/ ink_note/ scan_annotation/
+test/         위젯·로직 테스트(192개, DB 비의존). 폴더: data/ widgets/ screens/ notifications/ web_bridge/ mypage/ community/ push/ labels/ ink/ ink_note/ scan_annotation/
 ```
 
 - **탭 딥링크**: 알림 등에서 `TabNavigator.go(AppTab.questionRoom|myPage|…)`(`lib/app/app_tabs.dart`) → `HomeShell` 이 수신해 탭 전환. (정확한 thread 딥링크가 아니라 관련 **탭 이동** — 필요 시 개선 여지. `mentors`/`mypage` 상단의 `TODO(S10/S11)` 라우트 주석은 탭이 이미 HomeShell에 연결돼 있어 **실제 변경 불필요**한 참고 표시임.)
@@ -196,7 +196,7 @@ test/         위젯·로직 테스트(185개, DB 비의존). 폴더: data/ widg
 
 ### 인수인계 요약 (한 줄씩)
 1. `web_bridge_config.dart` `baseUrl` 채우기 → 결제 동선 즉시 켜짐.
-2. ✅ 이미지 첨부 **연결 완료**(버킷 `question-room-attachments` 실존 + `_storageReady=true` + `DeviceImagePicker`) — 첨부 퀵윈. 남은 백로그: 전송된 첨부 이미지 뷰어(서명 URL).
+2. ✅ 이미지 첨부 **연결 완료**(버킷 `question-room-attachments` 실존 + `_storageReady=true` + `DeviceImagePicker`) — 첨부 퀵윈. **전송된 이미지 뷰어(서명 URL)·전송 후 주석 진입점도 완료(PR #8)**.
 3. `supabase_realtime` publication에 질문 테이블 포함 → 실시간 켜짐(없어도 폴백 동작).
 4. Firebase 도입 + `device_tokens` DDL(`_tableExists=true`) + `send-push` 배포(`_deployed=true`) + `PushTrigger` 연결 → 푸시 켜짐.
 5. `color_tokens.dart` hex 확정.

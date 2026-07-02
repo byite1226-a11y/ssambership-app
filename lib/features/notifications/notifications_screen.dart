@@ -145,7 +145,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _open(AppNotification n) {
     _markRead(n); // 이동 시 읽음 처리(이미 읽음이면 no-op).
-    final int tab = n.kind == NotificationKind.subscription
+    // 구독·결제/개별질문 → 마이페이지(진입점 위치), 질문방 → 질문방 탭.
+    final int tab = n.kind == NotificationKind.subscription ||
+            n.kind == NotificationKind.individualQuestion
         ? AppTab.myPage
         : AppTab.questionRoom;
     (widget.onDeepLinkTab ?? TabNavigator.go)(tab);
@@ -185,9 +187,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: ChipScroll(
-            labels: const <String>['전체', '질문방', '구독·결제'],
-            selectedIndex:
-                _kind == null ? 0 : (_kind == NotificationKind.questionRoom ? 1 : 2),
+            labels: const <String>['전체', '질문방', '구독·결제', '개별질문'],
+            selectedIndex: _kindChipIndex,
             onSelected: _onKindSelected,
           ),
         ),
@@ -196,11 +197,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  int get _kindChipIndex {
+    switch (_kind) {
+      case null:
+        return 0;
+      case NotificationKind.questionRoom:
+        return 1;
+      case NotificationKind.subscription:
+        return 2;
+      case NotificationKind.individualQuestion:
+        return 3;
+      case NotificationKind.other:
+        return 0;
+    }
+  }
+
   void _onKindSelected(int i) {
     setState(() {
-      _kind = i == 0
-          ? null
-          : (i == 1 ? NotificationKind.questionRoom : NotificationKind.subscription);
+      switch (i) {
+        case 1:
+          _kind = NotificationKind.questionRoom;
+        case 2:
+          _kind = NotificationKind.subscription;
+        case 3:
+          _kind = NotificationKind.individualQuestion;
+        default:
+          _kind = null;
+      }
     });
   }
 

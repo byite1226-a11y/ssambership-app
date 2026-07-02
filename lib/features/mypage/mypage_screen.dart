@@ -10,6 +10,7 @@ import 'data/mypage_models.dart';
 import 'data/mypage_repository.dart';
 import 'ui/profile_edit_screen.dart';
 import 'ui/sections/cash_section.dart';
+import 'ui/sections/individual_question_section.dart';
 import 'ui/sections/mentor_dashboard_section.dart';
 import 'ui/sections/profile_section.dart';
 import 'ui/sections/settings_section.dart';
@@ -136,6 +137,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         subscriptions: data.subscriptions,
         onGoToQuestions: _goToQuestions,
       ),
+      const IndividualQuestionSection(isMentor: false),
       if (data.cash != null) CashSection(cash: data.cash!),
       const SupportSection(),
     ];
@@ -148,6 +150,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
           data: data.mentor!,
           onGoToQuestions: _goToQuestions,
         ),
+      const IndividualQuestionSection(isMentor: true),
       const SupportSection(),
     ];
   }

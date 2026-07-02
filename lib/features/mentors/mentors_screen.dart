@@ -131,7 +131,11 @@ class _MentorsScreenState extends State<MentorsScreen> {
                       title: '검색 결과가 없어요',
                       message: '다른 과목·이름·학교로 찾아보세요.',
                     )
-                  : ListView.separated(
+                  : Center(
+                      // 태블릿 과폭 방지: 리스트 폭 600 제한·중앙정렬(모바일 390<600 영향 없음, 2열 아님).
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 600),
+                        child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       itemCount: items.length + (_canLoadMore(all) ? 1 : 0),
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -150,6 +154,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
                           onOpen: () => _open(items[i]),
                         );
                       },
+                        ),
+                      ),
                     ),
             ),
           ],

@@ -156,8 +156,12 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       return;
     }
     try {
-      await widget.uploader
-          .upload(threadId: widget.thread.id, messageId: messageId, image: image);
+      await widget.uploader.upload(
+        roomId: widget.thread.roomId,
+        threadId: widget.thread.id,
+        messageId: messageId,
+        image: image,
+      );
       await _refresh();
     } catch (e) {
       _showError('이미지 첨부에 실패했어요. ($e)');

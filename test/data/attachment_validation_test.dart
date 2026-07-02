@@ -36,7 +36,20 @@ void main() {
     expect(await p.pickImage(), isNull);
   });
 
-  test('SupabaseAttachmentUploader: 저장소 미준비(버킷 인수인계)', () {
-    expect(const SupabaseAttachmentUploader().isReady, false);
+  test('SupabaseAttachmentUploader: 버킷 실사 확인 → 활성', () {
+    expect(const SupabaseAttachmentUploader().isReady, true);
+    expect(SupabaseAttachmentUploader.bucket, 'question-room-attachments');
+  });
+
+  test('업로드 경로: 첫 세그먼트가 roomId(정책 규약) + 파일명 안전화', () {
+    final String path = SupabaseAttachmentUploader.buildStoragePath(
+      roomId: 'room-1',
+      threadId: 'thread-9',
+      fileName: 'my photo!.png',
+      timestamp: 1234,
+    );
+    // 정책 통과 조건: 경로 첫 세그먼트 = roomId.
+    expect(path.split('/').first, 'room-1');
+    expect(path, 'room-1/thread-9/1234_my_photo_.png');
   });
 }

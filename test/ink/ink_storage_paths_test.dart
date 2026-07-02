@@ -4,25 +4,31 @@ import 'package:ssambership_app/core/ink/ink_storage_paths.dart';
 
 /// Storage 경로 규약 + 입력 모드 코드 — 형식 고정 회귀 방어.
 void main() {
-  test('연결노트 필기: 원본 JSON 과 썸네일이 같은 폴더·다른 파일로 분리된다', () {
+  test('버킷 상수(정책 정합): 필기·주석 버킷 이름', () {
+    expect(InkStoragePaths.bucket, 'connection-note-ink');
+    expect(InkStoragePaths.annotationBucket, 'scan-annotations');
+  });
+
+  test('연결노트 필기: 첫 세그먼트=roomId, 작성자별로 원본·썸네일 분리(버킷 상대)', () {
+    // 정책 통과 조건: 경로 첫 세그먼트가 room UUID.
     expect(
-      InkStoragePaths.noteDocument('room-1', 'note-9'),
-      'ink-notes/room-1/note-9/ink.json',
+      InkStoragePaths.noteDocument('room-1', 'author-9'),
+      'room-1/author-9/ink.json',
     );
     expect(
-      InkStoragePaths.noteThumbnail('room-1', 'note-9'),
-      'ink-notes/room-1/note-9/thumb.png',
+      InkStoragePaths.noteThumbnail('room-1', 'author-9'),
+      'room-1/author-9/thumb.png',
     );
   });
 
-  test('스캔 주석(S15): 원본과 평탄화 출력 경로', () {
+  test('스캔 주석(S15): 원본과 평탄화 출력 경로(버킷 상대)', () {
     expect(
       InkStoragePaths.annotationDocument('room-1', 'att-3'),
-      'ink-annotations/room-1/att-3/ink.json',
+      'room-1/att-3/ink.json',
     );
     expect(
       InkStoragePaths.annotationFlattened('room-1', 'att-3'),
-      'ink-annotations/room-1/att-3/flat.png',
+      'room-1/att-3/flat.png',
     );
   });
 

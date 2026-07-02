@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:scribble/scribble.dart';
@@ -88,7 +89,10 @@ class _InkNoteScreenState extends State<InkNoteScreen> {
       setState(() => _inputMode = mode);
 
   /// '완료' — 문서를 내보내 결과로 pop. 빈 필기면 결과 없이 pop(null).
-  void _onDone() {
+  ///
+  /// 썸네일은 캔버스가 아직 붙어 있는 이 시점에 생성한다(renderThumbnailPng 는
+  /// RepaintBoundary 접근이 필요). 렌더 실패는 삼키고 원본만으로 저장을 진행한다.
+  Future<void> _onDone() async {
     final InkDocument document = ScribbleInkAdapter.exportDocument(
       _notifier,
       canvasSize: _canvasSize,
@@ -98,8 +102,19 @@ class _InkNoteScreenState extends State<InkNoteScreen> {
       Navigator.of(context).pop(); // 빈 필기: 결과 없이 닫는다.
       return;
     }
+    Uint8List? thumbnail;
+    try {
+      thumbnail = await ScribbleInkAdapter.renderThumbnailPng(_notifier);
+    } catch (_) {
+      thumbnail = null; // 렌더 불가 환경 → 썸네일 없이 저장.
+    }
+    if (!mounted) return;
     Navigator.of(context).pop(
-      InkNoteResult(document: document, modified: _dirty),
+      InkNoteResult(
+        document: document,
+        modified: _dirty,
+        thumbnailPng: thumbnail,
+      ),
     );
   }
 

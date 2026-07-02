@@ -6,12 +6,15 @@ import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/app_badge.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
+import '../../../design/widgets/secondary_button.dart';
 import '../../../shared/format/formatters.dart';
 import '../../../shared/labels/question_room_labels.dart';
 import '../data/models/connection_note.dart';
 import '../data/models/room.dart';
 import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
+import '../ink_note/ink_note_result.dart';
+import '../ink_note/ink_note_screen.dart';
 
 /// 연결노트(풀스크린). 멘토/학생 노트를 author_role 로 구분.
 /// 본인 노트만 추가/수정한다(쓰기 레포가 본인 author 행만 다룸).
@@ -46,6 +49,9 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
   late Future<List<ConnectionNote>> _future;
   bool _saving = false;
   bool _seeded = false;
+
+  /// 필기 화면이 돌려준 결과를 보관(저장 연결은 S14-2). 재진입 시 이어 그리기용.
+  InkNoteResult? _pendingInk;
 
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
 
@@ -94,6 +100,23 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// 필기 화면으로 진입. 돌아온 결과는 보관만 하고 저장은 다음 세션(S14-2)에서 연결.
+  Future<void> _openInkNote() async {
+    final InkNoteResult? result = await Navigator.of(context).push<InkNoteResult>(
+      MaterialPageRoute<InkNoteResult>(
+        builder: (BuildContext context) => InkNoteScreen(
+          title: '연결노트 필기',
+          initial: _pendingInk?.document, // 저장 전 임시 필기를 이어서 편집.
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _pendingInk = result);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('필기를 저장할 준비가 됐어요. (저장 기능 연결 예정)')),
+    );
   }
 
   @override
@@ -163,10 +186,20 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    PrimaryButton(
-                      label: _saving ? '저장 중…' : '내 노트 저장',
-                      onPressed: _saving ? null : _save,
-                      expand: false,
+                    Row(
+                      children: <Widget>[
+                        PrimaryButton(
+                          label: _saving ? '저장 중…' : '내 노트 저장',
+                          onPressed: _saving ? null : _save,
+                          expand: false,
+                        ),
+                        const SizedBox(width: 8),
+                        SecondaryButton(
+                          label: '필기로 작성',
+                          onPressed: _openInkNote,
+                          expand: false,
+                        ),
+                      ],
                     ),
                   ],
                 ),

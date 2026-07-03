@@ -13,9 +13,13 @@ Widget _button(Future<void> Function(BuildContext context) onTap) => MaterialApp
     );
 
 void main() {
+  // baseUrl 미확정(빈 값) 폴백을 명시 주입으로 검증한다.
+  // (기본 WebBridgeConfig.baseUrl 은 이제 설정돼 있으므로 빈 브릿지를 주입해야
+  //  '준비 중' 폴백 경로가 재현된다.)
   testWidgets('미확정: 충전 → "충전은 웹에서" 안내(앱 결제화면 없음)',
       (WidgetTester tester) async {
-    await tester.pumpWidget(_button((BuildContext c) => openRechargeWeb(c)));
+    await tester.pumpWidget(_button(
+        (BuildContext c) => openRechargeWeb(c, bridge: WebBridge(baseUrl: ''))));
     await tester.tap(find.text('go'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -23,8 +27,8 @@ void main() {
   });
 
   testWidgets('미확정: 구독 → "구독은 웹에서" 안내', (WidgetTester tester) async {
-    await tester
-        .pumpWidget(_button((BuildContext c) => openSubscribeWeb(c, mentorId: 'm1')));
+    await tester.pumpWidget(_button((BuildContext c) =>
+        openSubscribeWeb(c, mentorId: 'm1', bridge: WebBridge(baseUrl: ''))));
     await tester.tap(find.text('go'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));

@@ -68,10 +68,15 @@ void main() {
       expect(b.buildUri(WebBridgeConfig.subscribePath), isNull);
     });
 
-    test('기본 WebBridge() 는 WebBridgeConfig 미확정을 그대로 반영', () async {
-      // 오너가 baseUrl 을 채우기 전에는 기본 생성자도 열지 않는다(앱 결제 트리거 0).
+    test('기본 WebBridge() 는 WebBridgeConfig 설정값을 그대로 반영', () {
+      // 오너가 baseUrl 을 채운 뒤: 기본 생성자도 설정됨 → URL 조립 가능.
+      // (실제 열기는 플랫폼 런처라 유닛에서 호출하지 않고 buildUri 로 확인.)
       expect(WebBridge().isConfigured, WebBridgeConfig.isConfigured);
-      expect(await WebBridge().openSubscribe(), WebOpenResult.notConfigured);
+      expect(WebBridgeConfig.isConfigured, isTrue);
+      final Uri? uri = WebBridge().buildUri(WebBridgeConfig.subscribePath);
+      expect(uri, isNotNull);
+      expect(uri!.origin, 'https://ssambership-web.vercel.app');
+      expect(uri.path, WebBridgeConfig.subscribePath);
     });
   });
 }

@@ -52,6 +52,22 @@ class WebBridge {
   Future<WebOpenResult> openProfileEdit({String source = 'app'}) =>
       _open(WebBridgeConfig.profileEditPath, <String, String>{'src': source});
 
+  /// 이용약관(정보 페이지).
+  Future<WebOpenResult> openTerms({String source = 'app'}) =>
+      _open(WebBridgeConfig.termsPath, <String, String>{'src': source});
+
+  /// 개인정보처리방침(정보 페이지).
+  Future<WebOpenResult> openPrivacy({String source = 'app'}) =>
+      _open(WebBridgeConfig.privacyPath, <String, String>{'src': source});
+
+  /// 고객지원 허브(FAQ·분쟁·환불·신고 안내).
+  Future<WebOpenResult> openSupport({String source = 'app'}) =>
+      _open(WebBridgeConfig.supportPath, <String, String>{'src': source});
+
+  /// 리뷰(멘토 계정 기준).
+  Future<WebOpenResult> openReviews({String source = 'app'}) =>
+      _open(WebBridgeConfig.reviewsPath, <String, String>{'src': source});
+
   /// URL 조립(테스트/검토용 — 실제 열기와 동일한 규칙). baseUrl 미확정이면 null.
   Uri? buildUri(String path, [Map<String, String> query = const <String, String>{}]) {
     if (_baseUrl.isEmpty || path.isEmpty) return null;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
+import '../../../../core/web_bridge/web_bridge_actions.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../../data/notification_settings_repository.dart';
@@ -82,12 +83,12 @@ class _SettingsSectionState extends State<SettingsSection> {
           MyPageRow(
             icon: Icons.description_rounded,
             label: '이용약관',
-            onTap: () => _soon(context),
+            onTap: () => openTermsWeb(context),
           ),
           MyPageRow(
             icon: Icons.privacy_tip_rounded,
             label: '개인정보 처리방침',
-            onTap: () => _soon(context),
+            onTap: () => openPrivacyWeb(context),
           ),
           MyPageRow(
             icon: Icons.info_rounded,
@@ -105,12 +106,6 @@ class _SettingsSectionState extends State<SettingsSection> {
           ],
         ],
       ),
-    );
-  }
-
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('약관·개인정보는 웹에서 확인할 수 있어요. (준비 중)')),
     );
   }
 }

@@ -10,15 +10,23 @@
 class WebBridgeConfig {
   WebBridgeConfig._();
 
-  /// 웹 베이스 URL(미확정 → 빈 문자열). 오너가 확정값으로 교체.
-  static const String baseUrl = '';
+  /// 웹 베이스 URL. ★끝 슬래시 없음 — buildUri 가 '$baseUrl$path'(path 는 '/…' 시작)로
+  /// 조립하므로 슬래시를 붙이면 '//' 이중슬래시가 난다.
+  static const String baseUrl = 'https://ssambership-web.vercel.app';
 
-  /// 결제/구독/충전/정산/프로필 웹 경로(오너 확정 대상). baseUrl 이 채워지면 이 경로로 열린다.
-  static const String subscribePath = '/subscribe';
-  static const String rechargePath = '/wallet/charge';
-  static const String billingManagePath = '/account/billing';
-  static const String payoutManagePath = '/mentor/payouts';
-  static const String profileEditPath = '/mentor/profile';
+  /// 결제/구독/충전/정산/프로필 웹 경로. 실제 Next.js 라우트와 대조해 확정(2026-07 실측).
+  static const String subscribePath = '/subscribe'; // app/(student)/subscribe
+  static const String rechargePath = '/wallet/charge'; // app/(student)/wallet/charge
+  static const String billingManagePath =
+      '/subscriptions'; // app/(student)/subscriptions (구독 취소·관리)
+  static const String payoutManagePath = '/mentor/payouts'; // app/(mentor)/mentor/payouts
+  static const String profileEditPath = '/mentor/profile'; // app/(mentor)/mentor/profile
+
+  /// 정보/지원/리뷰 웹 경로(마이페이지 행 배선용, 실측 라우트).
+  static const String termsPath = '/legal/terms'; // app/(public)/legal/terms
+  static const String privacyPath = '/legal/privacy'; // app/(public)/legal/privacy
+  static const String supportPath = '/support'; // app/(public)/support (고객센터·FAQ 허브)
+  static const String reviewsPath = '/mentor/reviews'; // app/(mentor)/mentor/reviews
 
   /// baseUrl 이 채워졌는지(=웹 열기 가능). 비면 안내 폴백.
   static bool get isConfigured => baseUrl.isNotEmpty;

@@ -42,6 +42,30 @@ Future<void> openProfileEditWeb(BuildContext context, {WebBridge? bridge}) async
   _showNotice(context, r, '프로필 편집은 웹에서 할 수 있어요. (준비 중)');
 }
 
+Future<void> openTermsWeb(BuildContext context, {WebBridge? bridge}) async {
+  final WebOpenResult r = await (bridge ?? WebBridge()).openTerms();
+  if (r == WebOpenResult.opened || !context.mounted) return;
+  _showNotice(context, r, '이용약관은 웹에서 확인할 수 있어요. (준비 중)');
+}
+
+Future<void> openPrivacyWeb(BuildContext context, {WebBridge? bridge}) async {
+  final WebOpenResult r = await (bridge ?? WebBridge()).openPrivacy();
+  if (r == WebOpenResult.opened || !context.mounted) return;
+  _showNotice(context, r, '개인정보처리방침은 웹에서 확인할 수 있어요. (준비 중)');
+}
+
+Future<void> openSupportWeb(BuildContext context, {WebBridge? bridge}) async {
+  final WebOpenResult r = await (bridge ?? WebBridge()).openSupport();
+  if (r == WebOpenResult.opened || !context.mounted) return;
+  _showNotice(context, r, '고객지원은 웹에서 확인할 수 있어요. (준비 중)');
+}
+
+Future<void> openReviewsWeb(BuildContext context, {WebBridge? bridge}) async {
+  final WebOpenResult r = await (bridge ?? WebBridge()).openReviews();
+  if (r == WebOpenResult.opened || !context.mounted) return;
+  _showNotice(context, r, '리뷰는 웹에서 확인할 수 있어요. (준비 중)');
+}
+
 /// 안내 스낵바(미확정: 준비 중 / 실패: 재시도 안내). 호출부에서 mounted 확인 후 호출.
 void _showNotice(BuildContext context, WebOpenResult result, String notConfiguredMsg) {
   final String msg = result == WebOpenResult.failed

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_tabs.dart';
+import '../../../../core/web_bridge/web_bridge_actions.dart';
 import '../widgets/mypage_section.dart';
 
-/// 지원 진입 섹션 — 알림·고객지원·리뷰. 목적지(전용 화면/웹)는 추후 연결 → 현재는 안내.
-/// ★ 없는 기능을 있는 척하지 않는다(준비 중 안내). 결제와 무관.
+/// 지원 진입 섹션 — 알림·고객지원·리뷰. 알림=인앱 탭 전환, 고객지원·리뷰=웹.
 class SupportSection extends StatelessWidget {
   const SupportSection({super.key, this.onOpenNotifications});
 
-  /// 알림 탭으로 보내는 핸드오프(없으면 안내 스낵바).
+  /// 알림 탭으로 보내는 핸드오프(없으면 TabNavigator 로 알림 탭 전환).
   final VoidCallback? onOpenNotifications;
 
   @override
@@ -19,27 +20,21 @@ class SupportSection extends StatelessWidget {
           MyPageRow(
             icon: Icons.notifications_rounded,
             label: '알림',
-            onTap: () => onOpenNotifications == null
-                ? _soon(context, '알림은 알림 탭에서 확인할 수 있어요.')
-                : onOpenNotifications!(),
+            onTap: () => (onOpenNotifications ??
+                () => TabNavigator.go(AppTab.notifications))(),
           ),
           MyPageRow(
             icon: Icons.support_agent_rounded,
             label: '고객지원',
-            onTap: () => _soon(context, '고객지원은 곧 제공돼요. (준비 중)'),
+            onTap: () => openSupportWeb(context),
           ),
           MyPageRow(
             icon: Icons.rate_review_rounded,
             label: '리뷰 작성',
-            onTap: () => _soon(context, '리뷰 작성은 곧 제공돼요. (준비 중)'),
+            onTap: () => openReviewsWeb(context),
           ),
         ],
       ),
     );
-  }
-
-  void _soon(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
   }
 }

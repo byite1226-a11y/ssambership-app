@@ -7,6 +7,7 @@ import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../../../design/widgets/initial_avatar.dart';
+import '../../../../design/widgets/status_pill.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/models/question_thread.dart';
 import '../../data/models/room.dart';
@@ -205,16 +206,8 @@ class _StudentTile extends StatelessWidget {
               children: <Widget>[
                 Text(item.studentName, style: AppType.body),
                 const SizedBox(height: 6),
-                Text(
-                  c.summaryLine,
-                  style: AppType.caption.copyWith(
-                    color: c.needsAttention
-                        ? ColorTokens.warning
-                        : ColorTokens.secondary,
-                    fontWeight:
-                        c.needsAttention ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
+                // 상태 카운트를 StatusDot + 개수로 시각화(현재 텍스트만이던 것).
+                _statusChips(context, c),
               ],
             ),
           ),
@@ -225,6 +218,41 @@ class _StudentTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// 상태 카운트 시각화(StatusDot + 개수). 값은 ThreadStatusCounts(이미 집계) — 새 조회 없음.
+  Widget _statusChips(BuildContext context, ThreadStatusCounts c) {
+    if (c.total == 0) {
+      return Text('질문 없음', style: AppType.caption);
+    }
+    final List<Widget> chips = <Widget>[
+      if (c.pending > 0)
+        _dotCount(context, StatusTone.warning, '답변 대기 ${c.pending}'),
+      if (c.inProgress > 0)
+        _dotCount(context, StatusTone.info, '진행 중 ${c.inProgress}'),
+    ];
+    if (chips.isEmpty) {
+      chips.add(_dotCount(context, StatusTone.success, '모두 답변 완료'));
+    }
+    return Wrap(spacing: 12, runSpacing: 4, children: chips);
+  }
+
+  /// StatusDot(색) + 개수 텍스트 한 쌍(StatusDot 재사용 — 새 위젯 아님).
+  Widget _dotCount(BuildContext context, StatusTone tone, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        StatusDot(tone: tone),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: AppType.caption.copyWith(
+            color: statusToneColor(context, tone),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -289,8 +289,9 @@ class _RoomTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.s8),
+                    // 마지막 활동시각(정렬에 쓰던 room.updatedAt) — 새 조회 없음.
                     Text(
-                      Formatters.relativeKorean(item.room.updatedAt),
+                      '${Formatters.relativeKorean(item.room.updatedAt)} 활동',
                       style: AppType.caption,
                     ),
                   ],

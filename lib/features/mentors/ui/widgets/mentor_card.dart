@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
 import '../../data/mentor_models.dart';
+import 'mentor_meta_item.dart';
 
 /// 멘토 목록 카드(열람 전용). 탭하면 상세로, '구독하기'는 웹 브릿지로 연결.
 class MentorCard extends StatelessWidget {
@@ -52,12 +54,8 @@ class MentorCard extends StatelessWidget {
                     ),
                     if (school != null) ...<Widget>[
                       const SizedBox(height: 3),
-                      Text(
-                        school,
-                        style: AppType.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      // 대학·학과 → school 아이콘(보조색).
+                      MentorMetaItem(icon: Icons.school_rounded, text: school),
                     ],
                   ],
                 ),
@@ -66,7 +64,19 @@ class MentorCard extends StatelessWidget {
           ),
           if (subjects.isNotEmpty) ...<Widget>[
             const SizedBox(height: 12),
-            _SubjectChips(subjects: subjects),
+            // 담당 과목/태그 → menu_book 아이콘(보조색) + 기존 칩(로직·색 불변).
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Padding(
+                  padding: EdgeInsets.only(top: 3),
+                  child: Icon(Icons.menu_book_rounded,
+                      size: 16, color: ColorTokens.secondary),
+                ),
+                const SizedBox(width: 5),
+                Expanded(child: _SubjectChips(subjects: subjects)),
+              ],
+            ),
           ],
           if (intro != null && intro.isNotEmpty) ...<Widget>[
             const SizedBox(height: 8),
@@ -80,11 +90,11 @@ class MentorCard extends StatelessWidget {
           const SizedBox(height: 14),
           // 커머스 제로: 구매 유도(구독하기) 버튼 제거. 가격은 '표시'만 유지,
           // 구독 진입은 카드 탭 → 멘토 상세로 이동(구매 유도 아님).
-          Text(
-            item.priceSummary,
+          // 요금 표시 → payments 아이콘(보조색). 결제 유도 아님.
+          MentorMetaItem(
+            icon: Icons.payments_rounded,
+            text: item.priceSummary,
             style: AppType.body,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

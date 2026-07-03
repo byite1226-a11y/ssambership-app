@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
+import '../../../../design/widgets/count_badge.dart';
+import '../../../../design/widgets/money_display.dart';
 import '../../../../design/widgets/secondary_button.dart';
+import '../../../../design/widgets/status_pill.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
 import '../widgets/mypage_section.dart';
@@ -37,32 +40,27 @@ class MentorDashboardSection extends StatelessWidget {
               Expanded(
                 child: _Stat(
                   label: '구독 학생',
-                  value: '${data.studentCount}명',
+                  count: data.studentCount,
                 ),
               ),
               Container(width: 1, height: 36, color: ColorTokens.border),
               Expanded(
                 child: _Stat(
                   label: '답변 대기',
-                  value: '${data.pendingAnswers}건',
-                  emphasize: data.pendingAnswers > 0,
+                  count: data.pendingAnswers,
+                  // 대기 있을 때 warning 배지로 강조. 0이면 배지 대신 차분한 '0'.
+                  tone: StatusTone.warning,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: <Widget>[
-              Text('최근 정산', style: AppType.body),
-              const Spacer(),
-              Text(
-                // 정산 데이터 없으면 숫자 날조 없이 '-'.
-                data.latestSettlementCents != null
-                    ? CashFormat.won(data.latestSettlementCents!)
-                    : '-',
-                style: AppType.number,
-              ),
-            ],
+          // 최근 정산 → MoneyDisplay 로 통일(캐시 섹션과 동일 패턴, 값은 그대로).
+          MoneyDisplay(
+            label: '최근 정산',
+            amount: data.latestSettlementCents != null
+                ? CashFormat.won(data.latestSettlementCents!)
+                : '-',
           ),
           const SizedBox(height: 12),
           SecondaryButton(
@@ -83,20 +81,39 @@ class MentorDashboardSection extends StatelessWidget {
   }
 }
 
+/// 요약 통계 한 칸 — 카운트를 CountBadge(D-1)로 시각화(0이면 차분한 '0').
 class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, this.emphasize = false});
+  const _Stat({
+    required this.label,
+    required this.count,
+    this.tone = StatusTone.info,
+  });
   final String label;
-  final String value;
-  final bool emphasize;
+  final int count;
+  final StatusTone tone;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Text(
-          value,
-          style: AppType.number.copyWith(
-            color: emphasize ? ColorTokens.warning : null,
+        SizedBox(
+          height: 26,
+          // Row(center)로 배지를 콘텐츠 크기로 유지(Center의 bounded 제약이 배지를
+          // 칸 전체로 늘리는 것 방지). CountBadge 자체는 미변경(다른 사용처 유지).
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              if (count > 0)
+                CountBadge(count: count, tone: tone)
+              else
+                Text(
+                  '0',
+                  style: AppType.body.copyWith(
+                    color: ColorTokens.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 2),

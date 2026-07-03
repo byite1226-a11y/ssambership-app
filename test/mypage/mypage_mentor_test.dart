@@ -36,9 +36,9 @@ void main() {
     expect(find.text('가격설정멘토'), findsOneWidget);
     expect(find.text('답변 · 정산 요약'), findsOneWidget);
     expect(find.text('구독 학생'), findsOneWidget);
-    expect(find.text('3명'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget); // CountBadge(구독 학생)
     expect(find.text('답변 대기'), findsOneWidget);
-    expect(find.text('2건'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget); // CountBadge(답변 대기)
     expect(find.text('최근 정산'), findsOneWidget);
     expect(find.text('4,800원'), findsOneWidget); // 정산 조회 표기
     expect(find.text('정산 관리 (웹)'), findsOneWidget);

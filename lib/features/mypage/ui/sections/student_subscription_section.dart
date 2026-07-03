@@ -4,6 +4,7 @@ import '../../../../app/app_tabs.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
+import '../../../../design/widgets/count_badge.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../../../design/widgets/primary_button.dart';
 import '../../../../design/widgets/quota_bar.dart';
@@ -30,9 +31,22 @@ class StudentSubscriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 이미 조회된 구독 리스트에서 파생(새 fetch 없음). 0이면 배지 생략.
+    final int activeCount =
+        subscriptions.where((SubscriptionCardInfo s) => s.isActive).length;
     return MyPageSection(
       icon: Icons.bookmark_rounded,
       title: '구독 현황',
+      trailing: activeCount > 0
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text('이용중', style: AppType.caption),
+                const SizedBox(width: 6),
+                CountBadge(count: activeCount, tone: StatusTone.success),
+              ],
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

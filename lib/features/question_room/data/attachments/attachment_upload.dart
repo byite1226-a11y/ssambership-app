@@ -90,10 +90,10 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
   const SupabaseAttachmentUploader();
 
   /// TODO(인수인계): 실제 버킷명 확정. 웹과 공유하는 첨부 버킷명으로 맞출 것.
-  static const String bucket = 'question-attachments';
+  static const String bucket = 'question-room-attachments';
 
   /// ★ 버킷 미확인 → 비활성. 오너/동업자가 버킷+정책을 만들면 true 로 전환.
-  static const bool _storageReady = false;
+  static const bool _storageReady = true;
 
   @override
   bool get isReady => _storageReady;

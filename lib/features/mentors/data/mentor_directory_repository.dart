@@ -105,9 +105,8 @@ class MentorDirectoryRepository {
   Future<Map<String, List<MentorPlan>>> _activePlans(List<String> ids) async {
     final List<Map<String, dynamic>> rows = await _client
         .from('mentor_plans')
-        .select('mentor_id, plan_tier, amount_cents, label, is_active')
-        .inFilter('mentor_id', ids)
-        .eq('is_active', true);
+        .select('mentor_id, plan_tier, amount_cents, label')
+        .inFilter('mentor_id', ids);
 
     final Map<String, List<MentorPlan>> out = <String, List<MentorPlan>>{};
     for (final Map<String, dynamic> r in rows) {

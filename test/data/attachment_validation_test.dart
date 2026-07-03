@@ -36,7 +36,7 @@ void main() {
     expect(await p.pickImage(), isNull);
   });
 
-  test('SupabaseAttachmentUploader: 저장소 미준비(버킷 인수인계)', () {
-    expect(const SupabaseAttachmentUploader().isReady, false);
+  test('SupabaseAttachmentUploader: 저장소 준비됨(버킷 생성 후 활성)', () {
+    expect(const SupabaseAttachmentUploader().isReady, true);
   });
 }

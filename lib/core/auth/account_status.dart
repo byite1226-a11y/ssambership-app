@@ -67,30 +67,24 @@ class AccountStatusReader {
     String userId,
   ) async {
     try {
+      // 클라우드 users 스키마엔 status 만 존재(status_reason·suspended_until 없음).
+      // → 해당 컬럼은 조회하지 않고 없으면 null 로 둔다(표시부는 값 없으면 생략).
       final Map<String, dynamic>? row = await client
           .from('users')
-          .select('status, status_reason, suspended_until')
+          .select('status')
           .eq('id', userId)
           .maybeSingle();
       if (row == null) return AccountState.unknown;
 
       final String status = (row['status'] as String?)?.trim() ?? '';
-      final String? reason = row['status_reason'] as String?;
-      final String? untilRaw = row['suspended_until'] as String?;
-      final DateTime? until =
-          untilRaw == null ? null : DateTime.tryParse(untilRaw);
 
       switch (status) {
         case 'active':
           return AccountState.active;
         case 'banned':
-          return AccountState(kind: AccountStatusKind.banned, reason: reason);
+          return const AccountState(kind: AccountStatusKind.banned);
         case 'suspended':
-          return AccountState(
-            kind: AccountStatusKind.suspended,
-            reason: reason,
-            suspendedUntil: until,
-          );
+          return const AccountState(kind: AccountStatusKind.suspended);
         default:
           // 알 수 없는 상태값은 통과시키지 않는다('active'만 통과).
           return AccountState.unknown;

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/auth_service.dart';
+import '../../../core/web_bridge/web_bridge_actions.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/shape_tokens.dart';
 import '../../../design/spacing_tokens.dart';
 import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/primary_button.dart';
+import '../../../design/widgets/secondary_button.dart';
 import '../data/mypage_models.dart';
 import '../data/profile_edit_repository.dart';
 
@@ -31,6 +34,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       TextEditingController(text: widget.profile.grade ?? '');
   bool _busy = false;
 
+  /// 역할 분기: 멘토는 학년 필드가 없고(웹에서 상세 관리), 학생만 학년을 편집한다.
+  bool get _isMentor => AuthService.instance.currentRole == AppRole.mentor;
+
   @override
   void dispose() {
     _name.dispose();
@@ -49,7 +55,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     try {
       await widget.repository.updateProfile(
         nickname: name,
-        gradeLevel: grade.isEmpty ? null : grade,
+        // 멘토는 grade_level 을 payload 에서 제외(null → 레포가 patch 에 안 넣음).
+        gradeLevel: _isMentor ? null : (grade.isEmpty ? null : grade),
       );
       if (!mounted) return;
       _snack('프로필을 저장했어요.');
@@ -81,14 +88,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             style: AppType.body,
             decoration: _decoration('표시할 이름'),
           ),
-          const SizedBox(height: AppSpacing.s16),
-          Text('학년 (선택)', style: AppType.caption),
-          const SizedBox(height: AppSpacing.titleBody),
-          TextField(
-            controller: _grade,
-            style: AppType.body,
-            decoration: _decoration('예: 고2, 재수생'),
-          ),
+          // 학년은 학생만 편집(멘토는 학년 개념 없음 — 웹 프로필 관리로 연결).
+          if (!_isMentor) ...<Widget>[
+            const SizedBox(height: AppSpacing.s16),
+            Text('학년 (선택)', style: AppType.caption),
+            const SizedBox(height: AppSpacing.titleBody),
+            TextField(
+              controller: _grade,
+              style: AppType.body,
+              decoration: _decoration('예: 고2, 재수생'),
+            ),
+          ],
           const SizedBox(height: AppSpacing.s12),
           // 역할·이메일은 편집 대상이 아님(안내만).
           if (widget.profile.email != null)
@@ -99,6 +109,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             label: _busy ? '저장 중…' : '저장',
             onPressed: _busy ? null : _save,
           ),
+          // 멘토: 상세 프로필(대학·학과·소개 등)은 웹에서 관리.
+          if (_isMentor) ...<Widget>[
+            const SizedBox(height: AppSpacing.s12),
+            SecondaryButton(
+              label: '멘토 프로필 관리 (웹)',
+              icon: Icons.open_in_new_rounded,
+              neutral: true,
+              onPressed: () => openProfileEditWeb(context),
+            ),
+          ],
         ],
       ),
     );

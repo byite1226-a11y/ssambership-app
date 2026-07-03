@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_tabs.dart';
 import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
 import '../../design/spacing_tokens.dart';
@@ -63,13 +64,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   void _goToQuestions() {
+    // 질문방 탭으로 전환(TabNavigator → HomeShell 수신). 테스트는 override 주입.
     if (widget.onOpenQuestionsTab != null) {
       widget.onOpenQuestionsTab!();
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('질문방 탭에서 질문할 수 있어요.')),
-    );
+    TabNavigator.go(AppTab.questionRoom);
   }
 
   @override

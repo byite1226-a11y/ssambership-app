@@ -260,9 +260,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     if (_items.isEmpty) {
       return const EmptyState(
-        icon: Icons.notifications_rounded,
-        title: '받은 알림이 없어요',
-        message: '새 소식이 오면 여기에 표시돼요.',
+        icon: Icons.notifications_none_rounded,
+        title: '새 알림이 없어요',
+        message: '활동이 생기면 여기에 알려드릴게요',
       );
     }
     final List<AppNotification> items = _filtered;

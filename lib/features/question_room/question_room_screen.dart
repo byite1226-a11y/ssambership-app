@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_tabs.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/commerce/commerce_policy.dart';
 import '../../core/entitlement/subscription_status_display.dart';
@@ -166,11 +167,14 @@ class _StudentRoomListState extends State<_StudentRoomList> {
         if (all.isEmpty) {
           return Column(
             children: <Widget>[
-              const Expanded(
+              Expanded(
                 child: EmptyState(
                   icon: Icons.forum_rounded,
-                  title: '아직 구독한 멘토가 없어요',
-                  message: '멘토를 구독하면 여기에서 질문할 수 있어요.',
+                  title: '아직 질문방이 없어요',
+                  message: '멘토를 구독하면 1:1 질문방이 열려요',
+                  // CTA는 기존 탭 전환 경로만 재사용(멘토 찾기 탭). 결제 유도 아님.
+                  actionLabel: '멘토 찾기',
+                  onAction: () => TabNavigator.go(AppTab.mentors),
                 ),
               ),
               const Padding(

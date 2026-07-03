@@ -4,6 +4,7 @@ import '../../../../core/commerce/commerce_policy.dart';
 import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
+import '../../../../design/widgets/empty_state.dart';
 import '../../../../design/widgets/money_display.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../../../shared/widgets/commerce_notice_card.dart';
@@ -33,7 +34,12 @@ class CashSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (cash.recent.isEmpty)
-            Text('최근 내역이 없어요.', style: AppType.caption)
+            // 커머스 제로: 충전 유도 CTA 없이 정보 문구만.
+            const EmptyState(
+              icon: Icons.receipt_long_rounded,
+              title: '거래 내역이 없어요',
+              message: '구독·충전 내역이 여기에 표시돼요',
+            )
           else ...<Widget>[
             Text('최근 내역', style: AppType.caption),
             const SizedBox(height: 6),

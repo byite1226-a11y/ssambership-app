@@ -172,6 +172,6 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.text('받은 알림이 없어요'), findsOneWidget);
+    expect(find.text('새 알림이 없어요'), findsOneWidget);
   });
 }

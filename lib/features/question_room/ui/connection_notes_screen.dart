@@ -6,6 +6,7 @@ import '../../../design/spacing_tokens.dart';
 import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/app_badge.dart';
 import '../../../design/widgets/app_card.dart';
+import '../../../design/widgets/empty_state.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../../../design/widgets/secondary_button.dart';
 import '../../../shared/format/formatters.dart';
@@ -232,7 +233,15 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
               Text('상대 노트', style: AppType.caption),
               const SizedBox(height: AppSpacing.titleBody),
               if (others.isEmpty)
-                Text('상대가 남긴 노트가 아직 없어요.', style: AppType.caption)
+                // 노트가 하나도 없을 때만 빈 상태(편집기는 아래 유지). 편집 맥락이라
+                // '질문하러 가기'(탭 이탈) CTA는 두지 않는다.
+                (mine.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.edit_note_rounded,
+                        title: '아직 연결노트가 없어요',
+                        message: '질문하고 답변을 확인하면 노트가 쌓여요',
+                      )
+                    : Text('상대가 남긴 노트가 아직 없어요.', style: AppType.caption))
               else
                 for (final ConnectionNote n in others) ...<Widget>[
                   _NoteCard(note: n),

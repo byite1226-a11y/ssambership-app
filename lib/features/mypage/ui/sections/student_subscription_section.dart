@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_tabs.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
+import '../../../../design/widgets/empty_state.dart';
 import '../../../../design/widgets/primary_button.dart';
 import '../../../../design/widgets/quota_bar.dart';
 import '../../../../design/widgets/secondary_button.dart';
@@ -34,10 +36,13 @@ class StudentSubscriptionSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           if (subscriptions.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text('아직 구독 중인 멘토가 없어요. 멘토를 구독하면 여기에 표시돼요.',
-                  style: AppType.caption),
+            EmptyState(
+              icon: Icons.bookmark_rounded,
+              title: '구독 중인 멘토가 없어요',
+              message: '관심 있는 멘토를 구독해 보세요',
+              // 기존 탭 전환 경로만 재사용(멘토 찾기 탭). 결제 유도 아님.
+              actionLabel: '멘토 찾기',
+              onAction: () => TabNavigator.go(AppTab.mentors),
             )
           else
             for (int i = 0; i < subscriptions.length; i++) ...<Widget>[

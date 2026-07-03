@@ -205,8 +205,6 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                   onReport: _report,
                 ),
                 const Divider(height: 28, color: ColorTokens.border),
-                Text('댓글', style: AppType.caption),
-                const SizedBox(height: AppSpacing.titleBody),
                 _commentList(),
               ],
             ),
@@ -233,12 +231,22 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
         }
         final List<CommunityComment> comments =
             snap.data ?? <CommunityComment>[];
-        if (comments.isEmpty) {
-          return Text('첫 댓글을 남겨보세요.', style: AppType.caption);
-        }
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            for (final CommunityComment c in comments) CommentTile(comment: c),
+            // 헤더: "댓글 {개수}"(동적 — 현재 리스트 length). 스타일 title.
+            Text('댓글 ${comments.length}', style: AppType.title),
+            const SizedBox(height: AppSpacing.titleBody),
+            if (comments.isEmpty)
+              Text('첫 댓글을 남겨보세요.', style: AppType.caption)
+            else
+              // 댓글 항목 '사이에만' 옅은 구분선(첫 위·마지막 아래 없음).
+              for (int i = 0; i < comments.length; i++) ...<Widget>[
+                if (i > 0)
+                  const Divider(
+                      height: 1, thickness: 0.5, color: ColorTokens.border),
+                CommentTile(comment: comments[i]),
+              ],
           ],
         );
       },

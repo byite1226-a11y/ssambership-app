@@ -28,10 +28,11 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 색 절제: 내 말풍선만 역할색 '옅은 틴트'(accentSoft), 상대는 중립 표면(surface).
-    // 텍스트는 양쪽 다 진한 본문색(옅은 틴트 위 가독).
+    // 색 절제: 내 말풍선만 역할색 '옅은 틴트'(accentSoft), 상대는 페이지보다 한 단계
+    // 짙은 중립 회색 표면(elevated). 회색 채움이 구분 역할 → 상대 말풍선 border 제거.
+    // 텍스트는 양쪽 다 진한 본문색(옅은 틴트/회색 위 가독).
     final Color bg =
-        mine ? AppAccent.of(context).accentSoft : ColorTokens.surface;
+        mine ? AppAccent.of(context).accentSoft : ColorTokens.elevated;
     const Color fg = ColorTokens.primary;
     // 말풍선 폭은 화면의 약 72% 로 제한 — 좁은 화면에서 자연스럽게 줄바꿈, 넓은 화면에서 과도하게 늘어나지 않음.
     final double maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.72;
@@ -64,7 +65,6 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: bg,
                 borderRadius: bubbleRadius,
-                border: mine ? null : Border.all(color: ColorTokens.border),
               ),
               child: Column(
                 crossAxisAlignment:

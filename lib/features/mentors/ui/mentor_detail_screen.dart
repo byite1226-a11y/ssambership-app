@@ -207,20 +207,38 @@ class _PlansView extends StatelessWidget {
       ..sort((MentorPlan a, MentorPlan b) =>
           a.amountCents.compareTo(b.amountCents));
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         for (int i = 0; i < sorted.length; i++) ...<Widget>[
           if (i > 0)
             const Divider(height: 16, color: ColorTokens.border),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 숫자 우선 위계: 라벨(caption) 위 · 금액(number 크게, '원'은 작게) 아래.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(sorted[i].displayLabel, style: AppType.body),
-              Text(formatWon(sorted[i].won), style: AppType.body),
+              Text(sorted[i].displayLabel, style: AppType.caption),
+              const SizedBox(height: AppSpacing.s4),
+              Text.rich(
+                TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(text: _amountDigits(sorted[i].won),
+                        style: AppType.number),
+                    const TextSpan(text: '원', style: AppType.caption),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
       ],
     );
+  }
+
+  /// formatWon 결과("29,900원")에서 끝의 '원'만 분리한 숫자부("29,900").
+  /// 금액 값·콤마 포맷은 그대로 유지하고, 표시 스타일(큰 숫자 + 작은 '원')만 분리한다.
+  static String _amountDigits(int won) {
+    final String s = formatWon(won);
+    return s.endsWith('원') ? s.substring(0, s.length - 1) : s;
   }
 }
 

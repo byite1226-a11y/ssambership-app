@@ -5,6 +5,7 @@ import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../design/typography_tokens.dart';
 import '../../design/widgets/chip_scroll.dart';
+import '../../design/widgets/count_badge.dart';
 import '../../design/widgets/empty_state.dart';
 import 'data/app_notification.dart';
 import 'data/notifications_repository.dart';
@@ -170,7 +171,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Row(
             children: <Widget>[
               Expanded(
-                child: Text('안 읽음 $_unreadCount건', style: AppType.title),
+                // D1-D: 미읽음 수를 카운트 배지로(스캔성↑). 0이면 배지 숨김.
+                child: Row(
+                  children: <Widget>[
+                    Text('안 읽음', style: AppType.title),
+                    const SizedBox(width: 8),
+                    CountBadge(count: _unreadCount),
+                  ],
+                ),
               ),
               if (_unreadCount > 0)
                 TextButton(onPressed: _markAll, child: const Text('모두 읽음')),

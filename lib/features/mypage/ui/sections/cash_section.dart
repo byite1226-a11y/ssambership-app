@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/commerce/commerce_policy.dart';
 import '../../../../design/shape_tokens.dart';
-import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
+import '../../../../design/widgets/money_display.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../../../shared/widgets/commerce_notice_card.dart';
 import '../../data/mypage_models.dart';
@@ -25,13 +25,11 @@ class CashSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // 숫자 위계(토스식): 라벨 caption 을 작게 위에, 금액을 number(26/w700)로 크게.
-          Text('보유 캐시', style: AppType.caption),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
+          // D1-C: 금액 강조(토스식 Number Display) — 라벨 작게 위, 금액 크게.
+          MoneyDisplay(
+            label: '보유 캐시',
             // 잔액 미확인이면 숫자 날조 없이 '-' 표기.
-            cash.hasBalance ? CashFormat.won(cash.balanceCents!) : '-',
-            style: AppType.number,
+            amount: cash.hasBalance ? CashFormat.won(cash.balanceCents!) : '-',
           ),
           const SizedBox(height: 12),
           if (cash.recent.isEmpty)

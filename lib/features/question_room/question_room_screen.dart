@@ -13,6 +13,7 @@ import '../../design/typography_tokens.dart';
 import '../../design/widgets/app_card.dart';
 import '../../design/widgets/empty_state.dart';
 import '../../design/widgets/initial_avatar.dart';
+import '../../design/widgets/quota_bar.dart';
 import '../../design/widgets/status_pill.dart';
 import '../../shared/format/formatters.dart';
 import '../../shared/widgets/commerce_notice_card.dart';
@@ -235,17 +236,23 @@ class _RoomTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final SubscriptionSummary? sub = item.sub;
     // 구독 상태칩·갱신일은 넘칠 수 있어 Wrap 으로 자연스럽게 줄바꿈(정보 유지, 배치만 정돈).
-    final String? quotaLabel = item.usage?.planQuotaLabel;
+    final WeeklyQuestionUsage? usage = item.usage;
+    final bool hasQuotaBar = usage != null && usage.hasQuota;
     final SubscriptionStatusDisplay? statusDisp = sub == null
         ? null
         : subscriptionStatusDisplay(sub.status, isActive: sub.isActive);
     // 상태칩 + 잔여를 한 줄로(정보 순서 유지). 넘치면 Wrap 이 자연 줄바꿈.
     final List<Widget> meta = <Widget>[
+      // D1-B: 상태 도트 + 기존 상태칩.
       if (statusDisp != null)
-        StatusPill(label: statusDisp.label, tone: statusDisp.tone),
-      // A2: 주간 잔여("주 N개 질문 · 잔여 X/N", 프리미엄=무제한). RPC 값 있을 때만.
-      if (quotaLabel != null)
-        Text(quotaLabel, style: AppType.caption),
+        StatusPill(
+          label: statusDisp.label,
+          tone: statusDisp.tone,
+          showDot: true,
+        ),
+      // A2: 잔여 바로 못 보여줄 때(한도 정보 없음)만 텍스트 폴백.
+      if (!hasQuotaBar && usage?.planQuotaLabel != null)
+        Text(usage!.planQuotaLabel!, style: AppType.caption),
       if (sub?.nextRenewal != null)
         Text(
           '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',
@@ -292,6 +299,11 @@ class _RoomTile extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: meta,
                   ),
+                ],
+                // D1-A: 주간 잔여 질문권 프로그레스 바(있는 값만 — RPC used/limit).
+                if (hasQuotaBar) ...<Widget>[
+                  const SizedBox(height: AppSpacing.s8),
+                  QuotaBar(used: usage.used, limit: usage.limit),
                 ],
               ],
             ),

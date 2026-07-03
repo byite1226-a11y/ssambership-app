@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssambership_app/design/widgets/chip_scroll.dart';
+import 'package:ssambership_app/design/widgets/count_badge.dart';
 import 'package:ssambership_app/features/notifications/data/app_notification.dart';
 import 'package:ssambership_app/features/notifications/data/notifications_repository.dart';
 import 'package:ssambership_app/features/notifications/notifications_screen.dart';
@@ -79,7 +80,8 @@ void main() {
     expect(find.text('D 의뢰(CR) 알림'), findsNothing);
     expect(find.text('E 환불 알림'), findsNothing);
     // 안읽음 = A,B (C는 읽음, D·E 제외).
-    expect(find.text('안 읽음 2건'), findsOneWidget);
+    expect(find.text('안 읽음'), findsOneWidget);
+    expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 2);
   });
 
   testWidgets('읽지 않음 토글 → 읽은 알림 숨김', (WidgetTester tester) async {
@@ -121,12 +123,13 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.text('안 읽음 2건'), findsOneWidget);
+    expect(find.text('안 읽음'), findsOneWidget);
+    expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 2);
     await tester.tap(_readBtnOf('A 질문방 알림'));
     await tester.pumpAndSettle();
 
     expect(repo.readCalls, contains('a'));
-    expect(find.text('안 읽음 1건'), findsOneWidget);
+    expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 1);
   });
 
   testWidgets('모두 읽음 → 전부 읽음 처리 + 카운트 0', (WidgetTester tester) async {
@@ -141,7 +144,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.allReadCalled, true);
-    expect(find.text('안 읽음 0건'), findsOneWidget);
+    expect(find.text('안 읽음'), findsOneWidget);
+    expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 0);
   });
 
   testWidgets('딥링크: 질문방 알림 → 질문방 탭(0), 구독 알림 → 마이페이지 탭(4)',

@@ -4,6 +4,7 @@ import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/primary_button.dart';
+import '../../../../design/widgets/quota_bar.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../../../design/widgets/status_pill.dart';
 import '../../../../shared/format/formatters.dart';
@@ -75,9 +76,11 @@ class _SubCard extends StatelessWidget {
           children: <Widget>[
             Expanded(child: Text(info.mentorName, style: AppType.title)),
             const SizedBox(width: 8),
+            // D1-B: 상태 도트 + 기존 상태칩(스캔성↑).
             StatusPill(
               label: info.statusLabel,
               tone: info.statusTone,
+              showDot: true,
             ),
           ],
         ),
@@ -91,17 +94,21 @@ class _SubCard extends StatelessWidget {
             if (info.nextRenewal != null)
               Text('다음 갱신 ${Formatters.shortDate(info.nextRenewal!)}',
                   style: AppType.caption),
-            // 주간 질문 한도·잔여(웹 데스크탑 기준): "주 N개 질문 · 잔여 X/N"
-            // (프리미엄=주 무제한 질문). RPC 값이 있을 때만, 없으면 기존 상태 문구로 폴백.
-            Text(
-              info.usage?.planQuotaLabel ??
-                  (info.remaining != null
-                      ? '남은 질문 ${info.remaining}개'
-                      : (info.isActive ? '구독 상태로 질문 가능' : '구독이 필요해요')),
-              style: AppType.caption,
-            ),
+            // 잔여 바(D1-A)로 못 보여주는 폴백 문구만 텍스트로 유지(한도 정보 없을 때).
+            if (info.usage == null || !info.usage!.hasQuota)
+              Text(
+                info.remaining != null
+                    ? '남은 질문 ${info.remaining}개'
+                    : (info.isActive ? '구독 상태로 질문 가능' : '구독이 필요해요'),
+                style: AppType.caption,
+              ),
           ],
         ),
+        // D1-A: 주간 잔여 질문권 프로그레스 바(있는 값만 — RPC used/limit).
+        if (info.usage != null && info.usage!.hasQuota) ...<Widget>[
+          const SizedBox(height: 8),
+          QuotaBar(used: info.usage!.used, limit: info.usage!.limit),
+        ],
       ],
     );
   }

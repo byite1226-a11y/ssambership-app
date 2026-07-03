@@ -26,6 +26,7 @@ class MentorDashboardSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MyPageSection(
+      icon: Icons.insights_rounded,
       title: '답변 · 정산 요약',
       trailing: const _ReadOnlyBadge(),
       child: Column(

@@ -14,6 +14,7 @@ class SupportSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MyPageSection(
+      icon: Icons.support_agent_rounded,
       title: '알림 · 지원',
       child: Column(
         children: <Widget>[

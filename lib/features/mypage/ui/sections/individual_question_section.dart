@@ -16,6 +16,7 @@ class IndividualQuestionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!kIndividualQuestionEnabled) return const SizedBox.shrink();
     return MyPageSection(
+      icon: Icons.question_answer_rounded,
       title: '개별질문',
       child: MyPageRow(
         icon: Icons.help_outline,

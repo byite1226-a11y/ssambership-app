@@ -62,6 +62,7 @@ class _SettingsSectionState extends State<SettingsSection> {
   @override
   Widget build(BuildContext context) {
     return MyPageSection(
+      icon: Icons.settings_rounded,
       title: '설정',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -13,6 +13,7 @@ class MyPageSection extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
+    this.icon,
   });
 
   final String title;
@@ -20,6 +21,9 @@ class MyPageSection extends StatelessWidget {
 
   /// 제목 우측 보조(예: '조회만' 배지).
   final Widget? trailing;
+
+  /// 제목 앞 leading 아이콘(선택). 없으면 기존과 동일(제목만). 색은 secondary 토큰.
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +36,10 @@ class MyPageSection extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.titleBody),
             child: Row(
               children: <Widget>[
+                if (icon != null) ...<Widget>[
+                  Icon(icon, size: 18, color: ColorTokens.secondary),
+                  const SizedBox(width: 6),
+                ],
                 Text(title, style: AppType.title),
                 if (trailing != null) ...<Widget>[
                   const SizedBox(width: 8),

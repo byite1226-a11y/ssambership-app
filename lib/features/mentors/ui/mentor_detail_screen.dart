@@ -10,6 +10,7 @@ import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
 import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
+import 'widgets/mentor_meta_item.dart';
 import '../../../app/app_tabs.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/commerce/commerce_policy.dart';
@@ -52,6 +53,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
           if (m.subjects.isNotEmpty) ...<Widget>[
             const SizedBox(height: AppSpacing.cardGap),
             _Section(
+              icon: Icons.menu_book_rounded,
               title: '지도 과목',
               child: Wrap(
                 spacing: 6,
@@ -91,6 +93,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
           ),
           const SizedBox(height: AppSpacing.cardGap),
           _Section(
+            icon: Icons.payments_rounded,
             title: '요금제',
             child: _PlansView(plans: m.plans),
           ),
@@ -185,7 +188,8 @@ class _Header extends StatelessWidget {
               ),
               if (school != null) ...<Widget>[
                 const SizedBox(height: 4),
-                Text(school, style: AppType.caption),
+                // 대학·학과 → school 아이콘(멘토 카드 D-2 P1과 동일 패턴).
+                MentorMetaItem(icon: Icons.school_rounded, text: school),
               ],
             ],
           ),
@@ -215,7 +219,12 @@ class _StatsView extends StatelessWidget {
     }
     final String text =
         hours < 1 ? '평균 답변 1시간 이내' : '평균 답변 약 ${hours.round()}시간';
-    return Text(text, style: AppType.body);
+    // 응답시간 → schedule 아이콘(값이 있을 때만). '신규 멘토' 프로즈엔 아이콘 없음.
+    return MentorMetaItem(
+      icon: Icons.schedule_rounded,
+      text: text,
+      style: AppType.body,
+    );
   }
 }
 
@@ -269,9 +278,12 @@ class _PlansView extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+  const _Section({required this.title, required this.child, this.icon});
   final String title;
   final Widget child;
+
+  /// 섹션 제목 앞 leading 아이콘(선택). 없으면 기존과 동일(제목만).
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -279,7 +291,15 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: AppType.title),
+          Row(
+            children: <Widget>[
+              if (icon != null) ...<Widget>[
+                Icon(icon, size: 18, color: ColorTokens.secondary),
+                const SizedBox(width: 6),
+              ],
+              Text(title, style: AppType.title),
+            ],
+          ),
           const SizedBox(height: AppSpacing.titleBody),
           child,
         ],

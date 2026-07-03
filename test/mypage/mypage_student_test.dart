@@ -75,7 +75,7 @@ void main() {
     expect(find.textContaining('남은 질문'), findsNothing);
   });
 
-  testWidgets('캐시 잔액 조회 표기 + "충전하기/결제 관리"는 웹 브릿지(앱 결제화면 없음)',
+  testWidgets('캐시 잔액 조회 표기 + 충전 유도 없음(안내 카드) + 구독 관리는 링크 유지',
       (WidgetTester tester) async {
     _bigSurface(tester);
     await tester.pumpWidget(
@@ -84,14 +84,11 @@ void main() {
 
     expect(find.text('보유 캐시'), findsOneWidget);
     expect(find.text('50,000원'), findsOneWidget); // 조회 표기
-    expect(find.text('충전하기 (웹)'), findsOneWidget);
-    expect(find.text('결제·구독 관리 (웹)'), findsOneWidget);
-
-    // 충전하기 탭 → 웹 안내 스낵바(앱에서 결제 실행 없음).
-    await tester.tap(find.text('충전하기 (웹)'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.textContaining('충전은 웹에서'), findsOneWidget);
+    // 커머스 제로: 충전 유도('충전하기 (웹)') 제거 → 비상호작용 안내 카드.
+    expect(find.text('충전하기 (웹)'), findsNothing);
+    expect(find.text('캐시 충전은 앱에서 지원하지 않아요'), findsOneWidget);
+    // 관리 링크는 유지하되 라벨만 '구독 관리 (웹)'.
+    expect(find.text('구독 관리 (웹)'), findsOneWidget);
   });
 }
 

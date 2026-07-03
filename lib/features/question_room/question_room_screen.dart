@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
+import '../../core/commerce/commerce_policy.dart';
 import '../../core/entitlement/subscription_status_display.dart';
 import '../../core/entitlement/subscription_summary.dart';
 import '../../core/entitlement/weekly_question_usage.dart';
 import '../../core/supabase/supabase_client.dart';
-import '../../core/web_bridge/web_bridge_actions.dart';
 import '../../design/shape_tokens.dart';
 import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
@@ -13,9 +13,9 @@ import '../../design/typography_tokens.dart';
 import '../../design/widgets/app_card.dart';
 import '../../design/widgets/empty_state.dart';
 import '../../design/widgets/initial_avatar.dart';
-import '../../design/widgets/secondary_button.dart';
 import '../../design/widgets/status_pill.dart';
 import '../../shared/format/formatters.dart';
+import '../../shared/widgets/commerce_notice_card.dart';
 import 'data/mentor_lookup_repository.dart';
 import 'data/models/room.dart';
 import 'data/question_room_read_repository.dart';
@@ -140,19 +140,8 @@ class _StudentRoomListState extends State<_StudentRoomList> {
           ),
         ),
         Expanded(child: _list()),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: SecondaryButton(
-              // 구독 단위는 멘토-학생 쌍 → 문구를 '멘토 구독하기'로(웹 정본 기준).
-              // 강조색 절제: 이 화면의 핵심 액션 1곳 → 역할색(outline) 유지.
-              label: '멘토 구독하기',
-              icon: Icons.add_rounded,
-              onPressed: () => openSubscribeWeb(context),
-            ),
-          ),
-        ),
+        // 커머스 제로: 하단 '멘토 구독하기'(구매 유도) 바 제거. 구독 없음은
+        // 빈 상태의 안내 카드로만 표시한다(버튼 없음).
       ],
     );
   }
@@ -169,10 +158,20 @@ class _StudentRoomListState extends State<_StudentRoomList> {
         }
         final List<_RoomItem> all = snap.data ?? <_RoomItem>[];
         if (all.isEmpty) {
-          return const EmptyState(
-            icon: Icons.forum_rounded,
-            title: '아직 구독한 멘토가 없어요',
-            message: '멘토를 구독하면 여기에서 질문할 수 있어요.',
+          return Column(
+            children: <Widget>[
+              const Expanded(
+                child: EmptyState(
+                  icon: Icons.forum_rounded,
+                  title: '아직 구독한 멘토가 없어요',
+                  message: '멘토를 구독하면 여기에서 질문할 수 있어요.',
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: CommerceNoticeCard(text: kSubscribeNoticeText),
+              ),
+            ],
           );
         }
         final List<_RoomItem> items = _query.isEmpty

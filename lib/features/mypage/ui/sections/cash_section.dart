@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/commerce/commerce_policy.dart';
 import '../../../../design/shape_tokens.dart';
 import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
-import '../../../../design/widgets/secondary_button.dart';
 import '../../../../shared/format/formatters.dart';
+import '../../../../shared/widgets/commerce_notice_card.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
 import '../widgets/mypage_section.dart';
-import '../../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 캐시 섹션 — 잔액·최근 내역 '조회만' + "충전하기(웹)". ★ 앱에서 결제/충전 실행 없음.
 class CashSection extends StatelessWidget {
@@ -42,12 +42,8 @@ class CashSection extends StatelessWidget {
             for (final CashEntry e in cash.recent) _EntryRow(entry: e),
           ],
           const SizedBox(height: 12),
-          SecondaryButton(
-            label: '충전하기 (웹)',
-            icon: Icons.open_in_new_rounded,
-            neutral: true,
-            onPressed: () => openRechargeWeb(context),
-          ),
+          // 커머스 제로: 구매 유도(충전하기) 제거 → 비상호작용 안내.
+          const CommerceNoticeCard(text: kRechargeNoticeText),
         ],
       ),
     );

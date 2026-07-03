@@ -4,9 +4,7 @@ import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
-import '../../../../design/widgets/secondary_button.dart';
 import '../../data/mentor_models.dart';
-import '../../../../core/web_bridge/web_bridge_actions.dart';
 
 /// 멘토 목록 카드(열람 전용). 탭하면 상세로, '구독하기'는 웹 브릿지로 연결.
 class MentorCard extends StatelessWidget {
@@ -80,25 +78,13 @@ class MentorCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Flexible(
-                child: Text(
-                  item.priceSummary,
-                  style: AppType.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 12),
-              SecondaryButton(
-                label: '구독하기',
-                expand: false,
-                onPressed: () => openSubscribeWeb(context, mentorId: item.id),
-              ),
-            ],
+          // 커머스 제로: 구매 유도(구독하기) 버튼 제거. 가격은 '표시'만 유지,
+          // 구독 진입은 카드 탭 → 멘토 상세로 이동(구매 유도 아님).
+          Text(
+            item.priceSummary,
+            style: AppType.body,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

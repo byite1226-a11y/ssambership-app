@@ -51,7 +51,7 @@ class StudentSubscriptionSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           SecondaryButton(
-            label: '결제·구독 관리 (웹)',
+            label: '구독 관리 (웹)',
             icon: Icons.open_in_new_rounded,
             neutral: true,
             onPressed: () => openBillingManageWeb(context),

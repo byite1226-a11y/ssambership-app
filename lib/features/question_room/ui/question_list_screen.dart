@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/commerce/commerce_policy.dart';
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../design/role_accent.dart';
@@ -15,7 +16,7 @@ import '../data/question_room_write_repository.dart';
 import 'chat_screen.dart';
 import 'connection_notes_screen.dart';
 import 'new_question_screen.dart';
-import '../../../core/web_bridge/web_bridge_actions.dart';
+import '../../../shared/widgets/commerce_notice_card.dart';
 import 'widgets/thread_card.dart';
 
 /// 질문 영역(3뎁스). 스레드 카드 목록(최신순) + 새 질문 + 연결노트 플로팅.
@@ -141,39 +142,39 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: _canAsk
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (remaining != null) ...<Widget>[
-                    Text(remaining,
-                        style: AppType.caption,
-                        textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                  ],
-                  PrimaryButton(
-                    label: '+ 새로운 질문하기',
-                    onPressed: _busy ? null : _openNewQuestion,
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    widget.sub?.isActive == true
-                        ? '이번 주 질문을 모두 사용했어요.'
-                        : '구독이 필요해요. 웹에서 구독하면 질문할 수 있어요.',
-                    style: AppType.caption,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  SecondaryButton(
-                    label: '웹에서 구독',
-                    onPressed: () => openSubscribeWeb(context),
-                  ),
-                ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (_canAsk) ...<Widget>[
+              if (remaining != null) ...<Widget>[
+                Text(remaining,
+                    style: AppType.caption, textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+              ],
+              PrimaryButton(
+                label: '+ 새로운 질문하기',
+                onPressed: _busy ? null : _openNewQuestion,
               ),
+            ] else if (widget.sub?.isActive == true) ...<Widget>[
+              // 구독 중인데 이번 주 소진 — 안내만(구매 유도 아님).
+              const Text(
+                '이번 주 질문을 모두 사용했어요.',
+                style: AppType.caption,
+                textAlign: TextAlign.center,
+              ),
+            ] else ...<Widget>[
+              // 커머스 제로: 구매 유도(웹에서 구독) 버튼 제거 → 비상호작용 안내.
+              const CommerceNoticeCard(text: kSubscribeNoticeText),
+            ],
+            // 연결노트 발견성: appBar 액션과 동일 라우트를 하단에도 노출(구독 여부 무관).
+            const SizedBox(height: 8),
+            SecondaryButton(
+              label: '연결노트',
+              icon: Icons.sticky_note_2_rounded,
+              onPressed: _openNotes,
+            ),
+          ],
+        ),
       ),
     );
   }

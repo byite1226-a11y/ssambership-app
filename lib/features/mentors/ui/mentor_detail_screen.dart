@@ -12,8 +12,9 @@ import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
 import '../../../app/app_tabs.dart';
 import '../../../core/auth/auth_service.dart';
-import '../../../core/web_bridge/web_bridge_actions.dart';
+import '../../../core/commerce/commerce_policy.dart';
 import '../../../design/widgets/secondary_button.dart';
+import '../../../shared/widgets/commerce_notice_card.dart';
 import '../../individual_question/iq_flags.dart';
 import '../../individual_question/ui/iq_create_screen.dart';
 
@@ -110,10 +111,8 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
                   onPressed: () => _goToQuestionRoom(context),
                 );
               }
-              return PrimaryButton(
-                label: '구독하기',
-                onPressed: () => openSubscribeWeb(context, mentorId: widget.item.id),
-              );
+              // 커머스 제로: 구매 유도(구독하기) 제거 → 비상호작용 안내.
+              return const CommerceNoticeCard(text: kSubscribeNoticeText);
             },
           ),
           // 개별질문: 구독 없이 1건씩 캐시로 질문(지정형). 학생만.

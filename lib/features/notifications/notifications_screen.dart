@@ -167,7 +167,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 12, 8, 4),
+          // 헤더 ↔ 첫 필터 줄 간격 확보(비좁음 해소): 하단 4→12. 전부 spacing 토큰 경유.
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH,
+            AppSpacing.s12,
+            AppSpacing.s8,
+            AppSpacing.s12,
+          ),
           child: Row(
             children: <Widget>[
               Expanded(
@@ -186,7 +192,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 4),
+          // 읽음상태 줄 ↔ 유형 줄: 라벨 없이 이 간격이 그룹 구분 신호(칩 간격 8의 2배=16).
+          padding: const EdgeInsets.only(bottom: AppSpacing.s16),
           child: ChipScroll(
             labels: const <String>['전체', '읽지 않음'],
             selectedIndex: _unreadOnly ? 1 : 0,
@@ -194,7 +201,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 6),
+          // 유형 필터 줄 ↔ 목록 첫 항목 간격 확보: 6→20.
+          padding: const EdgeInsets.only(bottom: AppSpacing.s20),
           child: ChipScroll(
             labels: const <String>['전체', '질문방', '구독·결제', '개별질문'],
             selectedIndex: _kindChipIndex,

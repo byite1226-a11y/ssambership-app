@@ -59,7 +59,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenH, 12, AppSpacing.screenH, 8),
           child: TextField(
             style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
@@ -67,7 +68,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
               hintText: '과목·이름·학교 검색',
               prefixIcon: const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
-              fillColor: ColorTokens.surface,
+              fillColor: ColorTokens.elevated,
               border: OutlineInputBorder(
                 borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
@@ -111,7 +112,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
                 // 좌우 여백은 ChipScroll 내부(스크롤 영역)로 넘겨 끝 칩이 잘리지 않게 한다.
                 padding: const EdgeInsets.only(bottom: 6),
                 child: ChipScroll(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
                   labels: <String>['전체', ...subjects],
                   // _subject 가 목록에 없으면 indexOf=-1 → +1=0 → '전체' 선택.
                   selectedIndex:
@@ -138,7 +140,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 600),
                         child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenH, 4, AppSpacing.screenH, 16),
                       itemCount: items.length + (_canLoadMore(all) ? 1 : 0),
                       separatorBuilder: (_, __) =>
                           const SizedBox(height: AppSpacing.cardGap),
@@ -234,7 +237,7 @@ class _SortBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 0, 8, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[

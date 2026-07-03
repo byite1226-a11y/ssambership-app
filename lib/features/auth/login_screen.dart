@@ -186,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
         labelText: label,
         labelStyle: AppType.caption,
         filled: true,
-        fillColor: ColorTokens.surface,
+        fillColor: ColorTokens.elevated,
         border: OutlineInputBorder(
           borderRadius: AppShape.inputRadius,
           borderSide: BorderSide.none,

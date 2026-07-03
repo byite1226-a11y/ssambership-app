@@ -105,7 +105,8 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
           }
           final _StudentHomeData d = snap.data!;
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
             children: <Widget>[
               _header(d.sub),
               const SizedBox(height: AppSpacing.section),

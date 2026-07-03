@@ -56,6 +56,10 @@ class AppTheme {
       // 전역 폰트: Pretendard(정적 4종 400/500/600/700 등록). 시스템 폰트 대체.
       fontFamily: 'Pretendard',
       scaffoldBackgroundColor: ColorTokens.page,
+      // 터치 피드백(A-6): 탭 가능한 카드·리스트·버튼 InkWell 에 은은한 역할색 리플.
+      // "정적 웹페이지" → "반응형 앱" 느낌. 과하지 않게(splash ~10%, highlight ~5%).
+      splashColor: ra.accent.withValues(alpha: 0.10),
+      highlightColor: ra.accent.withValues(alpha: 0.05),
       // 하단 탭: 활성 표시(indicator)=역할 soft, 선택 아이콘/라벨=역할 accent.
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: ColorTokens.surface,

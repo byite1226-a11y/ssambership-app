@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../data/attachments/attachment_url_resolver.dart';
 import '../../data/models/question_attachment.dart';
@@ -95,7 +96,8 @@ class _LiveMessageListState extends State<LiveMessageList> {
     }
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
       itemCount: rows.length,
       itemBuilder: (BuildContext context, int i) => rows[i].child,
     );

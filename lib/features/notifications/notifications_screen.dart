@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_tabs.dart';
+import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../design/typography_tokens.dart';
 import '../../design/widgets/chip_scroll.dart';
@@ -165,7 +166,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.screenH, 12, 8, 4),
           child: Row(
             children: <Widget>[
               Expanded(
@@ -257,7 +258,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 4, AppSpacing.screenH, 16),
       itemCount: items.length + (_hasMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (BuildContext context, int i) {

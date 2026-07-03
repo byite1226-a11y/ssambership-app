@@ -191,7 +191,8 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 12, AppSpacing.screenH, 16),
       itemCount: visible.length,
       separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.cardGap),
       itemBuilder: (BuildContext context, int i) => ThreadCard(

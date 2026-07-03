@@ -79,7 +79,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('프로필 수정')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
         children: <Widget>[
           Text('표시명', style: AppType.caption),
           const SizedBox(height: AppSpacing.titleBody),
@@ -128,7 +129,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: ColorTokens.surface,
+      fillColor: ColorTokens.elevated,
       border: OutlineInputBorder(
         borderRadius: AppShape.inputRadius,
         borderSide: BorderSide.none,

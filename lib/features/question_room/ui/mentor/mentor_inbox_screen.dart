@@ -98,7 +98,8 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenH, 12, AppSpacing.screenH, 8),
           child: TextField(
             style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
@@ -106,7 +107,7 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
               hintText: '학생 검색',
               prefixIcon: const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
-              fillColor: ColorTokens.surface,
+              fillColor: ColorTokens.elevated,
               border: OutlineInputBorder(
                 borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
@@ -160,7 +161,8 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
           );
         }
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenH, 4, AppSpacing.screenH, 12),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.cardGap),
           itemBuilder: (BuildContext context, int i) =>

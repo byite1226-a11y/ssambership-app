@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/app_card.dart';
@@ -213,7 +214,8 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         widget.isDirect && prefill.pricing == null;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 12, AppSpacing.screenH, 24),
       children: <Widget>[
         AppCard(
           child: Column(

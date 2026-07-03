@@ -166,7 +166,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
         children: <Widget>[
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenH, 16, AppSpacing.screenH, 16),
               children: <Widget>[
                 Row(
                   children: <Widget>[

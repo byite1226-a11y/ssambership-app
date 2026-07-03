@@ -45,7 +45,8 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(m.displayName)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH, 16, AppSpacing.screenH, 24),
         children: <Widget>[
           _Header(item: m),
           if (m.subjects.isNotEmpty) ...<Widget>[

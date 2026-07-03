@@ -103,7 +103,8 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('새 질문')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
         children: <Widget>[
           Text('제목 (선택)', style: AppType.caption),
           const SizedBox(height: AppSpacing.titleBody),
@@ -176,7 +177,7 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: ColorTokens.surface,
+      fillColor: ColorTokens.elevated,
       border: OutlineInputBorder(
         borderRadius: AppShape.inputRadius,
         borderSide: BorderSide.none,

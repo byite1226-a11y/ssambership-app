@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../data/community_models.dart';
@@ -111,7 +112,8 @@ class _ShortformFeedViewState extends State<ShortformFeedView> {
     }
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 8, AppSpacing.screenH, 88),
       itemCount: _posts.length + (_hasMore ? 1 : 0),
       itemBuilder: (BuildContext context, int i) {
         if (i >= _posts.length) {

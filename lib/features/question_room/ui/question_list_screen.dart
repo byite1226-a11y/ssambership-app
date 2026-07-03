@@ -112,7 +112,8 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                   return const _EmptyQuestions();
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.screenH, 16, AppSpacing.screenH, 96),
                   itemCount: threads.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.cardGap),
@@ -141,7 +142,8 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH, 8, AppSpacing.screenH, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/widgets/chip_scroll.dart';
 import '../../../../design/widgets/empty_state.dart';
@@ -151,7 +152,8 @@ class _BoardListViewState extends State<BoardListView> {
     }
     return ListView.separated(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 4, AppSpacing.screenH, 88),
       itemCount: _posts.length + (_hasMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (BuildContext context, int i) {

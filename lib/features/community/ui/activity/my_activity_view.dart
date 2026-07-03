@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/empty_state.dart';
@@ -56,7 +57,8 @@ class _MyActivityViewState extends State<MyActivityView> {
           );
         }
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenH, 12, AppSpacing.screenH, 24),
           children: <Widget>[
             _group('내가 쓴 글', a.myPosts),
             _group('좋아요한 글', a.liked),

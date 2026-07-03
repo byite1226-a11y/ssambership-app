@@ -226,7 +226,8 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
             children: <Widget>[
               Text('상대 노트', style: AppType.caption),
               const SizedBox(height: AppSpacing.titleBody),

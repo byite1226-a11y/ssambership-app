@@ -121,7 +121,12 @@ class _StudentRoomListState extends State<_StudentRoomList> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH,
+            12,
+            AppSpacing.screenH,
+            8,
+          ),
           child: TextField(
             style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
@@ -130,7 +135,7 @@ class _StudentRoomListState extends State<_StudentRoomList> {
               prefixIcon:
                   const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
-              fillColor: ColorTokens.surface,
+              fillColor: ColorTokens.elevated,
               border: OutlineInputBorder(
                 borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
@@ -168,7 +173,12 @@ class _StudentRoomListState extends State<_StudentRoomList> {
                 ),
               ),
               const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenH,
+                  0,
+                  AppSpacing.screenH,
+                  16,
+                ),
                 child: CommerceNoticeCard(text: kSubscribeNoticeText),
               ),
             ],
@@ -187,7 +197,12 @@ class _StudentRoomListState extends State<_StudentRoomList> {
           );
         }
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH,
+            8,
+            AppSpacing.screenH,
+            16,
+          ),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (BuildContext context, int i) =>

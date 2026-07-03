@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_service.dart';
+import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/app_badge.dart';
@@ -230,7 +231,8 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
     final String? remaining = formatIqExpiryRemaining(q.expiresAt, q.status);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenH, 12, AppSpacing.screenH, 24),
       children: <Widget>[
         // 헤더: 유형·상태·가격·마감.
         AppCard(

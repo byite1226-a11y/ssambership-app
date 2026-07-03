@@ -9,9 +9,12 @@ class ColorTokens {
   ColorTokens._();
 
   // ── 표면(배경 계층) — 라이트 테마 ──
-  static const Color page = Color(0xFFF8FAFC); // 앱 배경(거의 흰색)
+  // C안: 앱 배경을 순백(#FFFFFF)으로. 카드(surface)도 흰색이므로, 순백 위에서 카드가
+  //   묻히지 않도록 [AppShape.cardSurface] 에서 그림자 강화 + 옅은 경계(border) 병용.
+  static const Color page = Color(0xFFFFFFFF); // 앱 배경(순백)
   static const Color surface = Color(0xFFFFFFFF); // 카드 표면(흰색)
-  static const Color elevated = Color(0xFFF1F5F9); // 떠 있는 표면
+  // 입력필드·검색바 등: 순백 배경과 구분되도록 살짝 회색 유지(순백-순백이면 안 보임).
+  static const Color elevated = Color(0xFFF1F5F9); // 떠 있는 표면(입력/검색)
 
   // ── 텍스트/전경 ──
   static const Color primary = Color(0xFF0F172A); // 주요 텍스트(대비 17.85)

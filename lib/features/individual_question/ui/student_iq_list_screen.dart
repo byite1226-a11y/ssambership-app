@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/widgets/empty_state.dart';
 import '../../../design/widgets/primary_button.dart';
@@ -93,7 +94,8 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
           return RefreshIndicator(
             onRefresh: () async => _refresh(),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenH, 12, AppSpacing.screenH, 24),
               children: <Widget>[
                 if (kIndividualQuestionCreateEnabled) ...<Widget>[
                   PrimaryButton(

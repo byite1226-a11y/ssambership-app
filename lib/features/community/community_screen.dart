@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/role_accent.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import 'data/community_read_repository.dart';
 import 'data/community_write_repository.dart';
 import 'ui/activity/my_activity_view.dart';
@@ -36,7 +36,7 @@ class CommunityScreen extends StatelessWidget {
               labelColor: AppAccent.of(context).accent,
               unselectedLabelColor: ColorTokens.secondary,
               indicatorColor: AppAccent.of(context).accent,
-              labelStyle: AppTypography.body,
+              labelStyle: AppType.body,
               tabs: const <Widget>[
                 Tab(text: '숏폼'),
                 Tab(text: '게시판'),
@@ -62,7 +62,7 @@ class CommunityScreen extends StatelessWidget {
               ctx,
               shortform: DefaultTabController.of(ctx).index == 0,
             ),
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(Icons.edit_rounded),
             label: const Text('작성'),
           ),
         ),

@@ -144,7 +144,7 @@ class _BoardListViewState extends State<BoardListView> {
     }
     if (_posts.isEmpty) {
       return const EmptyState(
-        icon: Icons.forum_outlined,
+        icon: Icons.forum_rounded,
         title: '아직 글이 없어요',
         message: '이 분류에는 글이 없어요.',
       );

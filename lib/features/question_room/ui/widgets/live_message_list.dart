@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../data/attachments/attachment_url_resolver.dart';
 import '../../data/models/question_attachment.dart';
 import '../../data/models/question_message.dart';
@@ -90,7 +90,7 @@ class _LiveMessageListState extends State<LiveMessageList> {
     final List<_Row> rows = _buildRows();
     if (rows.isEmpty) {
       return Center(
-        child: Text(widget.emptyHint, style: AppTypography.caption),
+        child: Text(widget.emptyHint, style: AppType.caption),
       );
     }
     return ListView.builder(

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../design/role_accent.dart';
+import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../../../design/widgets/secondary_button.dart';
 import '../data/models/question_thread.dart';
@@ -112,7 +113,8 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   itemCount: threads.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.cardGap),
                   itemBuilder: (BuildContext context, int i) => ThreadCard(
                     thread: threads[i],
                     onOpen: () => _openChat(threads[i]),
@@ -145,7 +147,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                 children: <Widget>[
                   if (remaining != null) ...<Widget>[
                     Text(remaining,
-                        style: AppTypography.caption,
+                        style: AppType.caption,
                         textAlign: TextAlign.center),
                     const SizedBox(height: 8),
                   ],
@@ -162,7 +164,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                     widget.sub?.isActive == true
                         ? '이번 주 질문을 모두 사용했어요.'
                         : '구독이 필요해요. 웹에서 구독하면 질문할 수 있어요.',
-                    style: AppTypography.caption,
+                    style: AppType.caption,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -233,17 +235,17 @@ class _EmptyQuestions extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: <Widget>[
         const SizedBox(height: 8),
-        const Icon(Icons.forum_outlined, size: 44, color: ColorTokens.muted),
+        const Icon(Icons.forum_rounded, size: 44, color: ColorTokens.muted),
         const SizedBox(height: 14),
         Text('이 멘토에게 첫 질문을 남겨보세요',
-            style: AppTypography.title, textAlign: TextAlign.center),
+            style: AppType.title, textAlign: TextAlign.center),
         const SizedBox(height: 18),
         const _Step(n: '1', text: '과목·단원 고르기 (선택)'),
         const _Step(n: '2', text: '궁금한 점 질문 (사진·파일 첨부 가능)'),
         const _Step(n: '3', text: '답변 확인'),
         const SizedBox(height: 14),
         Text('연결노트로 기록이 쌓여요',
-            style: AppTypography.caption, textAlign: TextAlign.center),
+            style: AppType.caption, textAlign: TextAlign.center),
       ],
     );
   }
@@ -263,7 +265,7 @@ class _Step extends StatelessWidget {
         children: <Widget>[
           InitialAvatarLike(label: n),
           const SizedBox(width: 10),
-          Flexible(child: Text(text, style: AppTypography.body)),
+          Flexible(child: Text(text, style: AppType.body)),
         ],
       ),
     );

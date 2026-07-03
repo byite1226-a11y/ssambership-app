@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/spacing_tokens.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/app_badge.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/initial_avatar.dart';
@@ -43,7 +44,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
         children: <Widget>[
           _Header(item: m),
           if (m.subjects.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.cardGap),
             _Section(
               title: '지도 과목',
               child: Wrap(
@@ -56,17 +57,17 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.cardGap),
           _Section(
             title: '소개',
             child: Text(
               (m.profile?.introLine?.trim().isNotEmpty ?? false)
                   ? m.profile!.introLine!.trim()
                   : '아직 소개가 등록되지 않은 신규 멘토예요.',
-              style: AppTypography.body,
+              style: AppType.body,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.cardGap),
           FutureBuilder<MentorDetailExtras>(
             future: _future,
             builder: (BuildContext context,
@@ -82,17 +83,17 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               );
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.cardGap),
           _Section(
             title: '요금제',
             child: _PlansView(plans: m.plans),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.titleBody),
           const Text(
             '가격은 표시용이며, 구독은 웹에서 진행돼요.',
-            style: AppTypography.caption,
+            style: AppType.caption,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.s24),
           FutureBuilder<MentorDetailExtras>(
             future: _future,
             builder: (BuildContext context,
@@ -101,7 +102,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               if (subscribed) {
                 return PrimaryButton(
                   label: '질문방으로',
-                  icon: Icons.forum_outlined,
+                  icon: Icons.forum_rounded,
                   onPressed: () => _goToQuestionRoom(context),
                 );
               }
@@ -145,7 +146,7 @@ class _Header extends StatelessWidget {
                   Flexible(
                     child: Text(
                       item.displayName,
-                      style: AppTypography.title,
+                      style: AppType.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -158,7 +159,7 @@ class _Header extends StatelessWidget {
               ),
               if (school != null) ...<Widget>[
                 const SizedBox(height: 4),
-                Text(school, style: AppTypography.caption),
+                Text(school, style: AppType.caption),
               ],
             ],
           ),
@@ -177,18 +178,18 @@ class _StatsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Text('불러오는 중…', style: AppTypography.caption);
+      return const Text('불러오는 중…', style: AppType.caption);
     }
     final num? hours = extras.avgResponseHours;
     if (hours == null) {
       return const Text(
         '아직 활동 통계가 쌓이지 않은 신규 멘토예요.',
-        style: AppTypography.body,
+        style: AppType.body,
       );
     }
     final String text =
         hours < 1 ? '평균 답변 1시간 이내' : '평균 답변 약 ${hours.round()}시간';
-    return Text(text, style: AppTypography.body);
+    return Text(text, style: AppType.body);
   }
 }
 
@@ -200,7 +201,7 @@ class _PlansView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (plans.isEmpty) {
-      return const Text('요금제 문의', style: AppTypography.body);
+      return const Text('요금제 문의', style: AppType.body);
     }
     final List<MentorPlan> sorted = <MentorPlan>[...plans]
       ..sort((MentorPlan a, MentorPlan b) =>
@@ -213,8 +214,8 @@ class _PlansView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(sorted[i].displayLabel, style: AppTypography.body),
-              Text(formatWon(sorted[i].won), style: AppTypography.body),
+              Text(sorted[i].displayLabel, style: AppType.body),
+              Text(formatWon(sorted[i].won), style: AppType.body),
             ],
           ),
         ],
@@ -234,8 +235,8 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: AppTypography.caption),
-          const SizedBox(height: 8),
+          Text(title, style: AppType.title),
+          const SizedBox(height: AppSpacing.titleBody),
           child,
         ],
       ),

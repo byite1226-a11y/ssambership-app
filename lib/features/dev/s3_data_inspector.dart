@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/mappings/subject_labels.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/app_badge.dart';
 import '../../design/widgets/app_card.dart';
 import '../../design/widgets/empty_state.dart';
@@ -168,16 +168,16 @@ class _RoomsView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text('방 #${i + 1}', style: AppTypography.body),
+                        Text('방 #${i + 1}', style: AppType.body),
                         const SizedBox(height: 4),
                         Text(
                           '개설 ${Formatters.koreanDate(r.createdAt)}',
-                          style: AppTypography.caption,
+                          style: AppType.caption,
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: ColorTokens.muted),
+                  const Icon(Icons.chevron_right_rounded, color: ColorTokens.muted),
                 ],
               ),
             );
@@ -207,11 +207,11 @@ class _RoomDetailView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: <Widget>[
-        Text('질문 스레드', style: AppTypography.caption),
+        Text('질문 스레드', style: AppType.caption),
         const SizedBox(height: 10),
         _ThreadList(repo: repo, roomId: room.id, onOpenThread: onOpenThread),
         const SizedBox(height: 24),
-        Text('연결노트', style: AppTypography.caption),
+        Text('연결노트', style: AppType.caption),
         const SizedBox(height: 10),
         _NoteList(repo: repo, roomId: room.id),
       ],
@@ -263,7 +263,7 @@ class _ThreadList extends StatelessWidget {
         }
         final List<QuestionThread> threads = snap.data ?? <QuestionThread>[];
         if (threads.isEmpty) {
-          return Text('스레드가 없어요.', style: AppTypography.caption);
+          return Text('스레드가 없어요.', style: AppType.caption);
         }
         return Column(
           children: <Widget>[
@@ -280,7 +280,7 @@ class _ThreadList extends StatelessWidget {
                             t.title?.trim().isNotEmpty == true
                                 ? t.title!
                                 : '(제목 없음)',
-                            style: AppTypography.body,
+                            style: AppType.body,
                           ),
                         ),
                         StatusPill(
@@ -337,7 +337,7 @@ class _NoteList extends StatelessWidget {
         }
         final List<ConnectionNote> notes = snap.data ?? <ConnectionNote>[];
         if (notes.isEmpty) {
-          return Text('연결노트가 없어요.', style: AppTypography.caption);
+          return Text('연결노트가 없어요.', style: AppType.caption);
         }
         return Column(
           children: <Widget>[
@@ -353,7 +353,7 @@ class _NoteList extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       n.body?.trim().isNotEmpty == true ? n.body! : '(내용 없음)',
-                      style: AppTypography.body,
+                      style: AppType.body,
                     ),
                   ],
                 ),
@@ -392,10 +392,10 @@ class _MessagesView extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     Formatters.koreanDate(m.createdAt),
-                    style: AppTypography.caption,
+                    style: AppType.caption,
                   ),
                   const SizedBox(height: 6),
-                  Text(m.body, style: AppTypography.body),
+                  Text(m.body, style: AppType.body),
                 ],
               ),
             );

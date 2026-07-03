@@ -130,7 +130,7 @@ class _InkToolbarState extends State<InkToolbar> {
                 children: <Widget>[
                   // 펜 / 지우개
                   _ToolIconButton(
-                    icon: Icons.edit,
+                    icon: Icons.edit_rounded,
                     tooltip: '펜',
                     selected: !erasing,
                     onPressed: _selectPen,

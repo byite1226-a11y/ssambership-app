@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/initial_avatar.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/community_models.dart';
@@ -26,14 +26,14 @@ class CommentTile extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    Text(comment.authorName, style: AppTypography.caption),
+                    Text(comment.authorName, style: AppType.caption),
                     const SizedBox(width: 8),
                     Text(Formatters.relativeKorean(comment.createdAt),
-                        style: AppTypography.caption),
+                        style: AppType.caption),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(comment.body, style: AppTypography.body),
+                Text(comment.body, style: AppType.body),
               ],
             ),
           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tokens/color_tokens.dart';
-import '../tokens/typography.dart';
+import '../typography_tokens.dart';
 
 /// 빈 화면 공통 위젯(자리). 각 기능 화면이 실제 UI 전까지 이 위젯으로 채워진다.
 class EmptyScreen extends StatelessWidget {
@@ -23,10 +23,10 @@ class EmptyScreen extends StatelessWidget {
           children: <Widget>[
             const Icon(Icons.widgets_outlined, size: 40, color: ColorTokens.muted),
             const SizedBox(height: 12),
-            Text(title, style: AppTypography.title, textAlign: TextAlign.center),
+            Text(title, style: AppType.title, textAlign: TextAlign.center),
             if (subtitle != null) ...<Widget>[
               const SizedBox(height: 6),
-              Text(subtitle!, style: AppTypography.caption, textAlign: TextAlign.center),
+              Text(subtitle!, style: AppType.caption, textAlign: TextAlign.center),
             ],
           ],
         ),

@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
+import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../dev/dev_flags.dart';
 import 'data/mypage_models.dart';
 import 'data/mypage_repository.dart';
@@ -98,7 +99,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Widget _body(MyPageData data) {
     final bool signedIn = AuthService.instance.isSignedIn;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, AppSpacing.s16, 20, AppSpacing.s24),
       children: <Widget>[
         ProfileSection(
           profile: data.profile,
@@ -107,7 +108,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
               ? () => _openProfileEdit(data.profile)
               : null,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.section),
         if (data.isMentor)
           ..._mentorSections(data)
         else
@@ -122,7 +123,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
             child: TextButton(
               onPressed: () => context.go(EntryGuard.devS3),
               child: Text('S3 데이터 점검 (개발용)',
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             ),
           ),
         ],

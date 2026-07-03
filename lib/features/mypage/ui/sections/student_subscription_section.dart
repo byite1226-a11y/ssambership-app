@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/primary_button.dart';
 import '../../../../design/widgets/secondary_button.dart';
@@ -36,7 +36,7 @@ class StudentSubscriptionSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text('아직 구독 중인 멘토가 없어요. 멘토를 구독하면 여기에 표시돼요.',
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             )
           else
             for (int i = 0; i < subscriptions.length; i++) ...<Widget>[
@@ -46,13 +46,14 @@ class StudentSubscriptionSection extends StatelessWidget {
           const SizedBox(height: 12),
           PrimaryButton(
             label: '질문하러 가기',
-            icon: Icons.forum_outlined,
+            icon: Icons.forum_rounded,
             onPressed: onGoToQuestions,
           ),
           const SizedBox(height: 8),
           SecondaryButton(
             label: '결제·구독 관리 (웹)',
-            icon: Icons.open_in_new,
+            icon: Icons.open_in_new_rounded,
+            neutral: true,
             onPressed: () => openBillingManageWeb(context),
           ),
         ],
@@ -72,7 +73,7 @@ class _SubCard extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Expanded(child: Text(info.mentorName, style: AppTypography.body)),
+            Expanded(child: Text(info.mentorName, style: AppType.title)),
             const SizedBox(width: 8),
             StatusPill(
               label: info.statusLabel,
@@ -89,7 +90,7 @@ class _SubCard extends StatelessWidget {
             if (info.planLabel != null) AppBadge(label: info.planLabel!, tinted: true),
             if (info.nextRenewal != null)
               Text('다음 갱신 ${Formatters.shortDate(info.nextRenewal!)}',
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             // 주간 질문 한도·잔여(웹 데스크탑 기준): "주 N개 질문 · 잔여 X/N"
             // (프리미엄=주 무제한 질문). RPC 값이 있을 때만, 없으면 기존 상태 문구로 폴백.
             Text(
@@ -97,7 +98,7 @@ class _SubCard extends StatelessWidget {
                   (info.remaining != null
                       ? '남은 질문 ${info.remaining}개'
                       : (info.isActive ? '구독 상태로 질문 가능' : '구독이 필요해요')),
-              style: AppTypography.caption,
+              style: AppType.caption,
             ),
           ],
         ),

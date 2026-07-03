@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../shared/format/formatters.dart';
@@ -33,7 +33,7 @@ class NotificationCard extends StatelessWidget {
             children: <Widget>[
               AppBadge(
                 label: notificationKindLabel(notification.kind),
-                tinted: true,
+                tinted: false,
               ),
               if (unread) ...<Widget>[
                 const SizedBox(width: 8),
@@ -49,14 +49,14 @@ class NotificationCard extends StatelessWidget {
               const Spacer(),
               Text(
                 Formatters.relativeKorean(notification.createdAt),
-                style: AppTypography.caption,
+                style: AppType.caption,
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             notification.body,
-            style: AppTypography.body,
+            style: AppType.body,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../data/community_models.dart';
 import '../../data/community_read_repository.dart';
@@ -74,7 +74,7 @@ class _MyActivityViewState extends State<MyActivityView> {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(left: 4, top: 6, bottom: 8),
-          child: Text(title, style: AppTypography.caption),
+          child: Text(title, style: AppType.caption),
         ),
         for (final BoardPost p in posts) ...<Widget>[
           BoardPostCard(post: p, onOpen: () => _open(p)),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/primary_button.dart';
 import '../../design/widgets/secondary_button.dart';
 
@@ -26,13 +26,13 @@ class BlockedScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 const Text(
                   '앱을 이용할 수 없어요',
-                  style: AppTypography.title,
+                  style: AppType.title,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   auth.blockedMessage,
-                  style: AppTypography.caption,
+                  style: AppType.caption,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),

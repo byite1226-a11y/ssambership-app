@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
@@ -51,27 +52,28 @@ class MentorDashboardSection extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: <Widget>[
-              Text('최근 정산', style: AppTypography.body),
+              Text('최근 정산', style: AppType.body),
               const Spacer(),
               Text(
                 // 정산 데이터 없으면 숫자 날조 없이 '-'.
                 data.latestSettlementCents != null
                     ? CashFormat.won(data.latestSettlementCents!)
                     : '-',
-                style: AppTypography.title,
+                style: AppType.number,
               ),
             ],
           ),
           const SizedBox(height: 12),
           SecondaryButton(
             label: '받은 질문 보기',
-            icon: Icons.forum_outlined,
+            icon: Icons.forum_rounded,
             onPressed: onGoToQuestions,
           ),
           const SizedBox(height: 8),
           SecondaryButton(
             label: '정산 관리 (웹)',
-            icon: Icons.open_in_new,
+            icon: Icons.open_in_new_rounded,
+            neutral: true,
             onPressed: () => openPayoutManageWeb(context),
           ),
         ],
@@ -92,12 +94,12 @@ class _Stat extends StatelessWidget {
       children: <Widget>[
         Text(
           value,
-          style: AppTypography.title.copyWith(
+          style: AppType.number.copyWith(
             color: emphasize ? ColorTokens.warning : null,
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppType.caption),
       ],
     );
   }
@@ -112,10 +114,10 @@ class _ReadOnlyBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: ColorTokens.muted.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: AppShape.pillRadius,
       ),
       child: Text('조회만',
-          style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
+          style: AppType.caption.copyWith(color: ColorTokens.muted)),
     );
   }
 }

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlement/weekly_question_usage.dart';
 import '../../../data/mappings/subject_labels.dart';
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/shape_tokens.dart';
+import '../../../design/spacing_tokens.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/models/question_thread.dart';
 import '../data/models/room.dart';
@@ -103,28 +105,28 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          Text('제목 (선택)', style: AppTypography.caption),
-          const SizedBox(height: 6),
+          Text('제목 (선택)', style: AppType.caption),
+          const SizedBox(height: AppSpacing.titleBody),
           TextField(
             controller: _title,
-            style: AppTypography.body,
+            style: AppType.body,
             decoration: _decoration('한 줄 제목'),
           ),
-          const SizedBox(height: 16),
-          Text('과목 (선택)', style: AppTypography.caption),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.s16),
+          Text('과목 (선택)', style: AppType.caption),
+          const SizedBox(height: AppSpacing.titleBody),
           _subjectPicker(),
-          const SizedBox(height: 16),
-          Text('질문 내용', style: AppTypography.caption),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.s16),
+          Text('질문 내용', style: AppType.caption),
+          const SizedBox(height: AppSpacing.titleBody),
           TextField(
             controller: _body,
-            style: AppTypography.body,
+            style: AppType.body,
             minLines: 5,
             maxLines: 10,
             decoration: _decoration('궁금한 점을 적어주세요.'),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.s24),
           PrimaryButton(
             label: _busy ? '등록 중…' : '질문 등록',
             onPressed: _busy ? null : _submit,
@@ -150,7 +152,7 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: ColorTokens.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShape.inputRadius,
         border: Border.all(color: ColorTokens.border),
       ),
       child: DropdownButtonHideUnderline(
@@ -158,9 +160,9 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
           isExpanded: true,
           value: _subjectCode,
           dropdownColor: ColorTokens.surface,
-          style: AppTypography.body,
+          style: AppType.body,
           hint: Text(loaded ? '선택 안 함' : '과목 불러오는 중…',
-              style: AppTypography.body),
+              style: AppType.body),
           items: items,
           // 로딩 중에는 비활성(onChanged=null) — 로드 후 제한된 후보로만 선택.
           onChanged:
@@ -176,7 +178,7 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
       filled: true,
       fillColor: ColorTokens.surface,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShape.inputRadius,
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tokens/color_tokens.dart';
-import '../tokens/typography.dart';
+import '../typography_tokens.dart';
 
 /// 우측에서 슬라이드되는 패널(연결노트·학생정보용).
 /// 모바일에서는 화면 폭의 대부분을 덮는다. 호출부는 SlideOverPanel.show(...) 사용.
@@ -59,7 +59,7 @@ class _PanelBody extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
               child: Row(
                 children: <Widget>[
-                  Expanded(child: Text(title, style: AppTypography.title)),
+                  Expanded(child: Text(title, style: AppType.title)),
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Icons.close, color: ColorTokens.secondary),

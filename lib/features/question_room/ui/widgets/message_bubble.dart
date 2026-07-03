@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
+import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/models/question_message.dart';
 
@@ -27,12 +28,15 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = mine ? AppAccent.of(context).accent : ColorTokens.surface;
-    final Color fg = mine ? ColorTokens.page : ColorTokens.primary;
+    // 색 절제: 내 말풍선만 역할색 '옅은 틴트'(accentSoft), 상대는 중립 표면(surface).
+    // 텍스트는 양쪽 다 진한 본문색(옅은 틴트 위 가독).
+    final Color bg =
+        mine ? AppAccent.of(context).accentSoft : ColorTokens.surface;
+    const Color fg = ColorTokens.primary;
     // 말풍선 폭은 화면의 약 72% 로 제한 — 좁은 화면에서 자연스럽게 줄바꿈, 넓은 화면에서 과도하게 늘어나지 않음.
     final double maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.72;
-    // 카카오톡식 '꼬리' — 보낸 쪽 아래 모서리만 각지게(내=우하단, 상대=좌하단).
-    const Radius r = Radius.circular(16);
+    // 카카오톡식 '꼬리' — 보낸 쪽 아래 모서리만 각지게(내=우하단, 상대=좌하단). 반경=카드 토큰.
+    const Radius r = Radius.circular(AppShape.card);
     final BorderRadius bubbleRadius = BorderRadius.only(
       topLeft: r,
       topRight: r,
@@ -50,7 +54,7 @@ class MessageBubble extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 6, bottom: 2),
               child: Text(Formatters.hourMinute(message.createdAt),
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             ),
           Flexible(
             child: Container(
@@ -69,7 +73,7 @@ class MessageBubble extends StatelessWidget {
                 children: <Widget>[
                   if (message.body.isNotEmpty)
                     Text(message.body,
-                        style: AppTypography.body
+                        style: AppType.body
                             .copyWith(color: fg, height: 1.35)),
                   for (final Widget a in attachments) ...<Widget>[
                     if (message.body.isNotEmpty || a != attachments.first)
@@ -84,7 +88,7 @@ class MessageBubble extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 6, bottom: 2),
               child: Text(Formatters.hourMinute(message.createdAt),
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             ),
         ],
       ),

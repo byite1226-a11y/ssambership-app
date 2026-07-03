@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../data/community_models.dart';
 import 'thumbnail_view.dart';
@@ -20,11 +21,7 @@ class ShortformCard extends StatelessWidget {
       onTap: onOpen,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: ColorTokens.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: ColorTokens.border),
-        ),
+        decoration: AppShape.cardSurface,
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +36,7 @@ class ShortformCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(post.title,
-                      style: AppTypography.body,
+                      style: AppType.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
@@ -49,17 +46,17 @@ class ShortformCard extends StatelessWidget {
                         const AppBadge(label: '멘토', tinted: true),
                       if (post.authorRole == 'mentor')
                         const SizedBox(width: 6),
-                      Text(post.authorName, style: AppTypography.caption),
+                      Text(post.authorName, style: AppType.caption),
                       const Spacer(),
                       const Icon(Icons.favorite_border,
                           size: 15, color: ColorTokens.muted),
                       const SizedBox(width: 3),
-                      Text('${post.likeCount}', style: AppTypography.caption),
+                      Text('${post.likeCount}', style: AppType.caption),
                       const SizedBox(width: 12),
                       const Icon(Icons.visibility_outlined,
                           size: 15, color: ColorTokens.muted),
                       const SizedBox(width: 3),
-                      Text('${post.viewCount}', style: AppTypography.caption),
+                      Text('${post.viewCount}', style: AppType.caption),
                     ],
                   ),
                 ],

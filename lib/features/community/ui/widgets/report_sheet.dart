@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/primary_button.dart';
 
 /// 신고 사유(라벨=화면 표기, code=저장값). ★ 외부 연락처 유도 신고 동선 포함.
@@ -46,13 +46,13 @@ class _ReportSheetState extends State<_ReportSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text('신고하기', style: AppTypography.title),
+            Text('신고하기', style: AppType.title),
             const SizedBox(height: 8),
             // 출처/권리 확인 안내 — 외부 연락처 유도·불법 정보 신고 동선.
             Text(
               '게시물의 출처·권리는 작성자에게 있어요. 외부 연락처 유도, 저작권·출처 위반,'
               ' 불법·부적절한 정보는 신고해 주세요. 접수 내용은 운영팀이 검토해요.',
-              style: AppTypography.caption,
+              style: AppType.caption,
             ),
             const SizedBox(height: 12),
             for (final MapEntry<String, String> r in reportReasons)
@@ -64,7 +64,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                 activeColor: AppAccent.of(context).accent,
                 onChanged: (String? v) =>
                     setState(() => _reason = v ?? _reason),
-                title: Text(r.value, style: AppTypography.body),
+                title: Text(r.value, style: AppType.body),
               ),
             const SizedBox(height: 8),
             PrimaryButton(

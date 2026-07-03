@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../data/mappings/subject_labels.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/spacing_tokens.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/chip_scroll.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../data/models/question_thread.dart';
@@ -69,8 +70,8 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(widget.studentName,
-                style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
-            Text('질문 / 답변', style: AppTypography.body),
+                style: AppType.caption.copyWith(color: ColorTokens.muted)),
+            Text('질문 / 답변', style: AppType.body),
           ],
         ),
       ),
@@ -168,7 +169,7 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
           IconButton(
             tooltip: _newestFirst ? '최신순' : '오래된순',
             icon: Icon(
-              _newestFirst ? Icons.south : Icons.north,
+              _newestFirst ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
               color: ColorTokens.secondary,
               size: 20,
             ),
@@ -192,7 +193,7 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       itemCount: visible.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.cardGap),
       itemBuilder: (BuildContext context, int i) => ThreadCard(
         thread: visible[i],
         onOpen: () => _openAnswer(visible[i]),

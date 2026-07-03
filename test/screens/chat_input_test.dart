@@ -32,7 +32,7 @@ void main() {
 
     expect(find.byType(TextField), findsOneWidget);
     expect(find.byIcon(Icons.attach_file), findsOneWidget);
-    expect(find.byIcon(Icons.send), findsOneWidget);
+    expect(find.byIcon(Icons.send_rounded), findsOneWidget);
     // 상태칩 한글(앱바)
     expect(find.text('답변 대기'), findsOneWidget);
 

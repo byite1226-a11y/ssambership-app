@@ -33,12 +33,13 @@ class _HomeShellState extends State<HomeShell> {
     MyPageScreen(),
   ];
 
+  // 아이콘 통일: Material Symbols rounded 한 세트(하단 탭·검색·액션 혼용 제거).
   static const List<IconData> _icons = <IconData>[
-    Icons.forum_outlined,
-    Icons.groups_outlined,
-    Icons.search_outlined,
-    Icons.notifications_none,
-    Icons.person_outline,
+    Icons.forum_rounded,
+    Icons.groups_rounded,
+    Icons.search_rounded,
+    Icons.notifications_rounded,
+    Icons.person_rounded,
   ];
 
   @override

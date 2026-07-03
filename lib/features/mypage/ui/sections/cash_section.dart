@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/shape_tokens.dart';
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/mypage_models.dart';
@@ -23,29 +25,27 @@ class CashSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text('보유 캐시', style: AppTypography.body),
-              const Spacer(),
-              Text(
-                // 잔액 미확인이면 숫자 날조 없이 '-' 표기.
-                cash.hasBalance ? CashFormat.won(cash.balanceCents!) : '-',
-                style: AppTypography.title,
-              ),
-            ],
+          // 숫자 위계(토스식): 라벨 caption 을 작게 위에, 금액을 number(26/w700)로 크게.
+          Text('보유 캐시', style: AppType.caption),
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            // 잔액 미확인이면 숫자 날조 없이 '-' 표기.
+            cash.hasBalance ? CashFormat.won(cash.balanceCents!) : '-',
+            style: AppType.number,
           ),
           const SizedBox(height: 12),
           if (cash.recent.isEmpty)
-            Text('최근 내역이 없어요.', style: AppTypography.caption)
+            Text('최근 내역이 없어요.', style: AppType.caption)
           else ...<Widget>[
-            Text('최근 내역', style: AppTypography.caption),
+            Text('최근 내역', style: AppType.caption),
             const SizedBox(height: 6),
             for (final CashEntry e in cash.recent) _EntryRow(entry: e),
           ],
           const SizedBox(height: 12),
           SecondaryButton(
             label: '충전하기 (웹)',
-            icon: Icons.open_in_new,
+            icon: Icons.open_in_new_rounded,
+            neutral: true,
             onPressed: () => openRechargeWeb(context),
           ),
         ],
@@ -66,14 +66,14 @@ class _EntryRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: <Widget>[
-          Text(entry.kindLabel, style: AppTypography.body),
+          Text(entry.kindLabel, style: AppType.body),
           const SizedBox(width: 8),
           Text(Formatters.shortDate(entry.createdAt),
-              style: AppTypography.caption),
+              style: AppType.caption),
           const Spacer(),
           Text(
             CashFormat.signedWon(entry.deltaCents),
-            style: AppTypography.body.copyWith(
+            style: AppType.body.copyWith(
                 color: amountColor, fontWeight: FontWeight.w700),
           ),
         ],
@@ -92,10 +92,10 @@ class _ReadOnlyBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: ColorTokens.muted.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: AppShape.pillRadius,
       ),
       child: Text('조회만',
-          style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
+          style: AppType.caption.copyWith(color: ColorTokens.muted)),
     );
   }
 }

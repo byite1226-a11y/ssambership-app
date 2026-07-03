@@ -3,8 +3,10 @@
 //  현재 router.dart 변경 없이 동작한다. 별도 named-route 가 필요해지면 S5 머지 후 등록할 것.)
 import 'package:flutter/material.dart';
 
+import '../../design/shape_tokens.dart';
+import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/chip_scroll.dart';
 import '../../design/widgets/empty_state.dart';
 import '../../design/widgets/secondary_button.dart';
@@ -59,15 +61,15 @@ class _MentorsScreenState extends State<MentorsScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: TextField(
-            style: AppTypography.body,
+            style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
             decoration: InputDecoration(
               hintText: '과목·이름·학교 검색',
-              prefixIcon: const Icon(Icons.search, color: ColorTokens.muted),
+              prefixIcon: const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
               fillColor: ColorTokens.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -138,7 +140,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
                         child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       itemCount: items.length + (_canLoadMore(all) ? 1 : 0),
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.cardGap),
                       itemBuilder: (BuildContext context, int i) {
                         if (i >= items.length) {
                           return Padding(
@@ -235,7 +238,7 @@ class _SortBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text('멘토 $count명', style: AppTypography.caption),
+          Text('멘토 $count명', style: AppType.caption),
           PopupMenuButton<_Sort>(
             initialValue: sort,
             onSelected: onChanged,
@@ -247,7 +250,7 @@ class _SortBar extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(_label, style: AppTypography.caption),
+                Text(_label, style: AppType.caption),
                 const Icon(Icons.arrow_drop_down, color: ColorTokens.secondary),
               ],
             ),

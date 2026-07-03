@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/shape_tokens.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../data/attachments/attachment_upload.dart';
 
 /// 채팅 입력 바(학생·멘토 공용). 첨부 버튼 → 이미지 선택 → 미리보기 → 전송.
@@ -68,7 +69,7 @@ class ChatInputBar extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: controller,
-                    style: AppTypography.body,
+                    style: AppType.body,
                     minLines: 1,
                     maxLines: 4,
                     textInputAction: TextInputAction.send,
@@ -78,7 +79,7 @@ class ChatInputBar extends StatelessWidget {
                       filled: true,
                       fillColor: ColorTokens.elevated,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: AppShape.inputRadius,
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -88,7 +89,7 @@ class ChatInputBar extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(
-                    Icons.send,
+                    Icons.send_rounded,
                     color: sending ? ColorTokens.muted : AppAccent.of(context).accent,
                   ),
                   tooltip: sendTooltip,
@@ -140,14 +141,14 @@ class _AttachmentPreview extends StatelessWidget {
               Expanded(
                 child: Text(
                   image.fileName,
-                  style: AppTypography.caption,
+                  style: AppType.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (onAnnotate != null)
                 IconButton(
-                  icon: Icon(Icons.draw_outlined,
+                  icon: Icon(Icons.draw_rounded,
                       size: 18, color: AppAccent.of(context).accent),
                   tooltip: '주석 달기',
                   onPressed: onAnnotate,
@@ -159,7 +160,7 @@ class _AttachmentPreview extends StatelessWidget {
               ),
             ],
           ),
-          const Text(kAttachmentRestrictionText, style: AppTypography.caption),
+          const Text(kAttachmentRestrictionText, style: AppType.caption),
         ],
       ),
     );

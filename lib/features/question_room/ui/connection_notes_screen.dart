@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/supabase/supabase_client.dart';
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/spacing_tokens.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/app_badge.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
@@ -227,18 +228,18 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              Text('상대 노트', style: AppTypography.caption),
-              const SizedBox(height: 10),
+              Text('상대 노트', style: AppType.caption),
+              const SizedBox(height: AppSpacing.titleBody),
               if (others.isEmpty)
-                Text('상대가 남긴 노트가 아직 없어요.', style: AppTypography.caption)
+                Text('상대가 남긴 노트가 아직 없어요.', style: AppType.caption)
               else
                 for (final ConnectionNote n in others) ...<Widget>[
                   _NoteCard(note: n),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.cardGap),
                 ],
-              const SizedBox(height: 18),
-              Text('내 노트', style: AppTypography.caption),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.section),
+              Text('내 노트', style: AppType.caption),
+              const SizedBox(height: AppSpacing.titleBody),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +254,7 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
                     ],
                     TextField(
                       controller: _editor,
-                      style: AppTypography.body,
+                      style: AppType.body,
                       minLines: 3,
                       maxLines: 8,
                       decoration: const InputDecoration(
@@ -307,13 +308,13 @@ class _NoteCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(Formatters.relativeKorean(note.updatedAt),
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             note.body?.trim().isNotEmpty == true ? note.body!.trim() : '(내용 없음)',
-            style: AppTypography.body,
+            style: AppType.body,
           ),
         ],
       ),
@@ -376,7 +377,7 @@ class _ThumbFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Icon(Icons.draw_outlined, color: ColorTokens.muted, size: 28),
+      child: Icon(Icons.draw_rounded, color: ColorTokens.muted, size: 28),
     );
   }
 }

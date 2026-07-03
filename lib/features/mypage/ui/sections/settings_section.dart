@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../../data/notification_settings_repository.dart';
@@ -69,7 +69,7 @@ class _SettingsSectionState extends State<SettingsSection> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: <Widget>[
-                Expanded(child: Text('알림 받기', style: AppTypography.body)),
+                Expanded(child: Text('알림 받기', style: AppType.body)),
                 Switch(
                   value: _notify,
                   onChanged: _saving ? null : _onNotifyChanged,
@@ -80,17 +80,17 @@ class _SettingsSectionState extends State<SettingsSection> {
           ),
           const Divider(height: 12, color: ColorTokens.border),
           MyPageRow(
-            icon: Icons.description_outlined,
+            icon: Icons.description_rounded,
             label: '이용약관',
             onTap: () => _soon(context),
           ),
           MyPageRow(
-            icon: Icons.privacy_tip_outlined,
+            icon: Icons.privacy_tip_rounded,
             label: '개인정보 처리방침',
             onTap: () => _soon(context),
           ),
           MyPageRow(
-            icon: Icons.info_outline,
+            icon: Icons.info_rounded,
             label: '앱 버전',
             trailingText: AppConstants.appVersion,
             showChevron: false,
@@ -99,7 +99,7 @@ class _SettingsSectionState extends State<SettingsSection> {
             const SizedBox(height: 12),
             SecondaryButton(
               label: '로그아웃',
-              icon: Icons.logout,
+              icon: Icons.logout_rounded,
               onPressed: widget.onLogout,
             ),
           ],

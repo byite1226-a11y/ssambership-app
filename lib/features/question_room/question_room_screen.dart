@@ -6,8 +6,10 @@ import '../../core/entitlement/subscription_summary.dart';
 import '../../core/entitlement/weekly_question_usage.dart';
 import '../../core/supabase/supabase_client.dart';
 import '../../core/web_bridge/web_bridge_actions.dart';
+import '../../design/shape_tokens.dart';
+import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/app_card.dart';
 import '../../design/widgets/empty_state.dart';
 import '../../design/widgets/initial_avatar.dart';
@@ -39,7 +41,7 @@ class QuestionRoomScreen extends StatelessWidget {
       case AppRole.admin:
       case AppRole.guest:
         return const EmptyState(
-          icon: Icons.forum_outlined,
+          icon: Icons.forum_rounded,
           title: '질문방은 학생·멘토 전용이에요',
           message: '학생 또는 멘토 계정으로 이용해 주세요.',
         );
@@ -121,15 +123,16 @@ class _StudentRoomListState extends State<_StudentRoomList> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: TextField(
-            style: AppTypography.body,
+            style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
             decoration: InputDecoration(
               hintText: '멘토 검색',
-              prefixIcon: const Icon(Icons.search, color: ColorTokens.muted),
+              prefixIcon:
+                  const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
               fillColor: ColorTokens.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -143,8 +146,9 @@ class _StudentRoomListState extends State<_StudentRoomList> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: SecondaryButton(
               // 구독 단위는 멘토-학생 쌍 → 문구를 '멘토 구독하기'로(웹 정본 기준).
+              // 강조색 절제: 이 화면의 핵심 액션 1곳 → 역할색(outline) 유지.
               label: '멘토 구독하기',
-              icon: Icons.add,
+              icon: Icons.add_rounded,
               onPressed: () => openSubscribeWeb(context),
             ),
           ),
@@ -166,7 +170,7 @@ class _StudentRoomListState extends State<_StudentRoomList> {
         final List<_RoomItem> all = snap.data ?? <_RoomItem>[];
         if (all.isEmpty) {
           return const EmptyState(
-            icon: Icons.forum_outlined,
+            icon: Icons.forum_rounded,
             title: '아직 구독한 멘토가 없어요',
             message: '멘토를 구독하면 여기에서 질문할 수 있어요.',
           );
@@ -221,16 +225,17 @@ class _RoomTile extends StatelessWidget {
     final SubscriptionStatusDisplay? statusDisp = sub == null
         ? null
         : subscriptionStatusDisplay(sub.status, isActive: sub.isActive);
+    // 상태칩 + 잔여를 한 줄로(정보 순서 유지). 넘치면 Wrap 이 자연 줄바꿈.
     final List<Widget> meta = <Widget>[
       if (statusDisp != null)
         StatusPill(label: statusDisp.label, tone: statusDisp.tone),
       // A2: 주간 잔여("주 N개 질문 · 잔여 X/N", 프리미엄=무제한). RPC 값 있을 때만.
       if (quotaLabel != null)
-        Text(quotaLabel, style: AppTypography.caption),
+        Text(quotaLabel, style: AppType.caption),
       if (sub?.nextRenewal != null)
         Text(
           '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',
-          style: AppTypography.caption,
+          style: AppType.caption,
         ),
     ];
     return AppCard(
@@ -238,13 +243,14 @@ class _RoomTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
+          // 아바타: 역할색 옅은 틴트 배경 + 이니셜(이 카드의 시그니처 요소).
           InitialAvatar(name: item.mentorName, size: 48),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.s12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // 멘토명 + 마지막 활동시각(채팅목록식): 이름과 시각을 한 줄에 정렬.
+                // 이름(title) + 우측 상단 활동시각(caption): 한 줄 정렬.
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -252,23 +258,23 @@ class _RoomTile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.mentorName,
-                        style: AppTypography.body,
+                        style: AppType.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.s8),
                     Text(
                       Formatters.relativeKorean(item.room.updatedAt),
-                      style: AppTypography.caption,
+                      style: AppType.caption,
                     ),
                   ],
                 ),
                 if (meta.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.s8),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
+                    spacing: AppSpacing.s8,
+                    runSpacing: AppSpacing.s4 + 2,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: meta,
                   ),

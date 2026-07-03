@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 
 /// 반응 바 — 좋아요·스크랩·댓글수·신고. 상세 화면 하단/상단에 쓴다.
 /// 좋아요/스크랩은 토글(내 반응), 댓글수는 표시, 신고는 시트를 연다.
@@ -88,7 +88,7 @@ class _Action extends StatelessWidget {
             Icon(icon, size: 18, color: color),
             const SizedBox(width: 4),
             Text(label,
-                style: AppTypography.caption.copyWith(color: color)),
+                style: AppType.caption.copyWith(color: color)),
           ],
         ),
       ),

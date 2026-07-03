@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
@@ -29,12 +29,12 @@ class BoardPostCard extends StatelessWidget {
               AppBadge(label: communityCategoryLabel(post.category), tinted: true),
               const Spacer(),
               Text(Formatters.relativeKorean(post.createdAt),
-                  style: AppTypography.caption),
+                  style: AppType.caption),
             ],
           ),
           const SizedBox(height: 8),
           Text(post.title,
-              style: AppTypography.body,
+              style: AppType.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
           const SizedBox(height: 10),
@@ -42,7 +42,7 @@ class BoardPostCard extends StatelessWidget {
             children: <Widget>[
               InitialAvatar(name: post.authorName, size: 22, tinted: false),
               const SizedBox(width: 6),
-              Text(post.authorName, style: AppTypography.caption),
+              Text(post.authorName, style: AppType.caption),
               const Spacer(),
               _Metric(icon: Icons.favorite_border, value: post.likeCount),
               const SizedBox(width: 12),
@@ -67,7 +67,7 @@ class _Metric extends StatelessWidget {
       children: <Widget>[
         Icon(icon, size: 15, color: ColorTokens.muted),
         const SizedBox(width: 3),
-        Text('$value', style: AppTypography.caption),
+        Text('$value', style: AppType.caption),
       ],
     );
   }

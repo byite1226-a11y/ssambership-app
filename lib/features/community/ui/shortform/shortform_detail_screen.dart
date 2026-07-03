@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/shape_tokens.dart';
+import '../../../../design/spacing_tokens.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../data/community_models.dart';
 import '../../data/community_read_repository.dart';
@@ -181,19 +183,19 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
                             const AppBadge(label: '멘토', tinted: true),
                           if (p.authorRole == 'mentor')
                             const SizedBox(width: 6),
-                          Text(p.authorName, style: AppTypography.caption),
+                          Text(p.authorName, style: AppType.caption),
                           const Spacer(),
                           Text('조회 ${p.viewCount}',
-                              style: AppTypography.caption),
+                              style: AppType.caption),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(p.title, style: AppTypography.title),
+                      const SizedBox(height: AppSpacing.titleBody),
+                      Text(p.title, style: AppType.title),
                       if (p.description?.trim().isNotEmpty == true) ...<Widget>[
-                        const SizedBox(height: 8),
-                        Text(p.description!.trim(), style: AppTypography.body),
+                        const SizedBox(height: AppSpacing.titleBody),
+                        Text(p.description!.trim(), style: AppType.body),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.s16),
                       ReactionBar(
                         liked: _liked,
                         scrapped: _scrapped,
@@ -204,8 +206,8 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
                         onReport: _report,
                       ),
                       const Divider(height: 28, color: ColorTokens.border),
-                      Text('댓글', style: AppTypography.caption),
-                      const SizedBox(height: 6),
+                      Text('댓글', style: AppType.caption),
+                      const SizedBox(height: AppSpacing.titleBody),
                       _commentList(),
                     ],
                   ),
@@ -231,12 +233,12 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
           );
         }
         if (snap.hasError) {
-          return Text('댓글을 불러오지 못했어요.', style: AppTypography.caption);
+          return Text('댓글을 불러오지 못했어요.', style: AppType.caption);
         }
         final List<CommunityComment> comments =
             snap.data ?? <CommunityComment>[];
         if (comments.isEmpty) {
-          return Text('첫 댓글을 남겨보세요.', style: AppTypography.caption);
+          return Text('첫 댓글을 남겨보세요.', style: AppType.caption);
         }
         return Column(
           children: <Widget>[
@@ -261,7 +263,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
             Expanded(
               child: TextField(
                 controller: _input,
-                style: AppTypography.body,
+                style: AppType.body,
                 minLines: 1,
                 maxLines: 3,
                 textInputAction: TextInputAction.send,
@@ -271,7 +273,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
                   filled: true,
                   fillColor: ColorTokens.elevated,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppShape.inputRadius,
                     borderSide: BorderSide.none,
                   ),
                   contentPadding:
@@ -280,7 +282,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.send,
+              icon: Icon(Icons.send_rounded,
                   color: _busy ? ColorTokens.muted : AppAccent.of(context).accent),
               onPressed: _busy ? null : _send,
             ),

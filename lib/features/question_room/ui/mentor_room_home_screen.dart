@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/entitlement/subscription_summary.dart';
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/spacing_tokens.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../shared/format/formatters.dart';
 import '../data/models/connection_note.dart';
 import '../data/models/question_thread.dart';
@@ -85,19 +86,19 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               _header(),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.section),
               EntranceCard(
-                icon: Icons.forum_outlined,
+                icon: Icons.forum_rounded,
                 title: '질문 / 답변',
                 child: d.latestThread == null
                     ? Text('아직 질문이 없어요. 첫 질문을 남겨보세요.',
-                        style: AppTypography.caption)
+                        style: AppType.caption)
                     : Row(
                         children: <Widget>[
                           Expanded(
                             child: Text(
                               _threadTitle(d.latestThread!),
-                              style: AppTypography.body,
+                              style: AppType.body,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -115,12 +116,12 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
                 child: d.latestMentorNote?.body?.trim().isNotEmpty == true
                     ? Text(
                         d.latestMentorNote!.body!.trim(),
-                        style: AppTypography.caption,
+                        style: AppType.caption,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       )
                     : Text('멘토가 남긴 노트가 아직 없어요.',
-                        style: AppTypography.caption),
+                        style: AppType.caption),
                 onTap: () => _openNotes(),
               ),
             ],
@@ -140,10 +141,10 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
     return Row(
       children: <Widget>[
         Expanded(
-          child: Text(widget.mentorName, style: AppTypography.title),
+          child: Text(widget.mentorName, style: AppType.title),
         ),
         if (bits.isNotEmpty)
-          Text(bits.join(' · '), style: AppTypography.caption),
+          Text(bits.join(' · '), style: AppType.caption),
       ],
     );
   }

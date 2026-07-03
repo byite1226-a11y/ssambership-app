@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_service.dart';
 import 'role_accent.dart';
 import 'tokens/color_tokens.dart';
-import 'tokens/typography.dart';
+import 'typography_tokens.dart';
 
 /// 토큰 → ThemeData 빌드. 화면은 raw 색 대신 Theme/토큰을 참조한다.
 ///
@@ -28,6 +28,8 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // 전역 폰트: Pretendard(정적 4종 400/500/600/700 등록). 시스템 폰트 대체.
+      fontFamily: 'Pretendard',
       scaffoldBackgroundColor: ColorTokens.page,
       // 하단 탭: 활성 표시(indicator)=역할 soft, 선택 아이콘/라벨=역할 accent.
       navigationBarTheme: NavigationBarThemeData(
@@ -55,8 +57,8 @@ class AppTheme {
         foregroundColor: ColorTokens.primary,
         elevation: 0,
         centerTitle: false,
-        // 탭·화면 제목 위계를 앱 전역에서 일관되게(기존 타이포 토큰 재사용).
-        titleTextStyle: AppTypography.titleLarge,
+        // 화면 타이틀 = 새 타입 스케일 display(24/w700). 전역 일관.
+        titleTextStyle: AppType.display,
       ),
       // 역할 강조색을 화면/위젯이 AppAccent.of(context) 로 읽는다.
       extensions: <ThemeExtension<dynamic>>[ra],

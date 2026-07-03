@@ -31,7 +31,7 @@ void main() {
       onSend: () => send++,
       onAttach: () {},
     )));
-    await tester.tap(find.byIcon(Icons.send));
+    await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump();
     expect(send, 1);
   });
@@ -72,7 +72,7 @@ void main() {
       onSend: () => send++,
       onAttach: () {},
     )));
-    await tester.tap(find.byIcon(Icons.send), warnIfMissed: false);
+    await tester.tap(find.byIcon(Icons.send_rounded), warnIfMissed: false);
     await tester.pump();
     expect(send, 0);
   });

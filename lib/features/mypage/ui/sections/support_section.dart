@@ -17,19 +17,19 @@ class SupportSection extends StatelessWidget {
       child: Column(
         children: <Widget>[
           MyPageRow(
-            icon: Icons.notifications_none,
+            icon: Icons.notifications_rounded,
             label: '알림',
             onTap: () => onOpenNotifications == null
                 ? _soon(context, '알림은 알림 탭에서 확인할 수 있어요.')
                 : onOpenNotifications!(),
           ),
           MyPageRow(
-            icon: Icons.support_agent_outlined,
+            icon: Icons.support_agent_rounded,
             label: '고객지원',
             onTap: () => _soon(context, '고객지원은 곧 제공돼요. (준비 중)'),
           ),
           MyPageRow(
-            icon: Icons.rate_review_outlined,
+            icon: Icons.rate_review_rounded,
             label: '리뷰 작성',
             onTap: () => _soon(context, '리뷰 작성은 곧 제공돼요. (준비 중)'),
           ),

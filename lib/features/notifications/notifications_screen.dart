@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_tabs.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/chip_scroll.dart';
 import '../../design/widgets/empty_state.dart';
 import 'data/app_notification.dart';
@@ -167,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Row(
             children: <Widget>[
               Expanded(
-                child: Text('안 읽음 $_unreadCount건', style: AppTypography.title),
+                child: Text('안 읽음 $_unreadCount건', style: AppType.title),
               ),
               if (_unreadCount > 0)
                 TextButton(onPressed: _markAll, child: const Text('모두 읽음')),
@@ -220,7 +220,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     if (_items.isEmpty) {
       return const EmptyState(
-        icon: Icons.notifications_none,
+        icon: Icons.notifications_rounded,
         title: '받은 알림이 없어요',
         message: '새 소식이 오면 여기에 표시돼요.',
       );

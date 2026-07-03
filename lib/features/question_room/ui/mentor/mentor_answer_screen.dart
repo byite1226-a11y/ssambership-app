@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/supabase/supabase_client.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../data/attachments/attachment_upload.dart';
 import '../../data/attachments/attachment_url_resolver.dart';
 import '../../data/attachments/device_image_picker.dart';
@@ -236,9 +236,9 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(widget.studentName,
-                style: AppTypography.caption.copyWith(color: ColorTokens.muted)),
+                style: AppType.caption.copyWith(color: ColorTokens.muted)),
             Text(title,
-                style: AppTypography.body,
+                style: AppType.body,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],

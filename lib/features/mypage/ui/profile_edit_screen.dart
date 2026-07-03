@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../design/tokens/color_tokens.dart';
-import '../../../design/tokens/typography.dart';
+import '../../../design/shape_tokens.dart';
+import '../../../design/spacing_tokens.dart';
+import '../../../design/typography_tokens.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/mypage_models.dart';
 import '../data/profile_edit_repository.dart';
@@ -72,27 +74,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          Text('표시명', style: AppTypography.caption),
-          const SizedBox(height: 6),
+          Text('표시명', style: AppType.caption),
+          const SizedBox(height: AppSpacing.titleBody),
           TextField(
             controller: _name,
-            style: AppTypography.body,
+            style: AppType.body,
             decoration: _decoration('표시할 이름'),
           ),
-          const SizedBox(height: 16),
-          Text('학년 (선택)', style: AppTypography.caption),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.s16),
+          Text('학년 (선택)', style: AppType.caption),
+          const SizedBox(height: AppSpacing.titleBody),
           TextField(
             controller: _grade,
-            style: AppTypography.body,
+            style: AppType.body,
             decoration: _decoration('예: 고2, 재수생'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s12),
           // 역할·이메일은 편집 대상이 아님(안내만).
           if (widget.profile.email != null)
             Text('이메일 ${widget.profile.email} · 역할·이메일은 여기서 바꿀 수 없어요.',
-                style: AppTypography.caption),
-          const SizedBox(height: 24),
+                style: AppType.caption),
+          const SizedBox(height: AppSpacing.s24),
           PrimaryButton(
             label: _busy ? '저장 중…' : '저장',
             onPressed: _busy ? null : _save,
@@ -108,7 +110,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       filled: true,
       fillColor: ColorTokens.surface,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShape.inputRadius,
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tokens/color_tokens.dart';
-import '../tokens/typography.dart';
+import '../typography_tokens.dart';
 import 'primary_button.dart';
 
 /// 빈 상태: 아이콘 + 문구 + (선택) 액션.
@@ -31,11 +31,11 @@ class EmptyState extends StatelessWidget {
           children: <Widget>[
             Icon(icon, size: 44, color: ColorTokens.muted),
             const SizedBox(height: 14),
-            Text(title, style: AppTypography.title, textAlign: TextAlign.center),
+            Text(title, style: AppType.title, textAlign: TextAlign.center),
             if (message != null) ...<Widget>[
               const SizedBox(height: 6),
               Text(message!,
-                  style: AppTypography.caption, textAlign: TextAlign.center),
+                  style: AppType.caption, textAlign: TextAlign.center),
             ],
             if (actionLabel != null && onAction != null) ...<Widget>[
               const SizedBox(height: 18),

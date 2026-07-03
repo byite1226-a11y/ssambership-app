@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../data/mappings/subject_labels.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../shared/format/formatters.dart';
@@ -40,7 +40,7 @@ class ThreadCard extends StatelessWidget {
                   thread.title?.trim().isNotEmpty == true
                       ? thread.title!.trim()
                       : '(제목 없음)',
-                  style: AppTypography.body,
+                  style: AppType.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -60,7 +60,7 @@ class ThreadCard extends StatelessWidget {
               const Spacer(),
               Text(
                 Formatters.relativeKorean(thread.updatedAt),
-                style: AppTypography.caption,
+                style: AppType.caption,
               ),
             ],
           ),

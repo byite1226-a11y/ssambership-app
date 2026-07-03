@@ -86,7 +86,7 @@ class _AttachmentViewerScreenState extends State<AttachmentViewerScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(Icons.draw_outlined, color: AppAccent.of(context).accent),
+                : Icon(Icons.draw_rounded, color: AppAccent.of(context).accent),
             label: const Text('주석 달기'),
           ),
         ],

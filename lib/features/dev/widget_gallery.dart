@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/primary_button.dart';
 import '../../design/widgets/secondary_button.dart';
 import '../../design/widgets/status_pill.dart';
@@ -38,7 +38,7 @@ class _WidgetGalleryState extends State<WidgetGallery> {
           const SizedBox(height: 10),
           const PrimaryButton(label: '비활성', onPressed: null),
           const SizedBox(height: 10),
-          PrimaryButton(label: '아이콘', icon: Icons.send, onPressed: () {}),
+          PrimaryButton(label: '아이콘', icon: Icons.send_rounded, onPressed: () {}),
           const SizedBox(height: 10),
           SecondaryButton(label: '취소', onPressed: () {}),
           const SizedBox(height: 10),
@@ -49,7 +49,7 @@ class _WidgetGalleryState extends State<WidgetGallery> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('멘토 · 질문방', style: AppTypography.caption),
+                const Text('멘토 · 질문방', style: AppType.caption),
                 const SizedBox(height: 10),
                 PrimaryButton(label: '답변 등록', onPressed: () {}),
               ],
@@ -120,13 +120,13 @@ class _WidgetGalleryState extends State<WidgetGallery> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('카드 제목', style: AppTypography.body),
+                      Text('카드 제목', style: AppType.body),
                       SizedBox(height: 4),
-                      Text('탭 가능한 카드', style: AppTypography.caption),
+                      Text('탭 가능한 카드', style: AppType.caption),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: ColorTokens.muted),
+                Icon(Icons.chevron_right_rounded, color: ColorTokens.muted),
               ],
             ),
           ),
@@ -147,10 +147,10 @@ class _WidgetGalleryState extends State<WidgetGallery> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const <Widget>[
-                  Text('학생 학습 메모(예시)', style: AppTypography.body),
+                  Text('학생 학습 메모(예시)', style: AppType.body),
                   SizedBox(height: 8),
                   Text('우측에서 슬라이드되는 패널입니다.',
-                      style: AppTypography.caption),
+                      style: AppType.caption),
                 ],
               ),
             ),
@@ -160,7 +160,7 @@ class _WidgetGalleryState extends State<WidgetGallery> {
           SizedBox(
             height: 240,
             child: EmptyState(
-              icon: Icons.forum_outlined,
+              icon: Icons.forum_rounded,
               title: '아직 질문이 없어요',
               message: '궁금한 문제를 멘토에게 물어보세요.',
               actionLabel: '질문 시작하기',
@@ -176,7 +176,7 @@ class _WidgetGalleryState extends State<WidgetGallery> {
   Widget _section(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 10),
-      child: Text(title, style: AppTypography.caption),
+      child: Text(title, style: AppType.caption),
     );
   }
 }

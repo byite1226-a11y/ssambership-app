@@ -4,8 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
+import '../../design/role_accent.dart';
+import '../../design/shape_tokens.dart';
+import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/widgets/primary_button.dart';
 import '../../design/widgets/secondary_button.dart';
 import '../../shared/constants/app_constants.dart';
@@ -96,22 +99,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  const Center(child: _BrandSymbol()),
+                  const SizedBox(height: AppSpacing.s16),
                   const Text(
                     AppConstants.appDisplayName,
-                    style: AppTypography.titleLarge,
+                    style: AppType.display,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s8),
                   const Text(
                     '질문 멘토링, 모바일에서',
-                    style: AppTypography.caption,
+                    style: AppType.caption,
                     textAlign: TextAlign.center,
                   ),
                   if (loginRequired) ...<Widget>[
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.s24),
                     const _NoticeBanner(),
                   ],
-                  const SizedBox(height: 28),
+                  const SizedBox(height: AppSpacing.s32),
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
@@ -120,41 +125,41 @@ class _LoginScreenState extends State<LoginScreen> {
                       AutofillHints.username,
                     ],
                     textInputAction: TextInputAction.next,
-                    style: AppTypography.body,
+                    style: AppType.body,
                     decoration: _decoration('이메일'),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.s12),
                   TextField(
                     controller: _password,
                     obscureText: true,
                     autofillHints: const <String>[AutofillHints.password],
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _signIn(),
-                    style: AppTypography.body,
+                    style: AppType.body,
                     decoration: _decoration('비밀번호'),
                   ),
                   if (_error != null) ...<Widget>[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.s12),
                     Text(
                       _error!,
-                      style: const TextStyle(
+                      style: AppType.caption.copyWith(
                         color: ColorTokens.danger,
-                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.s24),
                   PrimaryButton(
                     label: _loading ? '로그인 중…' : '로그인',
                     onPressed: _loading ? null : _signIn,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.s12),
                   SecondaryButton(
                     label: '둘러보기',
+                    neutral: true,
                     onPressed: _loading ? null : _browse,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.s16),
                   TextButton(
                     onPressed: _openWebSignUp,
                     child: const Text(
@@ -179,14 +184,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
   InputDecoration _decoration(String label) => InputDecoration(
         labelText: label,
-        labelStyle: AppTypography.caption,
+        labelStyle: AppType.caption,
         filled: true,
         fillColor: ColorTokens.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppShape.inputRadius,
           borderSide: BorderSide.none,
         ),
       );
+}
+
+/// 브랜드 심볼(단 하나) — 역할색 둥근 사각 배경 위 말풍선 아이콘. 과한 장식 금지.
+class _BrandSymbol extends StatelessWidget {
+  const _BrandSymbol();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color accent = AppAccent.of(context).accent;
+    return Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accent,
+        borderRadius: AppShape.cardRadius,
+      ),
+      child: const Icon(
+        Icons.forum_rounded,
+        size: 34,
+        color: Colors.white,
+      ),
+    );
+  }
 }
 
 /// '로그인이 필요해요' 안내 배너(보호 탭을 게스트가 눌렀을 때).
@@ -199,15 +228,15 @@ class _NoticeBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: ColorTokens.elevated,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppShape.inputRadius,
         border: Border.all(color: ColorTokens.border),
       ),
       child: const Row(
         children: <Widget>[
-          Icon(Icons.info_outline, size: 18, color: ColorTokens.accent),
+          Icon(Icons.info_rounded, size: 18, color: ColorTokens.muted),
           SizedBox(width: 10),
           Expanded(
-            child: Text('로그인이 필요해요', style: AppTypography.body),
+            child: Text('로그인이 필요해요', style: AppType.body),
           ),
         ],
       ),

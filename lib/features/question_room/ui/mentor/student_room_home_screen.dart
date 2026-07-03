@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/entitlement/subscription_summary.dart';
 import '../../../../core/supabase/supabase_client.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/spacing_tokens.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/status_pill.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/models/connection_note.dart';
@@ -107,9 +108,9 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               _header(d.sub),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.section),
               EntranceCard(
-                icon: Icons.forum_outlined,
+                icon: Icons.forum_rounded,
                 title: '질문 / 답변',
                 trailing: d.counts.pending > 0
                     ? StatusPill(
@@ -119,13 +120,13 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
                     : null,
                 onTap: _openQuestions,
                 child: d.latestThread == null
-                    ? Text('아직 받은 질문이 없어요.', style: AppTypography.caption)
+                    ? Text('아직 받은 질문이 없어요.', style: AppType.caption)
                     : Row(
                         children: <Widget>[
                           Expanded(
                             child: Text(
                               _threadTitle(d.latestThread!),
-                              style: AppTypography.body,
+                              style: AppType.body,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -157,9 +158,9 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
     ];
     return Row(
       children: <Widget>[
-        Expanded(child: Text(widget.studentName, style: AppTypography.title)),
+        Expanded(child: Text(widget.studentName, style: AppType.title)),
         if (bits.isNotEmpty)
-          Text(bits.join(' · '), style: AppTypography.caption),
+          Text(bits.join(' · '), style: AppType.caption),
       ],
     );
   }
@@ -169,25 +170,25 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
     final String? stu = d.studentNote?.body?.trim();
     if ((mine == null || mine.isEmpty) && (stu == null || stu.isEmpty)) {
       return Text('아직 노트가 없어요. 내 노트를 추가해 보세요.',
-          style: AppTypography.caption);
+          style: AppType.caption);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (mine != null && mine.isNotEmpty) ...<Widget>[
-          Text('내 노트', style: AppTypography.caption),
+          Text('내 노트', style: AppType.caption),
           const SizedBox(height: 2),
           Text(mine,
-              style: AppTypography.body,
+              style: AppType.body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
         if (stu != null && stu.isNotEmpty) ...<Widget>[
           if (mine != null && mine.isNotEmpty) const SizedBox(height: 8),
-          Text('학생 메모', style: AppTypography.caption),
+          Text('학생 메모', style: AppType.caption),
           const SizedBox(height: 2),
           Text(stu,
-              style: AppTypography.body,
+              style: AppType.body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],

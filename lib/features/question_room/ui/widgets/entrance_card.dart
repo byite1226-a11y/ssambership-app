@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_card.dart';
 
 /// 방 홈(2뎁스)의 동등한 '큰 입구' 카드. 학생·멘토 홈이 함께 쓴다.
@@ -37,13 +37,13 @@ class EntranceCard extends StatelessWidget {
             children: <Widget>[
               Icon(icon, color: AppAccent.of(context).accent),
               const SizedBox(width: 8),
-              Text(title, style: AppTypography.title),
+              Text(title, style: AppType.title),
               if (trailing != null) ...<Widget>[
                 const SizedBox(width: 8),
                 trailing!,
               ],
               const Spacer(),
-              const Icon(Icons.chevron_right, color: ColorTokens.muted),
+              const Icon(Icons.chevron_right_rounded, color: ColorTokens.muted),
             ],
           ),
           const SizedBox(height: 12),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../design/tokens/typography.dart';
+import '../../design/typography_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
 import '../../shared/constants/app_constants.dart';
 import '../dev/dev_flags.dart';
@@ -16,9 +16,9 @@ class OnboardingScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(AppConstants.appDisplayName, style: AppTypography.titleLarge),
+            Text(AppConstants.appDisplayName, style: AppType.display),
             const SizedBox(height: 8),
-            const Text('질문 멘토링, 모바일에서', style: AppTypography.caption),
+            const Text('질문 멘토링, 모바일에서', style: AppType.caption),
             const SizedBox(height: 28),
             FilledButton(
               onPressed: () => context.go('/login'),

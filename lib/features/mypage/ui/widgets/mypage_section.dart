@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/spacing_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_card.dart';
 
 /// 마이페이지 섹션 컨테이너(제목 + 카드 본문). 세로로 잘게 쪼개지 않게 카드형으로 묶는다.
@@ -23,15 +24,15 @@ class MyPageSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.section),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.titleBody),
             child: Row(
               children: <Widget>[
-                Text(title, style: AppTypography.caption),
+                Text(title, style: AppType.title),
                 if (trailing != null) ...<Widget>[
                   const SizedBox(width: 8),
                   trailing!,
@@ -74,12 +75,12 @@ class MyPageRow extends StatelessWidget {
           children: <Widget>[
             Icon(icon, size: 20, color: ColorTokens.secondary),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: AppTypography.body)),
+            Expanded(child: Text(label, style: AppType.body)),
             if (trailingText != null)
-              Text(trailingText!, style: AppTypography.caption),
+              Text(trailingText!, style: AppType.caption),
             if (showChevron && onTap != null) ...<Widget>[
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right, size: 18, color: ColorTokens.muted),
+              const Icon(Icons.chevron_right_rounded, size: 18, color: ColorTokens.muted),
             ],
           ],
         ),

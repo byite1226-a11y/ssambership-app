@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design/tokens/color_tokens.dart';
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/shape_tokens.dart';
+import '../../../../design/spacing_tokens.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/empty_state.dart';
 import '../../../../design/widgets/initial_avatar.dart';
@@ -98,15 +100,15 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: TextField(
-            style: AppTypography.body,
+            style: AppType.body,
             onChanged: (String v) => setState(() => _query = v.trim()),
             decoration: InputDecoration(
               hintText: '학생 검색',
-              prefixIcon: const Icon(Icons.search, color: ColorTokens.muted),
+              prefixIcon: const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
               fillColor: ColorTokens.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: AppShape.inputRadius,
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -140,7 +142,7 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
         final List<_StudentItem> all = snap.data ?? <_StudentItem>[];
         if (all.isEmpty) {
           return const EmptyState(
-            icon: Icons.forum_outlined,
+            icon: Icons.forum_rounded,
             title: '아직 받은 학생이 없어요',
             message: '학생이 구독하면 여기에서 질문에 답할 수 있어요.',
           );
@@ -160,7 +162,7 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.cardGap),
           itemBuilder: (BuildContext context, int i) =>
               _StudentTile(item: items[i], onOpen: () => _open(items[i])),
         );
@@ -199,11 +201,11 @@ class _StudentTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(item.studentName, style: AppTypography.body),
+                Text(item.studentName, style: AppType.body),
                 const SizedBox(height: 6),
                 Text(
                   c.summaryLine,
-                  style: AppTypography.caption.copyWith(
+                  style: AppType.caption.copyWith(
                     color: c.needsAttention
                         ? ColorTokens.warning
                         : ColorTokens.secondary,
@@ -217,7 +219,7 @@ class _StudentTile extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             Formatters.relativeKorean(item.lastActivity),
-            style: AppTypography.caption,
+            style: AppType.caption,
           ),
         ],
       ),

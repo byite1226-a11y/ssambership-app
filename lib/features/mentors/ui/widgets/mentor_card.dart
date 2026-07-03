@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../design/tokens/typography.dart';
+import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
@@ -41,7 +41,7 @@ class MentorCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             item.displayName,
-                            style: AppTypography.body,
+                            style: AppType.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -56,7 +56,7 @@ class MentorCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         school,
-                        style: AppTypography.caption,
+                        style: AppType.caption,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -74,7 +74,7 @@ class MentorCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               intro,
-              style: AppTypography.caption,
+              style: AppType.caption,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -87,7 +87,7 @@ class MentorCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   item.priceSummary,
-                  style: AppTypography.body,
+                  style: AppType.body,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

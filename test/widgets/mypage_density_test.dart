@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ssambership_app/design/widgets/count_badge.dart';
 import 'package:ssambership_app/design/widgets/money_display.dart';
 import 'package:ssambership_app/features/mypage/data/mypage_models.dart';
 import 'package:ssambership_app/features/mypage/ui/sections/mentor_dashboard_section.dart';
@@ -10,7 +9,7 @@ Widget _wrap(Widget child) =>
     MaterialApp(home: Scaffold(body: SingleChildScrollView(child: child)));
 
 void main() {
-  testWidgets('멘토 대시보드: 카운트 배지 2개 + MoneyDisplay(정산)',
+  testWidgets('멘토 대시보드: 지표 숫자(3·2) + MoneyDisplay(정산)',
       (WidgetTester tester) async {
     await tester.pumpWidget(_wrap(MentorDashboardSection(
       data: const MentorDashboard(
@@ -20,8 +19,7 @@ void main() {
       ),
       onGoToQuestions: () {},
     )));
-    // 구독 학생·답변 대기 → CountBadge(양수)
-    expect(find.byType(CountBadge), findsNWidgets(2));
+    // 구독 학생·답변 대기 → 큰 숫자 메트릭(색 원 아님)
     expect(find.text('3'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     // 최근 정산 → MoneyDisplay(값은 기존 그대로)

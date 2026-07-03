@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
-import '../../../../design/widgets/count_badge.dart';
 import '../../../../design/widgets/money_display.dart';
 import '../../../../design/widgets/secondary_button.dart';
-import '../../../../design/widgets/status_pill.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
 import '../widgets/mypage_section.dart';
@@ -48,8 +46,8 @@ class MentorDashboardSection extends StatelessWidget {
                 child: _Stat(
                   label: '답변 대기',
                   count: data.pendingAnswers,
-                  // 대기 있을 때 warning 배지로 강조. 0이면 배지 대신 차분한 '0'.
-                  tone: StatusTone.warning,
+                  // 대기>0이면 '숫자만' warning 텍스트로 은은히 강조(꽉 찬 원 아님).
+                  emphasizeWhenPositive: true,
                 ),
               ),
             ],
@@ -81,39 +79,28 @@ class MentorDashboardSection extends StatelessWidget {
   }
 }
 
-/// 요약 통계 한 칸 — 카운트를 CountBadge(D-1)로 시각화(0이면 차분한 '0').
+/// 요약 통계 한 칸 — 큰 숫자(tabular) + 작은 라벨. 색 원(배지) 대신 메트릭 표기.
 class _Stat extends StatelessWidget {
   const _Stat({
     required this.label,
     required this.count,
-    this.tone = StatusTone.info,
+    this.emphasizeWhenPositive = false,
   });
   final String label;
   final int count;
-  final StatusTone tone;
+
+  /// 값>0일 때 '숫자만' warning(주황)으로 은은히 강조(꽉 찬 원 금지). 0이면 기본색.
+  final bool emphasizeWhenPositive;
 
   @override
   Widget build(BuildContext context) {
+    final bool warn = emphasizeWhenPositive && count > 0;
     return Column(
       children: <Widget>[
-        SizedBox(
-          height: 26,
-          // Row(center)로 배지를 콘텐츠 크기로 유지(Center의 bounded 제약이 배지를
-          // 칸 전체로 늘리는 것 방지). CountBadge 자체는 미변경(다른 사용처 유지).
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              if (count > 0)
-                CountBadge(count: count, tone: tone)
-              else
-                Text(
-                  '0',
-                  style: AppType.body.copyWith(
-                    color: ColorTokens.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-            ],
+        Text(
+          '$count',
+          style: AppType.number.copyWith(
+            color: warn ? ColorTokens.warning : null,
           ),
         ),
         const SizedBox(height: 2),

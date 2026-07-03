@@ -74,6 +74,7 @@ abstract class AttachmentUploaderPort {
   bool get isReady;
 
   Future<QuestionAttachment> upload({
+    required String roomId,
     required String threadId,
     String? messageId,
     required PickedImage image,
@@ -82,17 +83,17 @@ abstract class AttachmentUploaderPort {
 
 /// Supabase Storage 업로드 구현.
 ///
-/// ★ 인프라 의존(인수인계): 아래 [bucket] 이름의 Storage 버킷과 '방 참여자만 read/write'
-///   정책이 있어야 한다. 현재 로컬 확인 결과 버킷이 없어서 [_storageReady]=false 로 둔다.
-///   버킷 생성은 이 작업 범위 밖(인프라 생성 금지). 준비되면 플래그만 켜면 동작한다.
-///   업로드 로직(uploadBinary + question_attachments insert)은 아래에 완성해 둔다.
+/// ★ 인프라(실사 확인됨): Storage 버킷 [bucket] 과 정책
+///   `user_is_room_party_for_qra_path` 가 존재한다. 정책은 '경로 첫 세그먼트가
+///   mentor_student_rooms.id(room UUID)일 때만 insert/select 허용'이며, 버킷이
+///   비어 있어 이 정의가 유일한 규약이다 → 업로드 경로 첫 세그먼트는 반드시 roomId.
 class SupabaseAttachmentUploader implements AttachmentUploaderPort {
   const SupabaseAttachmentUploader();
 
-  /// TODO(인수인계): 실제 버킷명 확정. 웹과 공유하는 첨부 버킷명으로 맞출 것.
+  /// 실제 버킷명(Supabase 실사로 확인 — 웹과 공유).
   static const String bucket = 'question-room-attachments';
 
-  /// ★ 버킷 미확인 → 비활성. 오너/동업자가 버킷+정책을 만들면 true 로 전환.
+  /// 버킷·정책 준비 완료 → 활성.
   static const bool _storageReady = true;
 
   @override
@@ -106,6 +107,7 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
 
   @override
   Future<QuestionAttachment> upload({
+    required String roomId,
     required String threadId,
     String? messageId,
     required PickedImage image,
@@ -114,14 +116,16 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
     if (invalid != null) throw AppError(invalid);
 
     if (!_storageReady) {
-      // 버킷 미준비 → 저장 보류(골격). 화면은 이 에러를 사용자 안내로 표시한다.
-      throw const AppError('이미지 첨부 저장소가 아직 준비되지 않았어요. (저장소 설정 인수인계)');
+      throw const AppError('이미지 첨부 저장소가 아직 준비되지 않았어요.');
     }
 
-    // --- 아래는 버킷 준비 시 그대로 동작하는 실제 업로드 경로(인수인계 검토용) ---
-    final String safeName = image.fileName.replaceAll(RegExp(r'[^\w.\-]'), '_');
-    final String objectPath =
-        '$threadId/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    // 정책 규약: 경로 첫 세그먼트 = roomId(mentor_student_rooms.id)여야 통과한다.
+    final String objectPath = buildStoragePath(
+      roomId: roomId,
+      threadId: threadId,
+      fileName: image.fileName,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
 
     await _client.storage.from(bucket).uploadBinary(
           objectPath,
@@ -141,5 +145,17 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
         .select()
         .single();
     return QuestionAttachment.fromMap(row);
+  }
+
+  /// Storage object 경로 조립(순수 함수 — 테스트 가능).
+  /// 정책상 첫 세그먼트는 roomId 여야 한다: '{roomId}/{threadId}/{ts}_{safeName}'.
+  static String buildStoragePath({
+    required String roomId,
+    required String threadId,
+    required String fileName,
+    required int timestamp,
+  }) {
+    final String safeName = fileName.replaceAll(RegExp(r'[^\w.\-]'), '_');
+    return '$roomId/$threadId/${timestamp}_$safeName';
   }
 }

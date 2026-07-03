@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/app_badge.dart';
@@ -280,7 +281,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
             ),
             IconButton(
               icon: Icon(Icons.send,
-                  color: _busy ? ColorTokens.muted : ColorTokens.accent),
+                  color: _busy ? ColorTokens.muted : AppAccent.of(context).accent),
               onPressed: _busy ? null : _send,
             ),
           ],

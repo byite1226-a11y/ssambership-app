@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tokens/color_tokens.dart';
+import '../tokens/dimens.dart';
 
 /// 카드 컨테이너(모바일 패딩·라운드). 화면 카드의 기본 뼈대.
 class AppCard extends StatelessWidget {
@@ -21,7 +22,7 @@ class AppCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: ColorTokens.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: ColorTokens.border),
       ),
       child: child,
@@ -32,7 +33,7 @@ class AppCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: body,
       ),
     );

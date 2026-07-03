@@ -8,25 +8,25 @@ import 'package:flutter/material.dart';
 class ColorTokens {
   ColorTokens._();
 
-  // ── 표면(배경 계층) — TODO: 웹 다크 확정값으로 교체 ──
-  static const Color page = Color(0xFF0B1220); // 임시: 최하단 배경(다크)
-  static const Color surface = Color(0xFF111A2B); // 임시: 카드 표면
-  static const Color elevated = Color(0xFF1A2740); // 임시: 떠 있는 표면
+  // ── 표면(배경 계층) — 라이트 테마 ──
+  static const Color page = Color(0xFFF8FAFC); // 앱 배경(거의 흰색)
+  static const Color surface = Color(0xFFFFFFFF); // 카드 표면(흰색)
+  static const Color elevated = Color(0xFFF1F5F9); // 떠 있는 표면
 
   // ── 텍스트/전경 ──
-  static const Color primary = Color(0xFFF1F5F9); // 임시: 주요 텍스트
-  static const Color secondary = Color(0xFF94A3B8); // 임시: 보조 텍스트
-  static const Color muted = Color(0xFF64748B); // 임시: 약한 텍스트/구분선
+  static const Color primary = Color(0xFF0F172A); // 주요 텍스트(대비 17.85)
+  static const Color secondary = Color(0xFF475569); // 보조 텍스트(대비 7.58)
+  static const Color muted = Color(0xFF64748B); // 약한 텍스트/구분선(대비 4.76)
 
-  // ── 강조(스카이 단일) — TODO: 스카이 확정 hex ──
-  static const Color accent = Color(0xFF38BDF8); // 임시: 스카이 강조
-  static const Color accentMuted = Color(0xFF0EA5E9); // 임시: 강조 변형
+  // ── 강조(단일 파랑) — 2단계에서 role-aware 예정 ──
+  static const Color accent = Color(0xFF2563EB); // 포인트(웹 파랑, 대비 5.17)
+  static const Color accentMuted = Color(0xFF1D4ED8); // 진한 파랑
 
   // ── 상태색 ──
-  static const Color success = Color(0xFF22C55E); // 임시
-  static const Color warning = Color(0xFFF59E0B); // 임시
-  static const Color danger = Color(0xFFEF4444); // 임시
+  static const Color success = Color(0xFF16A34A);
+  static const Color warning = Color(0xFFEA580C);
+  static const Color danger = Color(0xFFDC2626); // 대비 4.83
 
   // ── 경계/구분선 ──
-  static const Color border = Color(0xFF233047); // 임시
+  static const Color border = Color(0xFFE2E8F0); // 옅은 회색(카드 층 구분)
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 
@@ -75,7 +76,7 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = active ? ColorTokens.accent : ColorTokens.secondary;
+    final Color color = active ? AppAccent.of(context).accent : ColorTokens.secondary;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),

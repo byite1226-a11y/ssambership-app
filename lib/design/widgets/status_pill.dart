@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
 
 /// 상태 칩의 의미색(시맨틱 토큰에만 매핑 — hex 하드코딩 금지).
+/// info = 역할 강조색(학생 파랑/멘토 초록), 나머지는 공통 시맨틱색.
 enum StatusTone { neutral, info, success, warning, danger }
 
 /// 상태 한글 칩. 예: 답변대기/진행중/답변완료/분쟁.
@@ -16,7 +18,7 @@ class StatusPill extends StatelessWidget {
   final String label;
   final StatusTone tone;
 
-  Color get _color {
+  Color _colorFor(BuildContext context) {
     switch (tone) {
       case StatusTone.success:
         return ColorTokens.success;
@@ -25,7 +27,7 @@ class StatusPill extends StatelessWidget {
       case StatusTone.danger:
         return ColorTokens.danger;
       case StatusTone.info:
-        return ColorTokens.accent;
+        return AppAccent.of(context).accent;
       case StatusTone.neutral:
         return ColorTokens.secondary;
     }
@@ -33,7 +35,7 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color c = _color;
+    final Color c = _colorFor(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(

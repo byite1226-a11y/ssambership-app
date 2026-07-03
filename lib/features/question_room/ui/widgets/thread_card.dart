@@ -52,7 +52,7 @@ class ThreadCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: <Widget>[
-              AppBadge(label: subjectLabel(thread.subject), tinted: true),
+              AppBadge(label: subjectLabel(thread.subject)),
               if (thread.isWrongAnswer) ...<Widget>[
                 const SizedBox(width: 6),
                 const AppBadge(label: '오답노트'),

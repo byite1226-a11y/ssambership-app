@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/app_card.dart';
@@ -34,7 +35,7 @@ class EntranceCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, color: ColorTokens.accent),
+              Icon(icon, color: AppAccent.of(context).accent),
               const SizedBox(width: 8),
               Text(title, style: AppTypography.title),
               if (trailing != null) ...<Widget>[

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
 
 /// 이니셜 아바타. 사진이 없으면 이름 첫 글자 + 중립/accent-tint 배경을 쓴다.
@@ -26,7 +27,8 @@ class InitialAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color base = tinted ? ColorTokens.accent : ColorTokens.muted;
+    final Color accent = AppAccent.of(context).accent;
+    final Color base = tinted ? accent : ColorTokens.muted;
     return Container(
       width: size,
       height: size,
@@ -38,7 +40,7 @@ class InitialAvatar extends StatelessWidget {
       child: Text(
         _initial,
         style: TextStyle(
-          color: tinted ? ColorTokens.accent : ColorTokens.primary,
+          color: tinted ? accent : ColorTokens.primary,
           fontSize: size * 0.42,
           fontWeight: FontWeight.w800,
         ),

@@ -121,7 +121,7 @@ class _SubjectChips extends StatelessWidget {
       spacing: 6,
       runSpacing: 6,
       children: <Widget>[
-        for (final String s in shown) AppBadge(label: s, tinted: true),
+        for (final String s in shown) AppBadge(label: s),
         if (extra > 0) AppBadge(label: '+$extra'),
       ],
     );

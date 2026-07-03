@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
+import '../tokens/dimens.dart';
 
-/// 보조 액션 버튼(외곽선). 강조색은 스카이(accent) — 역할색 금지.
+/// 보조 액션 버튼(외곽선). 강조색은 역할색(학생 파랑/멘토 초록) — AppAccent.of(context).
 class SecondaryButton extends StatelessWidget {
   const SecondaryButton({
     super.key,
@@ -29,14 +31,16 @@ class SecondaryButton extends StatelessWidget {
             ],
           );
 
+    final RoleAccent ra = AppAccent.of(context);
     final Widget button = OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: ColorTokens.accent,
+        foregroundColor: ra.accent,
         disabledForegroundColor: ColorTokens.muted,
         minimumSize: const Size(0, 52),
-        side: const BorderSide(color: ColorTokens.accent, width: 1.4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        side: BorderSide(color: ra.accent, width: 1.4),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.button)),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
       ),
       child: child,

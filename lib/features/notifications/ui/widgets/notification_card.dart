@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../design/tokens/color_tokens.dart';
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
@@ -40,8 +40,8 @@ class NotificationCard extends StatelessWidget {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(
-                    color: ColorTokens.accent,
+                  decoration: BoxDecoration(
+                    color: AppAccent.of(context).accent,
                     shape: BoxShape.circle,
                   ),
                 ),

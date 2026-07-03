@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../design/role_accent.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/tokens/typography.dart';
 import '../../../../design/widgets/secondary_button.dart';
@@ -72,7 +73,7 @@ class _SettingsSectionState extends State<SettingsSection> {
                 Switch(
                   value: _notify,
                   onChanged: _saving ? null : _onNotifyChanged,
-                  activeThumbColor: ColorTokens.accent,
+                  activeThumbColor: AppAccent.of(context).accent,
                 ),
               ],
             ),

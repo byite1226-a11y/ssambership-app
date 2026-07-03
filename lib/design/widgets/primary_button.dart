@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../role_accent.dart';
 import '../tokens/color_tokens.dart';
+import '../tokens/dimens.dart';
 
 /// 주요 액션 버튼.
-/// ★ 멘토 화면이라도 액션 버튼은 스카이(accent) — 역할색(초록 등) 금지.
+/// ★ 강조색은 역할색(학생 파랑/멘토 초록)을 따른다 — AppAccent.of(context).
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -30,15 +32,17 @@ class PrimaryButton extends StatelessWidget {
             ],
           );
 
+    final RoleAccent ra = AppAccent.of(context);
     final Widget button = FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: ColorTokens.accent,
-        foregroundColor: ColorTokens.page,
+        backgroundColor: ra.accent,
+        foregroundColor: ra.onAccent,
         disabledBackgroundColor: ColorTokens.muted,
         disabledForegroundColor: ColorTokens.secondary,
         minimumSize: const Size(0, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.button)),
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
       ),
       child: child,

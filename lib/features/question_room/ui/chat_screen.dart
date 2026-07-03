@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../data/attachments/attachment_upload.dart';
+import '../data/attachments/attachment_url_resolver.dart';
 import '../data/attachments/device_image_picker.dart';
+import '../data/models/question_attachment.dart';
 import '../data/models/question_message.dart';
 import '../data/models/question_thread.dart';
 import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
 import '../data/thread_messages_controller.dart';
 import '../data/thread_realtime.dart';
+import '../../scan_annotation/scan_annotation_screen.dart';
+import 'attachment_viewer_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/live_message_list.dart';
 import 'widgets/thread_status_pill.dart';
@@ -62,6 +66,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   PickedImage? _pending;
 
+  /// 첨부 이미지 서명 URL 리졸버(만료 전 캐시 재사용).
+  final AttachmentUrlResolver _resolver = AttachmentUrlResolver.supabase();
+  List<QuestionAttachment> _attachments = <QuestionAttachment>[];
+
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
 
   @override
@@ -92,9 +100,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _load() async {
     try {
       final List<QuestionMessage> msgs = await _read.messages(widget.thread.id);
+      final List<QuestionAttachment> atts = await _loadAttachments();
       if (!mounted) return;
       setState(() {
         _messages = ThreadMessagesController(msgs);
+        _attachments = atts;
         _loading = false;
       });
     } catch (e) {
@@ -106,7 +116,16 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// 폴백 재조회(Realtime 미설정 시 수동 새로고침 = 상대 메시지 반영).
+  /// 첨부 조회는 best-effort — 실패해도 대화는 막지 않는다(빈 목록 폴백).
+  Future<List<QuestionAttachment>> _loadAttachments() async {
+    try {
+      return await _read.attachments(widget.thread.id);
+    } catch (_) {
+      return const <QuestionAttachment>[];
+    }
+  }
+
+  /// 폴백 재조회(Realtime 미설정 시 수동 새로고침 = 상대 메시지·첨부 반영).
   Future<void> _refresh() async {
     final ThreadMessagesController? ctrl = _messages;
     if (ctrl == null) return;
@@ -116,6 +135,23 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (_) {
       // 조용히 무시 — 기존 목록 유지.
     }
+    final List<QuestionAttachment> atts = await _loadAttachments();
+    if (mounted) setState(() => _attachments = atts);
+  }
+
+  /// 이미지 첨부 탭 → 전체화면 뷰어. 주석이 전송되면 목록 새로고침.
+  Future<void> _openImage(QuestionAttachment a) async {
+    final bool? refreshed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => AttachmentViewerScreen(
+          attachment: a,
+          roomId: widget.thread.roomId,
+          threadId: widget.thread.id,
+          resolver: _resolver,
+        ),
+      ),
+    );
+    if (refreshed == true && mounted) await _refresh();
   }
 
   Future<void> _send() async {
@@ -152,8 +188,12 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
     try {
-      await widget.uploader
-          .upload(threadId: widget.thread.id, messageId: messageId, image: image);
+      await widget.uploader.upload(
+        roomId: widget.thread.roomId,
+        threadId: widget.thread.id,
+        messageId: messageId,
+        image: image,
+      );
       await _refresh(); // 첨부 반영.
     } catch (e) {
       _showError('이미지 첨부에 실패했어요. ($e)');
@@ -179,6 +219,30 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /// 선택한(전송 전) 이미지에 주석 달기(S15). 완료 시 평탄화 PNG 가 새 첨부로
+  /// 전송되므로, 원본 대기 이미지는 지운다(중복 전송 방지).
+  Future<void> _annotatePending() async {
+    final PickedImage? img = _pending;
+    if (img == null) return;
+    final bool? sent = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => ScanAnnotationScreen(
+          background: img.bytes,
+          roomId: widget.thread.roomId,
+          threadId: widget.thread.id,
+        ),
+      ),
+    );
+    if (sent != true || !mounted) return;
+    setState(() => _pending = null);
+    await _refresh();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('주석을 첨부로 보냈어요.')),
+      );
+    }
   }
 
   @override
@@ -213,6 +277,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onAttach: _attach,
             pendingImage: _pending,
             onRemovePending: () => setState(() => _pending = null),
+            onAnnotate: _annotatePending,
           ),
         ],
       ),
@@ -239,6 +304,9 @@ class _ChatScreenState extends State<ChatScreen> {
       currentUid: _uid,
       emptyHint: '첫 메시지를 남겨보세요.',
       onThreadUpdate: _onThreadUpdate,
+      attachments: _attachments,
+      resolver: _resolver,
+      onOpenImage: _openImage,
     );
   }
 }

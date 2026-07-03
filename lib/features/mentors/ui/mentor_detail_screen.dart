@@ -11,7 +11,11 @@ import '../data/mentor_directory_repository.dart';
 import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
 import '../../../app/app_tabs.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/web_bridge/web_bridge_actions.dart';
+import '../../../design/widgets/secondary_button.dart';
+import '../../individual_question/iq_flags.dart';
+import '../../individual_question/ui/iq_create_screen.dart';
 
 /// 멘토 상세(열람 전용). 목록에서 받은 항목을 재사용하고, 평균 답변시간·구독 여부만
 /// 추가로 불러온다. CTA 는 구독 상태에 따라 [질문방으로]/[구독하기](웹 브릿지).
@@ -112,7 +116,29 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               );
             },
           ),
+          // 개별질문: 구독 없이 1건씩 캐시로 질문(지정형). 학생만.
+          if (kIndividualQuestionEnabled &&
+              kIndividualQuestionCreateEnabled &&
+              AuthService.instance.currentRole == AppRole.student) ...<Widget>[
+            const SizedBox(height: 10),
+            SecondaryButton(
+              label: '개별질문 하기',
+              icon: Icons.help_outline,
+              onPressed: () => _openIndividualQuestion(context),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Future<void> _openIndividualQuestion(BuildContext context) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => IqCreateScreen(
+          mentorId: widget.item.id,
+          mentorName: widget.item.displayName,
+        ),
       ),
     );
   }

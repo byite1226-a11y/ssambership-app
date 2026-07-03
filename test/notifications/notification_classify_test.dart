@@ -35,15 +35,26 @@ void main() {
         NotificationKind.questionRoom);
   });
 
-  test('CR·환불·IQ 는 other(앱 범위 밖) — subscription_refund 도 환불 우선', () {
+  test('CR·환불은 other(앱 범위 밖) — subscription_refund 도 환불 우선', () {
     for (final String t in <String>[
       'custom_request_new',
       'custom_order_delivered',
       'refund_approved',
-      'individual_question_answered',
       'subscription_refund', // refund 우선 → other
     ]) {
       expect(classifyNotificationType(t), NotificationKind.other, reason: t);
+    }
+  });
+
+  test('개별질문(IQ) 유형으로 분류 — IQ 환불도 refund 필터보다 우선', () {
+    for (final String t in <String>[
+      'individual_question_answered',
+      'individual_question_claimed',
+      'individual_question_refund', // IQ 우선 → individualQuestion
+      'iq_released',
+    ]) {
+      expect(classifyNotificationType(t), NotificationKind.individualQuestion,
+          reason: t);
     }
   });
 

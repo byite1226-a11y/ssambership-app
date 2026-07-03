@@ -1,12 +1,12 @@
 /// 알림 도메인 모델 + 유형 분류.
 ///
-/// ★ 앱 범위: 질문방 · 구독/결제 알림만 노출한다.
-///   맞춤의뢰(CR)·환불·개별질문(IQ)은 앱 출시 제외 → [NotificationKind.other] 로 분류해 숨긴다.
+/// ★ 앱 범위: 질문방 · 구독/결제 · 개별질문(IQ) 알림을 노출한다.
+///   맞춤의뢰(CR)·환불은 앱 출시 제외 → [NotificationKind.other] 로 분류해 숨긴다.
 ///   type 원문(영문 코드)은 화면에 노출하지 않고, 한글 유형 라벨/본문만 쓴다.
 library;
 
-/// 알림 유형(앱 범위). other = 앱에서 표시하지 않음(CR·환불·IQ·미지).
-enum NotificationKind { questionRoom, subscription, other }
+/// 알림 유형(앱 범위). other = 앱에서 표시하지 않음(CR·환불·미지).
+enum NotificationKind { questionRoom, subscription, individualQuestion, other }
 
 /// 유형 한글 라벨(코드 비노출).
 String notificationKindLabel(NotificationKind kind) {
@@ -15,6 +15,8 @@ String notificationKindLabel(NotificationKind kind) {
       return '질문방';
     case NotificationKind.subscription:
       return '구독·결제';
+    case NotificationKind.individualQuestion:
+      return '개별질문';
     case NotificationKind.other:
       return '기타';
   }
@@ -23,17 +25,21 @@ String notificationKindLabel(NotificationKind kind) {
 /// notifications.type(자유 텍스트) → 앱 범위 유형.
 ///
 /// 실제 type 어휘는 RLS로 anon 조회가 막혀 확정 열람 불가 → 키워드로 방어적 분류한다.
-/// 제외 대상(CR·환불·IQ)을 먼저 걸러 other 로 보낸 뒤, 구독/질문방을 판별한다.
+/// 개별질문(IQ)을 먼저 판별하고(환불 알림도 IQ 화면에서 확인),
+/// 제외 대상(CR·환불)을 걸러 other 로 보낸 뒤, 구독/질문방을 판별한다.
 NotificationKind classifyNotificationType(String? type) {
   final String t = (type ?? '').toLowerCase();
 
-  // 앱 범위 밖(반드시 먼저): 맞춤의뢰(CR)·환불·개별질문(IQ).
+  // 개별질문(IQ) — 환불·정산 등 IQ 파생 알림도 여기로(refund 필터보다 먼저).
+  if (t.contains('individual_question') || t.startsWith('iq_')) {
+    return NotificationKind.individualQuestion;
+  }
+
+  // 앱 범위 밖: 맞춤의뢰(CR)·환불.
   if (t.contains('custom_request') ||
       t.contains('custom_order') ||
       t.contains('refund') ||
-      t.contains('individual_question') ||
-      t.startsWith('cr_') ||
-      t.startsWith('iq_')) {
+      t.startsWith('cr_')) {
     return NotificationKind.other;
   }
 
@@ -69,6 +75,8 @@ String _fallbackBody(NotificationKind kind) {
       return '질문방에 새 소식이 있어요.';
     case NotificationKind.subscription:
       return '구독·결제 관련 알림이에요.';
+    case NotificationKind.individualQuestion:
+      return '개별질문에 새 소식이 있어요.';
     case NotificationKind.other:
       return '새 알림이 있어요.';
   }

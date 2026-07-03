@@ -21,6 +21,7 @@ class CashSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MyPageSection(
+      icon: Icons.account_balance_wallet_rounded,
       title: '캐시',
       trailing: const _ReadOnlyBadge(),
       child: Column(

@@ -31,6 +31,7 @@ class StudentSubscriptionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MyPageSection(
+      icon: Icons.bookmark_rounded,
       title: '구독 현황',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

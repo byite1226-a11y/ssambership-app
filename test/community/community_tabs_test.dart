@@ -56,7 +56,7 @@ void main() {
     expect(find.text('7'), findsOneWidget); // 댓글수
   });
 
-  testWidgets('작성 FAB → "작성은 웹에서" 안내(앱 작성화면 없음)',
+  testWidgets('작성 FAB 없음(앱은 열람+반응만, 작성은 웹 전용)',
       (WidgetTester tester) async {
     _bigSurface(tester);
     await tester.pumpWidget(_wrap(CommunityScreen(
@@ -65,11 +65,7 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.text('작성'), findsOneWidget); // FAB
-    await tester.tap(find.text('작성'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    // 숏폼 탭(기본)에서 → 숏폼 작성 안내
-    expect(find.textContaining('작성은 웹에서'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.widgetWithText(FloatingActionButton, '작성'), findsNothing);
   });
 }

@@ -8,11 +8,10 @@ import 'data/community_write_repository.dart';
 import 'ui/activity/my_activity_view.dart';
 import 'ui/board/board_list_view.dart';
 import 'ui/shortform/shortform_feed_view.dart';
-import 'ui/widgets/community_write_notice.dart';
 
 /// 커뮤니티 탭. 상단 탭(숏폼 / 게시판 / 내 활동). HomeShell 이 바깥 AppBar/하단탭 제공.
 ///
-/// ★ 앱은 열람 + 반응(좋아요·스크랩·댓글·신고)만. 글·숏폼 '작성'은 웹에서(FAB → 안내).
+/// ★ 앱은 열람 + 반응(좋아요·스크랩·댓글·신고)만. 글·숏폼 '작성'은 웹 전용(앱 내 작성 없음).
 ///   레포는 테스트에서 fake 로 주입할 수 있게 optional 로 받는다(기본은 실제).
 class CommunityScreen extends StatelessWidget {
   const CommunityScreen({
@@ -53,18 +52,6 @@ class CommunityScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-        floatingActionButton: Builder(
-          builder: (BuildContext ctx) => FloatingActionButton.extended(
-            backgroundColor: ColorTokens.surface,
-            foregroundColor: AppAccent.of(context).accent,
-            onPressed: () => showWriteOnWebNotice(
-              ctx,
-              shortform: DefaultTabController.of(ctx).index == 0,
-            ),
-            icon: const Icon(Icons.edit_rounded),
-            label: const Text('작성'),
-          ),
         ),
       ),
     );

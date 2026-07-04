@@ -168,13 +168,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
               // 커머스 제로: 구매 유도(웹에서 구독) 버튼 제거 → 비상호작용 안내.
               const CommerceNoticeCard(text: kSubscribeNoticeText),
             ],
-            // 연결노트 발견성: appBar 액션과 동일 라우트를 하단에도 노출(구독 여부 무관).
-            const SizedBox(height: 8),
-            SecondaryButton(
-              label: '연결노트',
-              icon: Icons.sticky_note_2_rounded,
-              onPressed: _openNotes,
-            ),
+            // 연결노트는 상단 AppBar 액션(우상단 아이콘) 하나로 통일 — 하단 중복 버튼 제거.
           ],
         ),
       ),

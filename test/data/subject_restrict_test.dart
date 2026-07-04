@@ -50,6 +50,18 @@ void main() {
     expect(out, subjectLabels.keys.toList());
   });
 
+  test('mentorSubjectCodesStrict: 멘토 담당 과목만(전체 폴백 없음)', () {
+    // 지정 과목이 있으면 그 과목만 정규화.
+    expect(mentorSubjectCodesStrict(<String>['수학', '영어']),
+        <String>['math', 'english']);
+    // ★ 핵심: 미지정(빈 입력)이면 전체가 아니라 빈 리스트 → 드롭다운엔 '선택 안 함'만.
+    expect(mentorSubjectCodesStrict(<String>[]), <String>[]);
+    expect(mentorSubjectCodesStrict(<String>['  ', '\t']), <String>[]);
+    // 자유 라벨 유지·중복 제거는 그대로.
+    expect(mentorSubjectCodesStrict(<String>['수학', 'math', '코딩']),
+        <String>['math', '코딩']);
+  });
+
   test('subjectLabel: 정본 코드는 한글 라벨, 영문 미매핑은 기타, 빈값은 미분류', () {
     expect(subjectLabel('math'), '수학'); // 과거엔 '기타'로 나오던 버그
     expect(subjectLabel('korean'), '국어');

@@ -126,6 +126,18 @@ String subjectLabel(String? code) {
 /// 지정하지 않았을 때만(빈 입력) **전체 과목으로 폴백**한다 — 웹과 동일하게 "지정 과목이
 /// 있으면 제한, 없으면 전체 허용"이며 절대 빈 드롭다운으로 막지 않는다.
 List<String> restrictQuestionSubjectCodes(List<String> mentorTeachingCodes) {
+  final List<String> out = mentorSubjectCodesStrict(mentorTeachingCodes);
+  if (out.isNotEmpty) return out;
+  // 멘토 미지정 → 전체 폴백(정본 카탈로그 전체, sort 순).
+  return subjectLabels.keys.toList();
+}
+
+/// 질문 작성 드롭다운 전용 — **해당 멘토의 담당 과목만**(전체 과목 폴백 없음).
+///
+/// `teaching_subjects`(한글 라벨 `수학` 또는 코드 `math` 혼재)를 정본 코드로 정규화하고,
+/// 정규화 안 되는 자유 라벨(예 `코딩`)은 버리지 않고 원값 그대로 남긴다. 순서 유지·중복 제거.
+/// 멘토가 과목을 하나도 지정하지 않았으면 **빈 리스트**를 돌려준다(전체 과목을 뿌리지 않음).
+List<String> mentorSubjectCodesStrict(List<String> mentorTeachingCodes) {
   final List<String> out = <String>[];
   final Set<String> seen = <String>{};
   for (final String raw in mentorTeachingCodes) {
@@ -134,7 +146,5 @@ List<String> restrictQuestionSubjectCodes(List<String> mentorTeachingCodes) {
     final String code = normalizeSubjectCode(t) ?? t; // 자유 라벨은 원값 유지
     if (seen.add(code)) out.add(code);
   }
-  if (out.isNotEmpty) return out;
-  // 멘토 미지정 → 전체 폴백(정본 카탈로그 전체, sort 순).
-  return subjectLabels.keys.toList();
+  return out;
 }

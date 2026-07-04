@@ -42,7 +42,8 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
     _loadMentorSubjects();
   }
 
-  /// 방 멘토(teaching_subjects)를 읽어 과목 후보를 제한한다(A1). 실패/빈값이면 전체 폴백.
+  /// 방 멘토(teaching_subjects)를 읽어 과목 후보를 그 멘토 담당 과목만으로 제한한다(A1).
+  /// 조회 실패/미지정이면 후보가 비어 '선택 안 함'만 남는다(전체 과목을 뿌리지 않음).
   Future<void> _loadMentorSubjects() async {
     final List<String> codes =
         await _read.mentorTeachingSubjects(widget.room.mentorId);
@@ -139,10 +140,10 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
 
   Widget _subjectPicker() {
     // 로딩 전(_mentorCodes==null)에는 잠가 두어, 로드 후 후보에서 빠질 값이
-    // 미리 선택되는 문제를 막는다. 로드되면 멘토 담당 과목으로 제한(없으면 전체 폴백).
+    // 미리 선택되는 문제를 막는다. 로드되면 '해당 멘토 담당 과목만' 노출(전체 폴백 없음).
     final bool loaded = _mentorCodes != null;
     final List<String> codes = loaded
-        ? restrictQuestionSubjectCodes(_mentorCodes!)
+        ? mentorSubjectCodesStrict(_mentorCodes!)
         : const <String>[];
     final List<DropdownMenuItem<String?>> items = <DropdownMenuItem<String?>>[
       const DropdownMenuItem<String?>(value: null, child: Text('선택 안 함')),

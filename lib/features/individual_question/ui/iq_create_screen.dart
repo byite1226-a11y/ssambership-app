@@ -239,7 +239,7 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
                 ),
               ] else
                 const Text(
-                  '전체 멘토에게 공개로 질문해요. 먼저 수락한 멘토가 답변해요.',
+                  '공개로 올리면 먼저 수락한 멘토가 답변해요.',
                   style: AppTypography.body,
                 ),
               const SizedBox(height: 8),
@@ -306,7 +306,7 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         ],
         const SizedBox(height: 18),
         PrimaryButton(
-          label: '질문 등록 (캐시 예치)',
+          label: '질문 등록',
           onPressed:
               _submitting || directPriceMissing ? null : () => _submit(prefill),
         ),

@@ -44,11 +44,15 @@ class MentorDirectoryRepository {
         entries.map((MentorListItem e) => e.id).toList(growable: false);
     final Map<String, MentorProfileInfo> profiles = await _profiles(ids);
     final Map<String, List<MentorPlan>> plans = await _activePlans(ids);
+    // 정렬(별점·리뷰순)용 공개 리뷰 집계 — 목록 전체 id를 배치 1회로(N+1 아님).
+    final Map<String, _ReviewStats> stats = await _reviewStatsForMany(ids);
 
     return entries
         .map((MentorListItem e) => e.copyWith(
               profile: profiles[e.id],
               plans: plans[e.id] ?? const <MentorPlan>[],
+              avgRating: stats[e.id]?.avg,
+              reviewCount: stats[e.id]?.count ?? 0,
             ))
         .toList();
   }
@@ -89,33 +93,50 @@ class MentorDirectoryRepository {
     );
   }
 
-  /// 그 멘토의 '공개(visible) 리뷰' 평균 평점·개수(reviews 집계).
+  /// 한 멘토의 공개 리뷰 집계(상세 활동 통계용) — 배치 집계를 1건으로 재사용.
+  Future<_ReviewStats> _reviewStats(String mentorId) async {
+    final Map<String, _ReviewStats> m =
+        await _reviewStatsForMany(<String>[mentorId]);
+    return m[mentorId] ?? const _ReviewStats(0, null);
+  }
+
+  /// 여러 멘토의 '공개(visible) 리뷰' 평균 평점·개수(reviews 배치 집계).
   ///
   /// 공개 = moderation_state='visible' AND is_hidden=false AND is_blinded=false.
-  /// ★ reviews 외 다른 조회는 하지 않는다(rating 컬럼만 읽어 앱에서 평균낸다).
-  /// RLS/컬럼 부재 등 실패 시 (0, null) → 화면은 '아직 활동 정보가 없어요'로 폴백(날조 금지).
-  Future<_ReviewStats> _reviewStats(String mentorId) async {
+  /// ★ reviews 외 다른 조회는 하지 않는다(mentor_id·rating만 읽어 앱에서 그룹 집계).
+  /// RLS/컬럼 부재 등 실패 시 빈 맵 → 평점·리뷰순은 동률(안정 정렬) 처리(날조 금지).
+  Future<Map<String, _ReviewStats>> _reviewStatsForMany(
+      List<String> mentorIds) async {
+    if (mentorIds.isEmpty) return <String, _ReviewStats>{};
     try {
       final List<Map<String, dynamic>> rows = await _client
           .from('reviews')
-          .select('rating')
-          .eq('mentor_id', mentorId)
+          .select('mentor_id, rating')
+          .inFilter('mentor_id', mentorIds)
           .eq('moderation_state', 'visible')
           .eq('is_hidden', false)
           .eq('is_blinded', false);
-      if (rows.isEmpty) return const _ReviewStats(0, null);
-      int sum = 0;
-      int n = 0;
+      final Map<String, int> count = <String, int>{};
+      final Map<String, int> sum = <String, int>{};
+      final Map<String, int> rated = <String, int>{};
       for (final Map<String, dynamic> r in rows) {
+        final String? mid = r['mentor_id'] as String?;
+        if (mid == null) continue;
+        count[mid] = (count[mid] ?? 0) + 1;
         final Object? v = r['rating'];
         if (v is num) {
-          sum += v.toInt();
-          n++;
+          sum[mid] = (sum[mid] ?? 0) + v.toInt();
+          rated[mid] = (rated[mid] ?? 0) + 1;
         }
       }
-      return _ReviewStats(rows.length, n > 0 ? sum / n : null);
+      final Map<String, _ReviewStats> out = <String, _ReviewStats>{};
+      count.forEach((String mid, int c) {
+        final int n = rated[mid] ?? 0;
+        out[mid] = _ReviewStats(c, n > 0 ? (sum[mid]! / n) : null);
+      });
+      return out;
     } catch (_) {
-      return const _ReviewStats(0, null);
+      return <String, _ReviewStats>{};
     }
   }
 

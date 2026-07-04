@@ -107,6 +107,8 @@ class MentorListItem {
     this.createdAt,
     this.profile,
     this.plans = const <MentorPlan>[],
+    this.avgRating,
+    this.reviewCount = 0,
   });
 
   final String id; // 내부용(화면 미노출). 상세 조회·구독 확인에만 사용.
@@ -116,6 +118,12 @@ class MentorListItem {
   final DateTime? createdAt;
   final MentorProfileInfo? profile;
   final List<MentorPlan> plans; // is_active=true 만
+
+  /// 공개(visible) 리뷰 평균 평점(정렬 '별점높은순'용). null = 리뷰 없음.
+  final double? avgRating;
+
+  /// 공개(visible) 리뷰 수(정렬 '리뷰많은순'용). 0 = 없음.
+  final int reviewCount;
 
   /// 표시명(nickname 우선 → full_name → 폴백 '멘토').
   String get displayName {
@@ -163,6 +171,8 @@ class MentorListItem {
   MentorListItem copyWith({
     MentorProfileInfo? profile,
     List<MentorPlan>? plans,
+    double? avgRating,
+    int? reviewCount,
   }) {
     return MentorListItem(
       id: id,
@@ -172,6 +182,8 @@ class MentorListItem {
       createdAt: createdAt,
       profile: profile ?? this.profile,
       plans: plans ?? this.plans,
+      avgRating: avgRating ?? this.avgRating,
+      reviewCount: reviewCount ?? this.reviewCount,
     );
   }
 

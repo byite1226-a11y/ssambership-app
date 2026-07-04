@@ -14,6 +14,7 @@ import '../../design/widgets/secondary_button.dart';
 import 'data/mentor_directory_repository.dart';
 import 'data/mentor_favorites_repository.dart';
 import 'data/mentor_models.dart';
+import 'data/mentor_sort.dart';
 import 'ui/mentor_detail_screen.dart';
 import 'ui/widgets/mentor_card.dart';
 
@@ -28,8 +29,6 @@ class MentorsScreen extends StatefulWidget {
   State<MentorsScreen> createState() => _MentorsScreenState();
 }
 
-enum _Sort { latest, name }
-
 class _MentorsScreenState extends State<MentorsScreen> {
   final MentorDirectoryRepository _repo = const MentorDirectoryRepository();
   final MentorFavoritesRepository _favRepo = const MentorFavoritesRepository();
@@ -40,7 +39,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
 
   String _query = '';
   String? _subject; // null = 전체
-  _Sort _sort = _Sort.latest;
+  MentorSort _sort = MentorSort.latest;
 
   /// 내가 찜한 멘토 id(하트 채움·상단 카운트용). 비로그인/실패면 빈 집합.
   Set<String> _favoriteIds = <String>{};
@@ -188,7 +187,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
             _SortBar(
               sort: _sort,
               count: items.length,
-              onChanged: (_Sort s) => setState(() => _sort = s),
+              onChanged: (MentorSort s) => setState(() => _sort = s),
             ),
             Expanded(
               child: items.isEmpty
@@ -256,21 +255,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
     if (_query.isNotEmpty) {
       it = it.where((MentorListItem m) => m.searchHaystack.contains(_query));
     }
-    final List<MentorListItem> list = it.toList();
-    switch (_sort) {
-      case _Sort.latest:
-        list.sort((MentorListItem a, MentorListItem b) {
-          final DateTime ad =
-              a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final DateTime bd =
-              b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bd.compareTo(ad); // 최신순
-        });
-      case _Sort.name:
-        list.sort((MentorListItem a, MentorListItem b) =>
-            a.displayName.compareTo(b.displayName));
-    }
-    return list;
+    // 필터된 결과를 정렬(순수 함수 재사용 — 최신/가격/별점/리뷰).
+    return sortMentors(it.toList(), _sort);
   }
 
   Future<void> _open(MentorListItem item) async {
@@ -298,11 +284,11 @@ class _SortBar extends StatelessWidget {
     required this.onChanged,
   });
 
-  final _Sort sort;
+  final MentorSort sort;
   final int count;
-  final ValueChanged<_Sort> onChanged;
+  final ValueChanged<MentorSort> onChanged;
 
-  String get _label => sort == _Sort.latest ? '최신순' : '이름순';
+  String get _label => mentorSortLabel(sort);
 
   @override
   Widget build(BuildContext context) {
@@ -312,13 +298,13 @@ class _SortBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Text('멘토 $count명', style: AppType.caption),
-          PopupMenuButton<_Sort>(
+          PopupMenuButton<MentorSort>(
             initialValue: sort,
             onSelected: onChanged,
-            itemBuilder: (BuildContext context) =>
-                const <PopupMenuEntry<_Sort>>[
-              PopupMenuItem<_Sort>(value: _Sort.latest, child: Text('최신순')),
-              PopupMenuItem<_Sort>(value: _Sort.name, child: Text('이름순')),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<MentorSort>>[
+              for (final MentorSort s in MentorSort.values)
+                PopupMenuItem<MentorSort>(
+                    value: s, child: Text(mentorSortLabel(s))),
             ],
             child: Row(
               mainAxisSize: MainAxisSize.min,

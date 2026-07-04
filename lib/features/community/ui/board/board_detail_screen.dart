@@ -12,6 +12,7 @@ import '../../data/community_labels.dart';
 import '../../data/community_models.dart';
 import '../../data/community_read_repository.dart';
 import '../../data/community_write_repository.dart';
+import '../widgets/block_author_action.dart';
 import '../widgets/comment_tile.dart';
 import '../widgets/reaction_bar.dart';
 import '../widgets/report_sheet.dart';
@@ -129,6 +130,31 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
     }
   }
 
+  /// 글 작성자 차단 → 성공 시 상세를 닫아 목록으로(목록은 재조회 시 숨겨짐).
+  Future<void> _blockPostAuthor() async {
+    final bool blocked = await confirmAndBlockAuthor(
+      context,
+      table: 'community_posts',
+      contentId: widget.post.id,
+    );
+    if (blocked && mounted) Navigator.of(context).pop(true);
+  }
+
+  /// 댓글 작성자 차단 → 성공 시 댓글 목록 재조회(차단 작성자 댓글 숨김).
+  Future<void> _blockCommentAuthor(String commentId) async {
+    final bool blocked = await confirmAndBlockAuthor(
+      context,
+      table: 'community_comments',
+      contentId: commentId,
+    );
+    if (blocked && mounted) {
+      setState(() {
+        _comments =
+            widget.read.comments(CommunityPostType.board, widget.post.id);
+      });
+    }
+  }
+
   Future<void> _send() async {
     final String body = _input.text.trim();
     if (body.isEmpty || _busy) return;
@@ -161,7 +187,20 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
   Widget build(BuildContext context) {
     final BoardPost p = widget.post;
     return Scaffold(
-      appBar: AppBar(title: const Text('게시글')),
+      appBar: AppBar(
+        title: const Text('게시글'),
+        actions: <Widget>[
+          PopupMenuButton<String>(
+            tooltip: '더보기',
+            onSelected: (String v) {
+              if (v == 'block') _blockPostAuthor();
+            },
+            itemBuilder: (BuildContext ctx) => const <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(value: 'block', child: Text('이 사용자 차단')),
+            ],
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -246,7 +285,10 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                 if (i > 0)
                   const Divider(
                       height: 1, thickness: 0.5, color: ColorTokens.border),
-                CommentTile(comment: comments[i]),
+                CommentTile(
+                  comment: comments[i],
+                  onBlock: () => _blockCommentAuthor(comments[i].id),
+                ),
               ],
           ],
         );

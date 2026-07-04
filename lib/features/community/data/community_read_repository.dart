@@ -3,11 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/errors/app_error.dart';
 import 'community_models.dart';
+import 'user_blocks_repository.dart';
 
 /// 커뮤니티 열람(읽기 전용). 게시판·숏폼·댓글은 공개 열람(published/visible),
 /// 내 반응·내 활동은 RLS(본인 행)로 걸러진다. ★ 여기서 mutate 하지 않는다.
+/// ★ 차단(user_blocks): 목록·댓글에서 내가 차단한 작성자(author_id)의 콘텐츠는
+///   결과에서 숨긴다(모델엔 author_id 를 노출하지 않고 raw 행에서 필터).
 class CommunityReadRepository {
   const CommunityReadRepository();
+
+  final UserBlocksRepository _blocks = const UserBlocksRepository();
 
   SupabaseClient get _client {
     final SupabaseClient? c = SupabaseInit.clientOrNull;
@@ -18,6 +23,15 @@ class CommunityReadRepository {
   }
 
   String? get _uid => SupabaseInit.clientOrNull?.auth.currentUser?.id;
+
+  /// 차단 작성자 행 제거(author_id 는 화면에 노출하지 않고 여기서만 사용).
+  List<Map<String, dynamic>> _dropBlocked(
+      List<Map<String, dynamic>> rows, Set<String> blocked) {
+    if (blocked.isEmpty) return rows;
+    return rows
+        .where((Map<String, dynamic> r) => !blocked.contains(r['author_id']))
+        .toList();
+  }
 
   /// 게시판 글 목록(공개=published, 최신순). category 지정 시 그 분류만.
   /// [limit] 지정 시 [offset]부터 그만큼만(페이징). null 이면 전체(하위 호환).
@@ -31,8 +45,9 @@ class CommunityReadRepository {
     }
     q = q.order('created_at', ascending: false);
     if (limit != null) q = q.range(offset, offset + limit - 1);
+    final Future<Set<String>> blockedF = _blocks.myBlockedIds();
     final List<Map<String, dynamic>> rows = await q;
-    return rows.map(BoardPost.fromMap).toList();
+    return _dropBlocked(rows, await blockedF).map(BoardPost.fromMap).toList();
   }
 
   /// 숏폼 목록(공개=published, 최신순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
@@ -43,8 +58,11 @@ class CommunityReadRepository {
         .eq('status', 'published')
         .order('created_at', ascending: false);
     if (limit != null) q = q.range(offset, offset + limit - 1);
+    final Future<Set<String>> blockedF = _blocks.myBlockedIds();
     final List<Map<String, dynamic>> rows = await q;
-    return rows.map(ShortformPost.fromMap).toList();
+    return _dropBlocked(rows, await blockedF)
+        .map(ShortformPost.fromMap)
+        .toList();
   }
 
   /// 글/숏폼의 댓글(공개=visible, 대화순=오름차순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
@@ -62,8 +80,11 @@ class CommunityReadRepository {
         .eq('status', 'visible')
         .order('created_at', ascending: true);
     if (limit != null) q = q.range(offset, offset + limit - 1);
+    final Future<Set<String>> blockedF = _blocks.myBlockedIds();
     final List<Map<String, dynamic>> rows = await q;
-    return rows.map(CommunityComment.fromMap).toList();
+    return _dropBlocked(rows, await blockedF)
+        .map(CommunityComment.fromMap)
+        .toList();
   }
 
   /// 내가 특정 반응(type: like|scrap)을 남긴 게시판 글 id 집합(반응 상태 표시용).

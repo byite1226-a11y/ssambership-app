@@ -5,6 +5,7 @@ import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
 import '../../../../core/web_bridge/web_bridge_actions.dart';
 import '../../../../design/widgets/secondary_button.dart';
+import '../../../../features/community/ui/blocks/blocked_users_screen.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../../data/notification_settings_repository.dart';
 import '../widgets/mypage_section.dart';
@@ -97,9 +98,18 @@ class _SettingsSectionState extends State<SettingsSection> {
             trailingText: AppConstants.appVersion,
             showChevron: false,
           ),
-          // 계정: 회원 탈퇴(웹 링크) — 실제 삭제는 웹에서. 로그인 세션일 때만 노출.
+          // 계정: 차단 관리(앱 내) + 회원 탈퇴(웹 링크). 로그인 세션일 때만 노출.
           if (widget.showLogout) ...<Widget>[
             const Divider(height: 12, color: ColorTokens.border),
+            MyPageRow(
+              icon: Icons.block_rounded,
+              label: '차단 관리',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const BlockedUsersScreen(),
+                ),
+              ),
+            ),
             MyPageRow(
               icon: Icons.person_remove_rounded,
               label: '회원 탈퇴',

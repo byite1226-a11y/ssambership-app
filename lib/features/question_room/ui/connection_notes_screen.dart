@@ -273,19 +273,23 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // 두 액션을 동일 폭(full-width 분할)으로 — 좌측 쏠림 해소.
                     Row(
                       children: <Widget>[
-                        PrimaryButton(
-                          label: _saving ? '저장 중…' : '내 노트 저장',
-                          onPressed: _saving ? null : _save,
-                          expand: false,
+                        Expanded(
+                          child: PrimaryButton(
+                            label: _saving ? '저장 중…' : '내 노트 저장',
+                            onPressed: _saving ? null : _save,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        SecondaryButton(
-                          label:
-                              _myInkNote?.hasInk == true ? '필기 이어 그리기' : '필기로 작성',
-                          onPressed: _editInk,
-                          expand: false,
+                        Expanded(
+                          child: SecondaryButton(
+                            label: _myInkNote?.hasInk == true
+                                ? '필기 이어 그리기'
+                                : '필기로 작성',
+                            onPressed: _editInk,
+                          ),
                         ),
                       ],
                     ),

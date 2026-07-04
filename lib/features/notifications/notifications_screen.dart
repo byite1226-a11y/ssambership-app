@@ -44,7 +44,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _loadingMore = false;
   Object? _error;
 
-  bool _unreadOnly = false;
   NotificationKind? _kind; // null = 전체
 
   @override
@@ -104,7 +103,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   List<AppNotification> get _filtered => _items.where((AppNotification n) {
         if (_kind != null && n.kind != _kind) return false;
-        if (_unreadOnly && n.isRead) return false;
         return true;
       }).toList();
 
@@ -192,21 +190,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
         Padding(
-          // 읽음상태 줄 ↔ 유형 줄: 라벨 없이 이 간격이 그룹 구분 신호(칩 간격 8의 2배=16).
-          padding: const EdgeInsets.only(bottom: AppSpacing.s16),
-          child: ChipScroll(
-            labels: const <String>['전체', '읽지 않음'],
-            selectedIndex: _unreadOnly ? 1 : 0,
-            onSelected: (int i) => setState(() => _unreadOnly = i == 1),
-          ),
-        ),
-        Padding(
-          // 유형 필터 줄 ↔ 목록 첫 항목 간격 확보: 6→20.
+          // 유형 필터 줄 ↔ 목록 첫 항목 간격 확보. 좌우 패딩은 다른 화면과 동일(screenH=20).
           padding: const EdgeInsets.only(bottom: AppSpacing.s20),
           child: ChipScroll(
             labels: const <String>['전체', '질문방', '구독·결제', '개별질문'],
             selectedIndex: _kindChipIndex,
             onSelected: _onKindSelected,
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
           ),
         ),
         Expanded(child: _body()),

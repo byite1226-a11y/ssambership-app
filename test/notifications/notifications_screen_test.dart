@@ -84,20 +84,7 @@ void main() {
     expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 2);
   });
 
-  testWidgets('읽지 않음 토글 → 읽은 알림 숨김', (WidgetTester tester) async {
-    await tester.pumpWidget(_wrap(NotificationsScreen(
-      repository: _FakeRepo(_sample()),
-      onDeepLinkTab: (_) {},
-    )));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('읽지 않음'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('A 질문방 알림'), findsOneWidget);
-    expect(find.text('B 구독 알림'), findsOneWidget);
-    expect(find.text('C 읽은 질문방'), findsNothing); // 읽음 → 숨김
-  });
+  // (읽음상태 필터 '전체/읽지 않음' 줄은 UI에서 제거됨 — 유형 필터만 유지. 안읽음 카운트는 존치.)
 
   testWidgets('유형 필터(질문방) → 구독 알림 숨김', (WidgetTester tester) async {
     await tester.pumpWidget(_wrap(NotificationsScreen(

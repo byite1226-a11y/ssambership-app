@@ -114,7 +114,10 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
                 ? b.updatedAt.compareTo(a.updatedAt)
                 : a.updatedAt.compareTo(b.updatedAt));
 
+          // stretch: 두 필터 줄이 모두 전체 폭을 채워 같은 좌측 기준으로 정렬되도록
+          // (기본 center면 상태칩 줄이 콘텐츠 폭으로 줄어 가운데로 쏠려 과목칩 줄과 어긋난다).
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               _statusTabs(counts),
               _filterBar(subjectCodes),
@@ -133,8 +136,9 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
       '진행 중 ${c.inProgress}',
       '완료 ${c.confirmed}',
     ];
+    // 아래 과목 필터 줄과 좌우 기준·줄 간격을 통일(같은 LTRB 프레임, 대칭 세로 간격).
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 12, 4, 6),
       child: ChipScroll(
         labels: labels,
         selectedIndex: _StatusTab.values.indexOf(_tab),
@@ -154,7 +158,7 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
         ? 0
         : subjectCodes.indexOf(_subjectCode!) + 1;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 4, 8),
+      padding: const EdgeInsets.fromLTRB(12, 6, 4, 8),
       child: Row(
         children: <Widget>[
           Expanded(

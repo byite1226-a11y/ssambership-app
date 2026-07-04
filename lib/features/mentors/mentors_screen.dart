@@ -3,6 +3,7 @@
 //  현재 router.dart 변경 없이 동작한다. 별도 named-route 가 필요해지면 S5 머지 후 등록할 것.)
 import 'package:flutter/material.dart';
 
+import '../../design/role_accent.dart';
 import '../../design/shape_tokens.dart';
 import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
@@ -11,6 +12,7 @@ import '../../design/widgets/chip_scroll.dart';
 import '../../design/widgets/empty_state.dart';
 import '../../design/widgets/secondary_button.dart';
 import 'data/mentor_directory_repository.dart';
+import 'data/mentor_favorites_repository.dart';
 import 'data/mentor_models.dart';
 import 'ui/mentor_detail_screen.dart';
 import 'ui/widgets/mentor_card.dart';
@@ -30,6 +32,7 @@ enum _Sort { latest, name }
 
 class _MentorsScreenState extends State<MentorsScreen> {
   final MentorDirectoryRepository _repo = const MentorDirectoryRepository();
+  final MentorFavoritesRepository _favRepo = const MentorFavoritesRepository();
 
   static const int _pageSize = 20;
   int _limit = _pageSize;
@@ -39,13 +42,58 @@ class _MentorsScreenState extends State<MentorsScreen> {
   String? _subject; // null = 전체
   _Sort _sort = _Sort.latest;
 
+  /// 내가 찜한 멘토 id(하트 채움·상단 카운트용). 비로그인/실패면 빈 집합.
+  Set<String> _favoriteIds = <String>{};
+
   @override
   void initState() {
     super.initState();
     _future = _repo.list(limit: _limit);
+    _loadFavorites();
   }
 
-  void _reload() => setState(() => _future = _repo.list(limit: _limit));
+  // 블록 바디: setState(() => _future = future)는 Future를 반환해 리빌드가 취소된다.
+  void _reload() => setState(() {
+        _future = _repo.list(limit: _limit);
+      });
+
+  Future<void> _loadFavorites() async {
+    final Set<String> ids = await _favRepo.myFavoriteMentorIds();
+    if (mounted) setState(() => _favoriteIds = ids);
+  }
+
+  /// 하트 탭 — 비로그인이면 로그인 유도, 아니면 낙관적 토글 후 서버 반영(실패 시 되돌림).
+  Future<void> _toggleFavorite(String mentorId) async {
+    if (!_favRepo.isLoggedIn) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인하면 멘토를 찜할 수 있어요.')),
+        );
+      }
+      return;
+    }
+    final bool wasFav = _favoriteIds.contains(mentorId);
+    setState(() => _favoriteIds = _withToggle(_favoriteIds, mentorId, !wasFav));
+    final bool ok =
+        wasFav ? await _favRepo.remove(mentorId) : await _favRepo.add(mentorId);
+    if (!ok && mounted) {
+      setState(() => _favoriteIds = _withToggle(_favoriteIds, mentorId, wasFav));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('찜 처리에 실패했어요. 잠시 후 다시 시도해 주세요.')),
+      );
+    }
+  }
+
+  /// 불변 집합 토글(add=true면 추가, false면 제거).
+  static Set<String> _withToggle(Set<String> src, String id, bool add) {
+    final Set<String> next = <String>{...src};
+    if (add) {
+      next.add(id);
+    } else {
+      next.remove(id);
+    }
+    return next;
+  }
 
   void _loadMore() {
     setState(() {
@@ -77,6 +125,20 @@ class _MentorsScreenState extends State<MentorsScreen> {
             ),
           ),
         ),
+        // 상단 '찜한 멘토 N' 카운트(로그인 시). 전용 목록/필터는 두지 않는다(웹 패리티).
+        if (_favRepo.isLoggedIn)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenH, 0, AppSpacing.screenH, 6),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.favorite_rounded,
+                    size: 14, color: AppAccent.of(context).accent),
+                const SizedBox(width: 5),
+                Text('찜한 멘토 ${_favoriteIds.length}', style: AppType.caption),
+              ],
+            ),
+          ),
         Expanded(child: _body()),
       ],
     );
@@ -158,6 +220,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
                         return MentorCard(
                           item: items[i],
                           onOpen: () => _open(items[i]),
+                          favorited: _favoriteIds.contains(items[i].id),
+                          onToggleFavorite: () => _toggleFavorite(items[i].id),
                         );
                       },
                         ),
@@ -212,10 +276,16 @@ class _MentorsScreenState extends State<MentorsScreen> {
   Future<void> _open(MentorListItem item) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => MentorDetailScreen(item: item),
+        builder: (_) => MentorDetailScreen(
+          item: item,
+          initialFavorited: _favoriteIds.contains(item.id),
+        ),
       ),
     );
-    if (mounted) _reload(); // 돌아오면 최신화(구독 상태 변동 등 반영).
+    if (mounted) {
+      _loadFavorites(); // 상세에서 찜이 바뀌었을 수 있어 동기화.
+      _reload(); // 돌아오면 최신화(구독 상태 변동 등 반영).
+    }
   }
 }
 

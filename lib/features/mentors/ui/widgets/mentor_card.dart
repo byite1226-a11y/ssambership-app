@@ -6,14 +6,27 @@ import '../../../../design/widgets/app_badge.dart';
 import '../../../../design/widgets/app_card.dart';
 import '../../../../design/widgets/initial_avatar.dart';
 import '../../data/mentor_models.dart';
+import 'mentor_favorite_button.dart';
 import 'mentor_meta_item.dart';
 
 /// 멘토 목록 카드(열람 전용). 탭하면 상세로, '구독하기'는 웹 브릿지로 연결.
 class MentorCard extends StatelessWidget {
-  const MentorCard({super.key, required this.item, required this.onOpen});
+  const MentorCard({
+    super.key,
+    required this.item,
+    required this.onOpen,
+    this.favorited = false,
+    this.onToggleFavorite,
+  });
 
   final MentorListItem item;
   final VoidCallback onOpen;
+
+  /// 이 멘토를 찜했는지(하트 채움 여부).
+  final bool favorited;
+
+  /// 찜 토글 콜백. null 이면 하트를 표시하지 않는다(비로그인 목록 등).
+  final VoidCallback? onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +73,12 @@ class MentorCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // 우상단 찜 하트(콜백 있을 때만 — 카드 탭보다 우선 처리).
+              if (onToggleFavorite != null)
+                MentorFavoriteButton(
+                  favorited: favorited,
+                  onTap: onToggleFavorite!,
+                ),
             ],
           ),
           if (subjects.isNotEmpty) ...<Widget>[

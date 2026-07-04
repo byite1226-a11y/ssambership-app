@@ -8,8 +8,10 @@ import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/initial_avatar.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
+import '../data/mentor_favorites_repository.dart';
 import '../data/mentor_models.dart';
 import '../format/mentor_price_format.dart';
+import 'widgets/mentor_favorite_button.dart';
 import 'widgets/mentor_meta_item.dart';
 import '../../../app/app_tabs.dart';
 import '../../../core/auth/auth_service.dart';
@@ -22,9 +24,16 @@ import '../../individual_question/ui/iq_create_screen.dart';
 /// 멘토 상세(열람 전용). 목록에서 받은 항목을 재사용하고, 평균 답변시간·구독 여부만
 /// 추가로 불러온다. CTA 는 구독 상태에 따라 [질문방으로]/[구독하기](웹 브릿지).
 class MentorDetailScreen extends StatefulWidget {
-  const MentorDetailScreen({super.key, required this.item});
+  const MentorDetailScreen({
+    super.key,
+    required this.item,
+    this.initialFavorited = false,
+  });
 
   final MentorListItem item;
+
+  /// 목록에서 넘어올 때의 찜 상태(하트 초기값). 상세에서 토글하면 서버 반영.
+  final bool initialFavorited;
 
   @override
   State<MentorDetailScreen> createState() => _MentorDetailScreenState();
@@ -32,7 +41,9 @@ class MentorDetailScreen extends StatefulWidget {
 
 class _MentorDetailScreenState extends State<MentorDetailScreen> {
   final MentorDirectoryRepository _repo = const MentorDirectoryRepository();
+  final MentorFavoritesRepository _favRepo = const MentorFavoritesRepository();
   late Future<MentorDetailExtras> _future;
+  late bool _favorited = widget.initialFavorited;
 
   @override
   void initState() {
@@ -40,11 +51,40 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
     _future = _repo.fetchExtras(widget.item.id);
   }
 
+  /// 하트 탭 — 비로그인이면 로그인 유도, 아니면 낙관적 토글 후 서버 반영(실패 시 되돌림).
+  Future<void> _toggleFavorite() async {
+    if (!_favRepo.isLoggedIn) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인하면 멘토를 찜할 수 있어요.')),
+        );
+      }
+      return;
+    }
+    final bool wasFav = _favorited;
+    setState(() => _favorited = !wasFav);
+    final bool ok = wasFav
+        ? await _favRepo.remove(widget.item.id)
+        : await _favRepo.add(widget.item.id);
+    if (!ok && mounted) {
+      setState(() => _favorited = wasFav);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('찜 처리에 실패했어요. 잠시 후 다시 시도해 주세요.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final MentorListItem m = widget.item;
     return Scaffold(
-      appBar: AppBar(title: Text(m.displayName)),
+      appBar: AppBar(
+        title: Text(m.displayName),
+        actions: <Widget>[
+          MentorFavoriteButton(favorited: _favorited, onTap: _toggleFavorite),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screenH, 16, AppSpacing.screenH, 24),

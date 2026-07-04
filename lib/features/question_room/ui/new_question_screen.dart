@@ -59,7 +59,7 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
   }
 
   Future<void> _submit() async {
-    final String title = _title.text.trim();
+    final String titleInput = _title.text.trim();
     final String body = _body.text.trim();
     if (body.isEmpty || _busy) return;
     setState(() => _busy = true);
@@ -81,9 +81,16 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
         }
         return;
       }
+      // 제목 미입력 → 방의 질문 순번으로 자동 제목("{N}번 질문", N=기존 질문 수+1).
+      // 순번 계산에 방의 스레드 수를 1회 조회한다(미입력일 때만). '(제목 없음)' 폴백 대신 저장.
+      String title = titleInput;
+      if (title.isEmpty) {
+        final int existing = (await _read.threads(widget.room.id)).length;
+        title = autoQuestionTitle(existing);
+      }
       final QuestionThread thread = await _write.createThread(
         roomId: widget.room.id,
-        title: title.isEmpty ? null : title,
+        title: title,
         subject: _subjectCode,
       );
       await _write.appendMessage(threadId: thread.id, body: body);

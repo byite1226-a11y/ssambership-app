@@ -128,3 +128,9 @@ class QuestionThread {
         'updated_at': updatedAt.toIso8601String(),
       };
 }
+
+/// 제목 미입력 시 자동 제목 — 그 방(mentor_student_room)의 질문 순번(1-based) 기반.
+///
+/// [existingCount] = 그 방의 기존 질문(스레드) 수. 새 질문의 순번 N = existingCount + 1.
+/// 예) 방에 질문이 2건이면 새 질문 제목은 '3번 질문'. 저장·표시 모두 이 값을 쓴다.
+String autoQuestionTitle(int existingCount) => '${existingCount + 1}번 질문';

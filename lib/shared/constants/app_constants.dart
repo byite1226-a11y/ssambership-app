@@ -10,6 +10,9 @@ class AppConstants {
   /// 앱 표시명 (브랜드).
   static const String appDisplayName = '쌤버십';
 
+  /// 확정 앱 로고 에셋(파란 사각 + 졸업모자). 로그인 헤더·스플래시 등 인앱 브랜드 마크.
+  static const String brandLogoAsset = 'assets/branding/ssambership_logo_1024.png';
+
   /// 앱 표시 버전(마이페이지 설정 표기용). pubspec version 과 맞춘다.
   /// TODO: package_info_plus 도입 시 런타임 값으로 대체(현재는 표시 전용 상수).
   static const String appVersion = '0.1.0';

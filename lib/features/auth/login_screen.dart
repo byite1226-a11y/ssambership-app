@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/entry_guard.dart';
 import '../../core/auth/auth_service.dart';
-import '../../design/role_accent.dart';
 import '../../design/shape_tokens.dart';
 import '../../design/spacing_tokens.dart';
 import '../../design/tokens/color_tokens.dart';
@@ -194,26 +193,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 }
 
-/// 브랜드 심볼(단 하나) — 역할색 둥근 사각 배경 위 말풍선 아이콘. 과한 장식 금지.
+/// 브랜드 심볼(단 하나) — 확정 앱 로고(파란 사각 + 졸업모자). 과한 장식 금지.
+/// 로고 PNG 자체가 둥근 사각·여백을 포함하므로 별도 배경/장식 없이 이미지만 표시.
 class _BrandSymbol extends StatelessWidget {
   const _BrandSymbol();
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = AppAccent.of(context).accent;
-    return Container(
-      width: 64,
-      height: 64,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: accent,
-        borderRadius: AppShape.cardRadius,
-      ),
-      child: const Icon(
-        Icons.forum_rounded,
-        size: 34,
-        color: Colors.white,
-      ),
+    return Image.asset(
+      AppConstants.brandLogoAsset,
+      width: 76,
+      height: 76,
+      filterQuality: FilterQuality.medium,
     );
   }
 }

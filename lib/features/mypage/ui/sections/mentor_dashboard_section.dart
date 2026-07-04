@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../design/shape_tokens.dart';
 import '../../../../design/tokens/color_tokens.dart';
 import '../../../../design/typography_tokens.dart';
-import '../../../../design/widgets/money_display.dart';
 import '../../../../design/widgets/secondary_button.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
@@ -29,7 +27,6 @@ class MentorDashboardSection extends StatelessWidget {
     return MyPageSection(
       icon: Icons.insights_rounded,
       title: '답변 · 정산 요약',
-      trailing: const _ReadOnlyBadge(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -53,12 +50,18 @@ class MentorDashboardSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // 최근 정산 → MoneyDisplay 로 통일(캐시 섹션과 동일 패턴, 값은 그대로).
-          MoneyDisplay(
-            label: '최근 정산',
-            amount: data.latestSettlementCents != null
-                ? CashFormat.won(data.latestSettlementCents!)
-                : '-',
+          // 최근 정산 — 라벨+금액 한 줄(값은 그대로). 라벨 좌측, 금액 우측 정렬.
+          Row(
+            children: <Widget>[
+              const Text('최근 정산', style: AppType.caption),
+              const Spacer(),
+              Text(
+                data.latestSettlementCents != null
+                    ? CashFormat.won(data.latestSettlementCents!)
+                    : '-',
+                style: AppType.number,
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           SecondaryButton(
@@ -106,23 +109,6 @@ class _Stat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(label, style: AppType.caption),
       ],
-    );
-  }
-}
-
-class _ReadOnlyBadge extends StatelessWidget {
-  const _ReadOnlyBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: ColorTokens.muted.withOpacity(0.16),
-        borderRadius: AppShape.pillRadius,
-      ),
-      child: Text('조회만',
-          style: AppType.caption.copyWith(color: ColorTokens.muted)),
     );
   }
 }

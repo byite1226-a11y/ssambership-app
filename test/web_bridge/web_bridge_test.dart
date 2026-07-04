@@ -43,6 +43,13 @@ void main() {
       ]);
     });
 
+    test('openAccountDelete: accountDeletePath 로 조립', () async {
+      final WebOpenResult r = await make().openAccountDelete();
+      expect(r, WebOpenResult.opened);
+      expect(opened.single.path, WebBridgeConfig.accountDeletePath);
+      expect(opened.single.path, '/account/delete');
+    });
+
     test('열기 실패 → failed', () async {
       final WebOpenResult r = await WebBridge(
         baseUrl: 'https://web.test',

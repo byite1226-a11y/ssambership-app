@@ -28,6 +28,10 @@ class WebBridgeConfig {
   static const String supportPath = '/support'; // app/(public)/support (고객센터·FAQ 허브)
   static const String reviewsPath = '/mentor/reviews'; // app/(mentor)/mentor/reviews
 
+  /// 회원 탈퇴(계정 삭제) — 앱은 삭제하지 않고 웹 페이지만 연다.
+  static const String accountDeletePath =
+      '/account/delete'; // app/(student)/account/delete
+
   /// baseUrl 이 채워졌는지(=웹 열기 가능). 비면 안내 폴백.
   static bool get isConfigured => baseUrl.isNotEmpty;
 }

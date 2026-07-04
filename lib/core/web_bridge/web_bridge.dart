@@ -68,6 +68,10 @@ class WebBridge {
   Future<WebOpenResult> openReviews({String source = 'app'}) =>
       _open(WebBridgeConfig.reviewsPath, <String, String>{'src': source});
 
+  /// 회원 탈퇴(계정 삭제) — 웹 페이지만 연다(앱 내 삭제 흐름 없음).
+  Future<WebOpenResult> openAccountDelete({String source = 'app'}) =>
+      _open(WebBridgeConfig.accountDeletePath, <String, String>{'src': source});
+
   /// URL 조립(테스트/검토용 — 실제 열기와 동일한 규칙). baseUrl 미확정이면 null.
   Uri? buildUri(String path, [Map<String, String> query = const <String, String>{}]) {
     if (_baseUrl.isEmpty || path.isEmpty) return null;

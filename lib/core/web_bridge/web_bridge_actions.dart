@@ -66,6 +66,12 @@ Future<void> openReviewsWeb(BuildContext context, {WebBridge? bridge}) async {
   _showNotice(context, r, '리뷰는 웹에서 확인할 수 있어요. (준비 중)');
 }
 
+Future<void> openAccountDeleteWeb(BuildContext context, {WebBridge? bridge}) async {
+  final WebOpenResult r = await (bridge ?? WebBridge()).openAccountDelete();
+  if (r == WebOpenResult.opened || !context.mounted) return;
+  _showNotice(context, r, '회원 탈퇴는 웹에서 진행돼요. (준비 중)');
+}
+
 /// 안내 스낵바(미확정: 준비 중 / 실패: 재시도 안내). 호출부에서 mounted 확인 후 호출.
 void _showNotice(BuildContext context, WebOpenResult result, String notConfiguredMsg) {
   final String msg = result == WebOpenResult.failed

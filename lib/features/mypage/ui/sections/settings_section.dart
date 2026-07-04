@@ -97,7 +97,14 @@ class _SettingsSectionState extends State<SettingsSection> {
             trailingText: AppConstants.appVersion,
             showChevron: false,
           ),
+          // 계정: 회원 탈퇴(웹 링크) — 실제 삭제는 웹에서. 로그인 세션일 때만 노출.
           if (widget.showLogout) ...<Widget>[
+            const Divider(height: 12, color: ColorTokens.border),
+            MyPageRow(
+              icon: Icons.person_remove_rounded,
+              label: '회원 탈퇴',
+              onTap: () => openAccountDeleteWeb(context),
+            ),
             const SizedBox(height: 12),
             SecondaryButton(
               label: '로그아웃',

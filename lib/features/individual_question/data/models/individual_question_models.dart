@@ -26,6 +26,54 @@ IndividualQuestionType iqTypeFromDb(String? v) {
 String iqTypeLabel(IndividualQuestionType t) =>
     t == IndividualQuestionType.open ? '공개형' : '지정형';
 
+/// IQ 목록 '질문 유형' 필터(멘토·학생 공용). 유형 기준이라 상태(진행중/완료 등)와 독립.
+/// - all        = 전체
+/// - direct     = 지정형(question_type=='direct')
+/// - openClaimed= 공개형 + 답변자 확정(claimed_mentor_id != null)
+/// - openWaiting= 공개형 + 답변자 미정(claimed_mentor_id == null)
+enum IqTypeFilter { all, direct, openClaimed, openWaiting }
+
+/// 칩 노출 순서(라벨 확정: 전체 / 지정 / 공개·확정 / 공개·대기).
+const List<IqTypeFilter> kIqTypeFilters = <IqTypeFilter>[
+  IqTypeFilter.all,
+  IqTypeFilter.direct,
+  IqTypeFilter.openClaimed,
+  IqTypeFilter.openWaiting,
+];
+
+/// 필터 한글 라벨.
+String iqTypeFilterLabel(IqTypeFilter f) {
+  switch (f) {
+    case IqTypeFilter.all:
+      return '전체';
+    case IqTypeFilter.direct:
+      return '지정';
+    case IqTypeFilter.openClaimed:
+      return '공개·확정';
+    case IqTypeFilter.openWaiting:
+      return '공개·대기';
+  }
+}
+
+/// 질문 1건이 유형 필터에 부합하는지(유형 기준 — 상태와 독립).
+bool iqMatchesTypeFilter(IndividualQuestion q, IqTypeFilter f) {
+  switch (f) {
+    case IqTypeFilter.all:
+      return true;
+    case IqTypeFilter.direct:
+      return q.type == IndividualQuestionType.direct;
+    case IqTypeFilter.openClaimed:
+      return q.type == IndividualQuestionType.open && q.claimedMentorId != null;
+    case IqTypeFilter.openWaiting:
+      return q.type == IndividualQuestionType.open && q.claimedMentorId == null;
+  }
+}
+
+/// 멘토 목록의 '수락 대기(공개형)' 섹션(OpenIndividualQuestion)은 정의상
+/// 공개·대기(open·미확정)다. 이 섹션을 필터에서 보여줄지 여부.
+bool iqShowOpenWaitingSection(IqTypeFilter f) =>
+    f == IqTypeFilter.all || f == IqTypeFilter.openWaiting;
+
 /// 상태(웹 070 CHECK 값 + 미지 방어).
 enum IndividualQuestionStatus {
   escrowed,

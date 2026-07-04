@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
+import '../../../design/widgets/chip_scroll.dart';
 import '../../../design/widgets/empty_state.dart';
 import '../data/individual_question_repository.dart';
 import '../data/models/individual_question_models.dart';
@@ -37,6 +38,9 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
       const IndividualQuestionRepository();
   late Future<MentorIqListData> _future;
   bool _claiming = false;
+
+  /// 질문 유형 필터(전체/지정/공개·확정/공개·대기). 상태 표기와 독립.
+  IqTypeFilter _filter = IqTypeFilter.all;
 
   @override
   void initState() {
@@ -110,6 +114,17 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
     if (changed == true && mounted) _refresh();
   }
 
+  /// 질문 유형 필터 칩(전체/지정/공개·확정/공개·대기). ChipScroll 재사용.
+  Widget _typeFilterChips() {
+    return ChipScroll(
+      labels: <String>[
+        for (final IqTypeFilter f in kIqTypeFilters) iqTypeFilterLabel(f),
+      ],
+      selectedIndex: kIqTypeFilters.indexOf(_filter),
+      onSelected: (int i) => setState(() => _filter = kIqTypeFilters[i]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,35 +158,56 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
               message: '학생이 지정하거나 공개로 올린 질문이 여기에 보여요.',
             );
           }
+          // 유형 필터 적용(새 조회 없음, in-memory).
+          // '수락 대기(공개형)' 섹션은 정의상 공개·대기 → 필터가 all/공개·대기일 때만.
+          // '내 질문'(지정 + 내가 수락한 공개형)은 유형 필터를 각 행에 적용.
+          final List<OpenIndividualQuestion> open =
+              iqShowOpenWaitingSection(_filter)
+                  ? data.open
+                  : const <OpenIndividualQuestion>[];
+          final List<IndividualQuestion> mine = data.mine
+              .where((IndividualQuestion q) => iqMatchesTypeFilter(q, _filter))
+              .toList(growable: false);
           return RefreshIndicator(
             onRefresh: () async => _refresh(),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenH, 12, AppSpacing.screenH, 24),
               children: <Widget>[
-                if (data.open.isNotEmpty) ...<Widget>[
+                _typeFilterChips(),
+                const SizedBox(height: 12),
+                if (open.isNotEmpty) ...<Widget>[
                   const Padding(
                     padding: EdgeInsets.only(left: 4, bottom: 8),
                     child: Text('수락 대기 (공개형)', style: AppTypography.caption),
                   ),
-                  for (final OpenIndividualQuestion q in data.open)
+                  for (final OpenIndividualQuestion q in open)
                     IqOpenQuestionCard(
                       question: q,
                       onClaim: _claiming ? null : () => _claim(q),
                     ),
                   const SizedBox(height: 12),
                 ],
-                if (data.mine.isNotEmpty) ...<Widget>[
+                if (mine.isNotEmpty) ...<Widget>[
                   const Padding(
                     padding: EdgeInsets.only(left: 4, bottom: 8),
                     child: Text('내 질문', style: AppTypography.caption),
                   ),
-                  for (final IndividualQuestion q in data.mine)
+                  for (final IndividualQuestion q in mine)
                     IqQuestionCard(
                       question: q,
                       onTap: () => _openDetail(q),
                     ),
                 ],
+                if (open.isEmpty && mine.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: Text(
+                      '이 조건의 질문이 없어요.',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption,
+                    ),
+                  ),
               ],
             ),
           );

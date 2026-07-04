@@ -92,6 +92,120 @@ void main() {
     });
   });
 
+  group('IQ 유형 필터 (칩 4개·전환)', () {
+    IndividualQuestion openClaimed({
+      String id = 'oc',
+      String title = '공개확정질문',
+    }) {
+      return IndividualQuestion(
+        id: id,
+        studentId: 's1',
+        type: IndividualQuestionType.open,
+        status: IndividualQuestionStatus.claimed,
+        title: title,
+        body: '본문',
+        priceCents: 500000,
+        claimedMentorId: 'm1',
+        createdAt: DateTime(2026, 7, 1),
+      );
+    }
+
+    testWidgets('학생 목록: 칩 4개 + 지정/공개·대기 전환', (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(StudentIqListScreen(
+        loaderOverride: () async => <IndividualQuestion>[
+          _question(
+              id: 'd',
+              type: IndividualQuestionType.direct,
+              status: IndividualQuestionStatus.assigned,
+              title: '지정질문'),
+          openClaimed(),
+          _question(
+              id: 'ow',
+              type: IndividualQuestionType.open,
+              status: IndividualQuestionStatus.open,
+              title: '공개대기질문'),
+        ],
+      )));
+      await tester.pumpAndSettle();
+
+      // 칩 4개
+      expect(find.text('전체'), findsOneWidget);
+      expect(find.text('지정'), findsOneWidget);
+      expect(find.text('공개·확정'), findsOneWidget);
+      expect(find.text('공개·대기'), findsOneWidget);
+      // 전체 → 셋 다
+      expect(find.text('지정질문'), findsOneWidget);
+      expect(find.text('공개확정질문'), findsOneWidget);
+      expect(find.text('공개대기질문'), findsOneWidget);
+
+      // '지정' → direct 만
+      await tester.tap(find.text('지정'));
+      await tester.pumpAndSettle();
+      expect(find.text('지정질문'), findsOneWidget);
+      expect(find.text('공개확정질문'), findsNothing);
+      expect(find.text('공개대기질문'), findsNothing);
+
+      // '공개·대기' → open·미확정 만
+      await tester.tap(find.text('공개·대기'));
+      await tester.pumpAndSettle();
+      expect(find.text('공개대기질문'), findsOneWidget);
+      expect(find.text('지정질문'), findsNothing);
+      expect(find.text('공개확정질문'), findsNothing);
+    });
+
+    testWidgets('멘토 목록: 필터로 섹션·행 전환', (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(MentorIqListScreen(
+        loaderOverride: () async => MentorIqListData(
+          open: <OpenIndividualQuestion>[
+            OpenIndividualQuestion(
+              id: 'o1',
+              title: '공개대기질문',
+              priceCents: 300000,
+              createdAt: DateTime(2026, 7, 1),
+            ),
+          ],
+          mine: <IndividualQuestion>[
+            _question(
+                id: 'd',
+                type: IndividualQuestionType.direct,
+                status: IndividualQuestionStatus.assigned,
+                title: '지정질문'),
+            openClaimed(),
+          ],
+        ),
+      )));
+      await tester.pumpAndSettle();
+
+      // 전체 → 대기 섹션 + 내 질문 둘 다
+      expect(find.text('공개대기질문'), findsOneWidget);
+      expect(find.text('지정질문'), findsOneWidget);
+      expect(find.text('공개확정질문'), findsOneWidget);
+
+      // '지정' → 대기 섹션 숨김, 지정만
+      await tester.tap(find.text('지정'));
+      await tester.pumpAndSettle();
+      expect(find.text('수락 대기 (공개형)'), findsNothing);
+      expect(find.text('공개대기질문'), findsNothing);
+      expect(find.text('지정질문'), findsOneWidget);
+      expect(find.text('공개확정질문'), findsNothing);
+
+      // '공개·확정' → 확정 행만
+      await tester.tap(find.text('공개·확정'));
+      await tester.pumpAndSettle();
+      expect(find.text('공개확정질문'), findsOneWidget);
+      expect(find.text('지정질문'), findsNothing);
+      expect(find.text('공개대기질문'), findsNothing);
+
+      // '공개·대기' → 대기 섹션만
+      await tester.tap(find.text('공개·대기'));
+      await tester.pumpAndSettle();
+      expect(find.text('수락 대기 (공개형)'), findsOneWidget);
+      expect(find.text('공개대기질문'), findsOneWidget);
+      expect(find.text('지정질문'), findsNothing);
+      expect(find.text('공개확정질문'), findsNothing);
+    });
+  });
+
   group('IqDetailScreen', () {
     IqDetailData detail(IndividualQuestionStatus status,
         {List<IqMessage> messages = const <IqMessage>[]}) {

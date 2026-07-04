@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
+import '../../../design/typography_tokens.dart';
+import '../../../design/widgets/chip_scroll.dart';
 import '../../../design/widgets/empty_state.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/individual_question_repository.dart';
@@ -27,6 +29,9 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
   final IndividualQuestionRepository _repo =
       const IndividualQuestionRepository();
   late Future<List<IndividualQuestion>> _future;
+
+  /// 질문 유형 필터(전체/지정/공개·확정/공개·대기). 상태 표기와 독립.
+  IqTypeFilter _filter = IqTypeFilter.all;
 
   @override
   void initState() {
@@ -55,6 +60,17 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
       ),
     );
     if (changed == true && mounted) _refresh();
+  }
+
+  /// 질문 유형 필터 칩(전체/지정/공개·확정/공개·대기). ChipScroll 재사용.
+  Widget _typeFilterChips() {
+    return ChipScroll(
+      labels: <String>[
+        for (final IqTypeFilter f in kIqTypeFilters) iqTypeFilterLabel(f),
+      ],
+      selectedIndex: kIqTypeFilters.indexOf(_filter),
+      onSelected: (int i) => setState(() => _filter = kIqTypeFilters[i]),
+    );
   }
 
   @override
@@ -91,6 +107,9 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
                   kIndividualQuestionCreateEnabled ? _openCreate : null,
             );
           }
+          final List<IndividualQuestion> filtered = items
+              .where((IndividualQuestion q) => iqMatchesTypeFilter(q, _filter))
+              .toList(growable: false);
           return RefreshIndicator(
             onRefresh: () async => _refresh(),
             child: ListView(
@@ -105,11 +124,23 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
                   ),
                   const SizedBox(height: 14),
                 ],
-                for (final IndividualQuestion q in items)
-                  IqQuestionCard(
-                    question: q,
-                    onTap: () => _openDetail(q),
-                  ),
+                _typeFilterChips(),
+                const SizedBox(height: 12),
+                if (filtered.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: Text(
+                      '이 조건의 질문이 없어요.',
+                      textAlign: TextAlign.center,
+                      style: AppType.caption,
+                    ),
+                  )
+                else
+                  for (final IndividualQuestion q in filtered)
+                    IqQuestionCard(
+                      question: q,
+                      onTap: () => _openDetail(q),
+                    ),
               ],
             ),
           );

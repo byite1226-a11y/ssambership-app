@@ -55,7 +55,11 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
   }
 
   void _refresh() {
-    setState(() => _future = _read.threads(widget.room.id));
+    // ★ 블록 바디로: setState(() => _future = future)는 클로저가 Future를 반환해
+    //   'setState callback returned a Future' 예외로 리빌드가 취소된다(목록 미갱신).
+    setState(() {
+      _future = _read.threads(widget.room.id);
+    });
     _loadUsage();
   }
 

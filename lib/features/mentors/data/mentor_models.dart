@@ -187,16 +187,41 @@ class MentorListItem {
   }
 }
 
-/// 상세 화면 추가 정보(목록에서 못 가져오는 것: 평균 답변시간·내 구독 여부).
+/// 상세 화면 추가 정보(목록에서 못 가져오는 것: 활동 통계·내 구독 여부).
 class MentorDetailExtras {
   const MentorDetailExtras({
     this.avgResponseHours,
+    this.avgRating,
+    this.reviewCount = 0,
     this.alreadySubscribed = false,
   });
 
-  /// 평균 답변시간(시간). null = 통계 없음 → '신규 멘토' 친화 표기.
+  /// 평균 답변시간(시간). null = 통계 없음.
   final num? avgResponseHours;
+
+  /// 공개(visible) 리뷰 평균 평점(1~5). null = 리뷰 없음(평점 미표시).
+  final double? avgRating;
+
+  /// 공개(visible) 리뷰 수. 0 = 없음.
+  final int reviewCount;
 
   /// 현재 로그인 사용자가 이 멘토를 활성 구독 중인지(게스트는 항상 false).
   final bool alreadySubscribed;
+
+  /// 평점 표시 라벨('4.5 · 리뷰 2개'). 공개 리뷰가 있을 때만, 없으면 null(날조 금지).
+  String? get ratingLabel {
+    final double? r = avgRating;
+    if (reviewCount <= 0 || r == null) return null;
+    return '${r.toStringAsFixed(1)}  ·  리뷰 $reviewCount개';
+  }
+
+  /// 평균 응답시간 라벨. 값이 없으면 null.
+  String? get responseLabel {
+    final num? h = avgResponseHours;
+    if (h == null) return null;
+    return h < 1 ? '평균 답변 1시간 이내' : '평균 답변 약 ${h.round()}시간';
+  }
+
+  /// 표시할 활동 정보(평점·응답시간)가 하나도 없는지 → 빈 상태 안내로 대체.
+  bool get hasNoActivity => ratingLabel == null && responseLabel == null;
 }

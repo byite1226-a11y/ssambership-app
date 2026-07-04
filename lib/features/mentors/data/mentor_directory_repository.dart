@@ -67,6 +67,8 @@ class MentorDirectoryRepository {
       avgHours = null; // 통계 없음 → '신규 멘토'
     }
 
+    final _ReviewStats reviews = await _reviewStats(mentorId);
+
     bool subscribed = false;
     final String? uid = _client.auth.currentUser?.id;
     if (uid != null) {
@@ -81,8 +83,40 @@ class MentorDirectoryRepository {
 
     return MentorDetailExtras(
       avgResponseHours: avgHours,
+      avgRating: reviews.avg,
+      reviewCount: reviews.count,
       alreadySubscribed: subscribed,
     );
+  }
+
+  /// 그 멘토의 '공개(visible) 리뷰' 평균 평점·개수(reviews 집계).
+  ///
+  /// 공개 = moderation_state='visible' AND is_hidden=false AND is_blinded=false.
+  /// ★ reviews 외 다른 조회는 하지 않는다(rating 컬럼만 읽어 앱에서 평균낸다).
+  /// RLS/컬럼 부재 등 실패 시 (0, null) → 화면은 '아직 활동 정보가 없어요'로 폴백(날조 금지).
+  Future<_ReviewStats> _reviewStats(String mentorId) async {
+    try {
+      final List<Map<String, dynamic>> rows = await _client
+          .from('reviews')
+          .select('rating')
+          .eq('mentor_id', mentorId)
+          .eq('moderation_state', 'visible')
+          .eq('is_hidden', false)
+          .eq('is_blinded', false);
+      if (rows.isEmpty) return const _ReviewStats(0, null);
+      int sum = 0;
+      int n = 0;
+      for (final Map<String, dynamic> r in rows) {
+        final Object? v = r['rating'];
+        if (v is num) {
+          sum += v.toInt();
+          n++;
+        }
+      }
+      return _ReviewStats(rows.length, n > 0 ? sum / n : null);
+    } catch (_) {
+      return const _ReviewStats(0, null);
+    }
   }
 
   Future<Map<String, MentorProfileInfo>> _profiles(List<String> ids) async {
@@ -116,4 +150,11 @@ class MentorDirectoryRepository {
     }
     return out;
   }
+}
+
+/// 리뷰 집계 결과(개수 + 평균 평점). 평균은 리뷰가 없으면 null.
+class _ReviewStats {
+  const _ReviewStats(this.count, this.avg);
+  final int count;
+  final double? avg;
 }

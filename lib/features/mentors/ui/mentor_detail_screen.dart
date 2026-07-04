@@ -199,7 +199,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// 통계: 공개 가능한 항목만 표시한다(평균 답변시간). 없으면 '신규 멘토' 친화 표기.
+/// 활동 통계: 공개 가능한 항목만 표시(평점·리뷰수·평균 답변시간). 값이 없으면 날조하지
+/// 않고 자연스러운 빈 처리. 표시는 공통 [MentorMetaItem] 재사용(별=warning 토큰).
 class _StatsView extends StatelessWidget {
   const _StatsView({required this.extras, required this.loading});
   final MentorDetailExtras extras;
@@ -210,20 +211,39 @@ class _StatsView extends StatelessWidget {
     if (loading) {
       return const Text('불러오는 중…', style: AppType.caption);
     }
-    final num? hours = extras.avgResponseHours;
-    if (hours == null) {
-      return const Text(
-        '아직 활동 통계가 쌓이지 않은 신규 멘토예요.',
-        style: AppType.body,
-      );
+    if (extras.hasNoActivity) {
+      return const Text('아직 활동 정보가 없어요.', style: AppType.body);
     }
-    final String text =
-        hours < 1 ? '평균 답변 1시간 이내' : '평균 답변 약 ${hours.round()}시간';
-    // 응답시간 → schedule 아이콘(값이 있을 때만). '신규 멘토' 프로즈엔 아이콘 없음.
-    return MentorMetaItem(
-      icon: Icons.schedule_rounded,
-      text: text,
-      style: AppType.body,
+
+    final List<Widget> lines = <Widget>[];
+    // 평점(별 + 숫자) · 리뷰 수 — 공개 리뷰가 있을 때만. 별은 의미색(warning) 토큰.
+    final String? rating = extras.ratingLabel;
+    if (rating != null) {
+      lines.add(MentorMetaItem(
+        icon: Icons.star_rounded,
+        iconColor: ColorTokens.warning,
+        text: rating,
+        style: AppType.body,
+      ));
+    }
+    // 평균 응답시간 — 값이 있을 때만(schedule 아이콘).
+    final String? response = extras.responseLabel;
+    if (response != null) {
+      lines.add(MentorMetaItem(
+        icon: Icons.schedule_rounded,
+        text: response,
+        style: AppType.body,
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        for (int i = 0; i < lines.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: AppSpacing.s8),
+          lines[i],
+        ],
+      ],
     );
   }
 }

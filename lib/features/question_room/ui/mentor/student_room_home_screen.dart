@@ -104,12 +104,16 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
             );
           }
           final _StudentHomeData d = snap.data!;
+          // 학생 이름은 AppBar 제목에 이미 있으므로 본문 헤더에서는 중복 표시하지 않는다.
+          final Widget? header = _header(d.sub);
           return ListView(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenH, vertical: AppSpacing.s16),
             children: <Widget>[
-              _header(d.sub),
-              const SizedBox(height: AppSpacing.section),
+              if (header != null) ...<Widget>[
+                header,
+                const SizedBox(height: AppSpacing.section),
+              ],
               EntranceCard(
                 icon: Icons.forum_rounded,
                 title: '질문 / 답변',
@@ -151,19 +155,15 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
     );
   }
 
-  Widget _header(SubscriptionSummary? sub) {
+  /// 구독 상태 한 줄(학생 이름은 AppBar 제목과 중복이라 제외). 표시할 게 없으면 null.
+  Widget? _header(SubscriptionSummary? sub) {
     final List<String> bits = <String>[
       if (sub != null) (sub.isActive ? '구독 중' : '구독 만료'),
       if (sub?.nextRenewal != null)
         '다음 갱신 ${Formatters.shortDate(sub!.nextRenewal!)}',
     ];
-    return Row(
-      children: <Widget>[
-        Expanded(child: Text(widget.studentName, style: AppType.title)),
-        if (bits.isNotEmpty)
-          Text(bits.join(' · '), style: AppType.caption),
-      ],
-    );
+    if (bits.isEmpty) return null;
+    return Text(bits.join(' · '), style: AppType.caption);
   }
 
   Widget _notesPreview(_StudentHomeData d) {

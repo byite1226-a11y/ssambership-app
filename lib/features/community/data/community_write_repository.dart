@@ -4,7 +4,7 @@ import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/errors/app_error.dart';
 import 'community_models.dart';
 
-/// 커뮤니티 쓰기(반응·댓글·신고만). ★ 글·숏폼 '작성'은 앱에서 하지 않는다(웹).
+/// 커뮤니티 쓰기(반응·댓글·신고·게시판 글 작성). ★ 숏폼 '작성'만 웹 전용.
 /// 본인(author_id/user_id/reporter_id = 현재 사용자) 행만 다룬다(RLS도 강제).
 class CommunityWriteRepository {
   const CommunityWriteRepository();
@@ -112,6 +112,29 @@ class CommunityWriteRepository {
         .select()
         .single();
     return CommunityComment.fromMap(row);
+  }
+
+  /// 게시판 글 작성(본인). ★ 검수 없이 즉시 공개(status='published' — 동업자 확정).
+  /// 본문은 읽기 모델(content 우선·body 폴백)과 정합하도록 두 컬럼에 동일 값 저장.
+  /// author_id 는 항상 현재 사용자(addComment 와 동일 패턴).
+  Future<BoardPost> createPost({
+    required String title,
+    required String body,
+    required String category,
+  }) async {
+    final Map<String, dynamic> row = await _client
+        .from('community_posts')
+        .insert(<String, dynamic>{
+          'title': title,
+          'content': body,
+          'body': body,
+          'category': category,
+          'author_id': _uid,
+          'status': 'published',
+        })
+        .select()
+        .single();
+    return BoardPost.fromMap(row);
   }
 
   /// 신고 접수(content_reports). 외부 연락처 유도 등도 사유로 신고할 수 있다.

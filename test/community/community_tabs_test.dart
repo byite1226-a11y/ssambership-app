@@ -56,7 +56,7 @@ void main() {
     expect(find.text('7'), findsOneWidget); // 댓글수
   });
 
-  testWidgets('작성 FAB 없음(앱은 열람+반응만, 작성은 웹 전용)',
+  testWidgets('작성 FAB: 게시판 탭에서만 노출(숏폼·내활동 없음)',
       (WidgetTester tester) async {
     _bigSurface(tester);
     await tester.pumpWidget(_wrap(CommunityScreen(
@@ -65,7 +65,17 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
+    // 숏폼 탭(기본): FAB 없음.
     expect(find.byType(FloatingActionButton), findsNothing);
-    expect(find.widgetWithText(FloatingActionButton, '작성'), findsNothing);
+
+    // 게시판 탭: '작성' FAB 노출.
+    await tester.tap(find.text('게시판'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(FloatingActionButton, '작성'), findsOneWidget);
+
+    // 내 활동 탭: FAB 없음.
+    await tester.tap(find.text('내 활동'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 }

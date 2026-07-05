@@ -61,7 +61,11 @@ class FakeCommunityWrite extends CommunityWriteRepository {
   int reactionCalls = 0;
   int commentCalls = 0;
   int reportCalls = 0;
+  int postCalls = 0;
   String? lastReportReason;
+  String? lastPostTitle;
+  String? lastPostBody;
+  String? lastPostCategory;
 
   @override
   Future<void> toggleBoardReaction({
@@ -92,6 +96,30 @@ class FakeCommunityWrite extends CommunityWriteRepository {
       id: 'fake-comment',
       body: body,
       authorLabel: '나',
+      createdAt: DateTime(2026, 7, 1),
+    );
+  }
+
+  @override
+  Future<BoardPost> createPost({
+    required String title,
+    required String body,
+    required String category,
+  }) async {
+    postCalls++;
+    lastPostTitle = title;
+    lastPostBody = body;
+    lastPostCategory = category;
+    return BoardPost(
+      id: 'fake-post',
+      title: title,
+      body: body,
+      category: category,
+      authorLabel: '나',
+      authorRole: 'student',
+      likeCount: 0,
+      commentCount: 0,
+      viewCount: 0,
       createdAt: DateTime(2026, 7, 1),
     );
   }

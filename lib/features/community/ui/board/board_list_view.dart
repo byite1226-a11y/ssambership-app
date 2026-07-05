@@ -19,10 +19,11 @@ class BoardListView extends StatefulWidget {
   final CommunityWriteRepository write;
 
   @override
-  State<BoardListView> createState() => _BoardListViewState();
+  State<BoardListView> createState() => BoardListViewState();
 }
 
-class _BoardListViewState extends State<BoardListView> {
+/// 상태를 공개해 글 작성 성공 시 바깥(커뮤니티 화면)에서 [reload]로 새로고침한다.
+class BoardListViewState extends State<BoardListView> {
   static const int _pageSize = 20;
 
   final ScrollController _scroll = ScrollController();
@@ -52,6 +53,9 @@ class _BoardListViewState extends State<BoardListView> {
       _loadMore();
     }
   }
+
+  /// 첫 페이지부터 다시 로드(글 작성 직후 새 글 반영용).
+  Future<void> reload() => _loadFirst();
 
   Future<void> _loadFirst() async {
     setState(() {

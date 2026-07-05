@@ -7,13 +7,14 @@ import 'data/community_read_repository.dart';
 import 'data/community_write_repository.dart';
 import 'ui/activity/my_activity_view.dart';
 import 'ui/board/board_list_view.dart';
+import 'ui/board/board_write_screen.dart';
 import 'ui/shortform/shortform_feed_view.dart';
 
 /// 커뮤니티 탭. 상단 탭(숏폼 / 게시판 / 내 활동). HomeShell 이 바깥 AppBar/하단탭 제공.
 ///
-/// ★ 앱은 열람 + 반응(좋아요·스크랩·댓글·신고)만. 글·숏폼 '작성'은 웹 전용(앱 내 작성 없음).
+/// ★ 게시판 '글쓰기'는 앱에서 가능(즉시 공개). 숏폼 '작성'은 웹 전용.
 ///   레포는 테스트에서 fake 로 주입할 수 있게 optional 로 받는다(기본은 실제).
-class CommunityScreen extends StatelessWidget {
+class CommunityScreen extends StatefulWidget {
   const CommunityScreen({
     super.key,
     this.read = const CommunityReadRepository(),
@@ -24,36 +25,91 @@ class CommunityScreen extends StatelessWidget {
   final CommunityWriteRepository write;
 
   @override
+  State<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends State<CommunityScreen>
+    with SingleTickerProviderStateMixin {
+  static const int _boardTab = 1;
+
+  late final TabController _tab;
+  final GlobalKey<BoardListViewState> _boardKey =
+      GlobalKey<BoardListViewState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 3, vsync: this);
+    // 게시판 탭에서만 글쓰기 FAB 노출 → 탭 전환 시 리빌드.
+    _tab.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    super.dispose();
+  }
+
+  /// 게시판 글쓰기 → 성공(pop true) 시 목록 새로고침.
+  Future<void> _openWrite() async {
+    final bool? created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => BoardWriteScreen(write: widget.write),
+      ),
+    );
+    if (created == true && mounted) {
+      await _boardKey.currentState?.reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('글이 등록됐어요.')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
-          children: <Widget>[
-            TabBar(
-              labelColor: AppAccent.of(context).accent,
-              unselectedLabelColor: ColorTokens.secondary,
-              indicatorColor: AppAccent.of(context).accent,
-              labelStyle: AppType.body,
-              tabs: const <Widget>[
-                Tab(text: '숏폼'),
-                Tab(text: '게시판'),
-                Tab(text: '내 활동'),
+    final bool onBoardTab = _tab.index == _boardTab;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: <Widget>[
+          TabBar(
+            controller: _tab,
+            labelColor: AppAccent.of(context).accent,
+            unselectedLabelColor: ColorTokens.secondary,
+            indicatorColor: AppAccent.of(context).accent,
+            labelStyle: AppType.body,
+            tabs: const <Widget>[
+              Tab(text: '숏폼'),
+              Tab(text: '게시판'),
+              Tab(text: '내 활동'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tab,
+              children: <Widget>[
+                ShortformFeedView(read: widget.read, write: widget.write),
+                BoardListView(
+                    key: _boardKey, read: widget.read, write: widget.write),
+                MyActivityView(read: widget.read, write: widget.write),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: <Widget>[
-                  ShortformFeedView(read: read, write: write),
-                  BoardListView(read: read, write: write),
-                  MyActivityView(read: read, write: write),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+      // 게시판 탭에서만 노출. 역할색(학생 파랑/멘토 초록)은 AppAccent 경유.
+      floatingActionButton: onBoardTab
+          ? FloatingActionButton.extended(
+              onPressed: _openWrite,
+              backgroundColor: AppAccent.of(context).accent,
+              foregroundColor: AppAccent.of(context).onAccent,
+              icon: const Icon(Icons.edit_rounded),
+              label: const Text('작성'),
+            )
+          : null,
     );
   }
 }

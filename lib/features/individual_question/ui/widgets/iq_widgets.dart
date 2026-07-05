@@ -68,16 +68,12 @@ class IqQuestionCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              // 컴플라이언스: 카드에서 금액 표시 제거(유형·상태만).
               Row(
                 children: <Widget>[
                   AppBadge(label: iqTypeLabel(question.type), tinted: true),
                   const SizedBox(width: 6),
                   IqStatusPill(status: question.status),
-                  const Spacer(),
-                  Text(
-                    formatIqCash(question.priceCents),
-                    style: AppTypography.body,
-                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -132,14 +128,10 @@ class IqOpenQuestionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Row(
+            // 컴플라이언스: 금액 표시 제거(유형 뱃지만).
+            const Row(
               children: <Widget>[
-                const AppBadge(label: '공개형', tinted: true),
-                const Spacer(),
-                Text(
-                  formatIqCash(question.priceCents),
-                  style: AppTypography.body,
-                ),
+                AppBadge(label: '공개형', tinted: true),
               ],
             ),
             const SizedBox(height: 8),

@@ -37,7 +37,8 @@ void main() {
       expect(find.text('아직 개별질문이 없어요'), findsOneWidget);
     });
 
-    testWidgets('목록: 제목·상태 라벨·가격 표시', (WidgetTester tester) async {
+    testWidgets('목록: 제목·상태 라벨 표시, 금액 비노출(컴플라이언스)',
+        (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(StudentIqListScreen(
         loaderOverride: () async => <IndividualQuestion>[
           _question(status: IndividualQuestionStatus.answered),
@@ -46,7 +47,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('수열 질문이에요'), findsOneWidget);
       expect(find.text('답변 도착'), findsOneWidget);
-      expect(find.text('5,000캐시'), findsOneWidget);
+      expect(find.text('5,000캐시'), findsNothing);
     });
   });
 

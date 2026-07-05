@@ -63,9 +63,10 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('질문을 수락할까요?'),
+        // 컴플라이언스: 확인문에서 금액 표시 제거(제목만).
         content: Text(
           '수락하면 답변 담당 멘토가 돼요.\n'
-          '${q.title.isEmpty ? '(제목 없음)' : q.title} · ${formatIqCash(q.priceCents)}',
+          '${q.title.isEmpty ? '(제목 없음)' : q.title}',
         ),
         actions: <Widget>[
           TextButton(

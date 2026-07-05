@@ -10,7 +10,6 @@ import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
 import '../data/mentor_favorites_repository.dart';
 import '../data/mentor_models.dart';
-import '../format/mentor_price_format.dart';
 import 'widgets/mentor_favorite_button.dart';
 import 'widgets/mentor_meta_item.dart';
 import '../../../app/app_tabs.dart';
@@ -131,17 +130,8 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.cardGap),
-          _Section(
-            icon: Icons.payments_rounded,
-            title: '요금제',
-            child: _PlansView(plans: m.plans),
-          ),
-          const SizedBox(height: AppSpacing.titleBody),
-          const Text(
-            '가격은 표시용이며, 구독은 웹에서 진행돼요.',
-            style: AppType.caption,
-          ),
+          // 컴플라이언스: 요금제 섹션(가격 숫자·안내문) 제거 — 결제 유도 방지.
+          // 구독 CTA는 가격 없이 이동만 유지.
           const SizedBox(height: AppSpacing.s24),
           FutureBuilder<MentorDetailExtras>(
             future: _future,
@@ -288,54 +278,7 @@ class _StatsView extends StatelessWidget {
   }
 }
 
-/// 요금제: 가격 '표시'만. 활성 요금제가 없으면 '요금제 문의'(가격 날조 금지).
-class _PlansView extends StatelessWidget {
-  const _PlansView({required this.plans});
-  final List<MentorPlan> plans;
-
-  @override
-  Widget build(BuildContext context) {
-    if (plans.isEmpty) {
-      return const Text('요금제 문의', style: AppType.body);
-    }
-    final List<MentorPlan> sorted = <MentorPlan>[...plans]
-      ..sort((MentorPlan a, MentorPlan b) =>
-          a.amountCents.compareTo(b.amountCents));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (int i = 0; i < sorted.length; i++) ...<Widget>[
-          if (i > 0)
-            const Divider(height: 16, color: ColorTokens.border),
-          // 숫자 우선 위계: 라벨(caption) 위 · 금액(number 크게, '원'은 작게) 아래.
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(sorted[i].displayLabel, style: AppType.caption),
-              const SizedBox(height: AppSpacing.s4),
-              Text.rich(
-                TextSpan(
-                  children: <InlineSpan>[
-                    TextSpan(text: _amountDigits(sorted[i].won),
-                        style: AppType.number),
-                    const TextSpan(text: '원', style: AppType.caption),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// formatWon 결과("29,900원")에서 끝의 '원'만 분리한 숫자부("29,900").
-  /// 금액 값·콤마 포맷은 그대로 유지하고, 표시 스타일(큰 숫자 + 작은 '원')만 분리한다.
-  static String _amountDigits(int won) {
-    final String s = formatWon(won);
-    return s.endsWith('원') ? s.substring(0, s.length - 1) : s;
-  }
-}
+// 컴플라이언스: 요금제 표시(_PlansView) 제거 — 앱 내 가격 노출 금지.
 
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.child, this.icon});

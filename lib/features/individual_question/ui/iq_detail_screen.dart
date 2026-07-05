@@ -239,13 +239,12 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              // 컴플라이언스: 헤더에서 금액 표시 제거(유형·상태만).
               Row(
                 children: <Widget>[
                   AppBadge(label: iqTypeLabel(q.type), tinted: true),
                   const SizedBox(width: 6),
                   IqStatusPill(status: q.status),
-                  const Spacer(),
-                  Text(formatIqCash(q.priceCents), style: AppTypography.body),
                 ],
               ),
               const SizedBox(height: 10),

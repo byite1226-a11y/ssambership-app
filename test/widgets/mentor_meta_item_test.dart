@@ -17,8 +17,8 @@ void main() {
   });
 
   testWidgets('아이콘 색 기본은 secondary 토큰', (WidgetTester tester) async {
-    await tester.pumpWidget(_wrap(
-        const MentorMetaItem(icon: Icons.payments_rounded, text: '29,900원부터')));
+    await tester.pumpWidget(_wrap(const MentorMetaItem(
+        icon: Icons.menu_book_rounded, text: '수학 · 과학')));
     final Icon icon = tester.widget<Icon>(find.byType(Icon));
     expect(icon.color, ColorTokens.secondary);
     expect(icon.size, 16);

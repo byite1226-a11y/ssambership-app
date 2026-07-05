@@ -221,23 +221,11 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              if (widget.isDirect) ...<Widget>[
+              // 컴플라이언스: 지정형 단가 표시 제거 — 금액은 등록 확인 단계에서만 안내.
+              if (widget.isDirect)
                 Text('${widget.mentorName ?? '멘토'}에게 1건 질문해요.',
-                    style: AppTypography.body),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    const Text('질문 가격', style: AppTypography.caption),
-                    Text(
-                      prefill.pricing == null
-                          ? '가격 미설정'
-                          : formatIqCash(prefill.pricing!.amountCents),
-                      style: AppTypography.body,
-                    ),
-                  ],
-                ),
-              ] else
+                    style: AppTypography.body)
+              else
                 const Text(
                   '공개로 올리면 먼저 수락한 멘토가 답변해요.',
                   style: AppTypography.body,

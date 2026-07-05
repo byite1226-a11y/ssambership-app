@@ -106,15 +106,8 @@ class MentorCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 14),
-          // 커머스 제로: 구매 유도(구독하기) 버튼 제거. 가격은 '표시'만 유지,
-          // 구독 진입은 카드 탭 → 멘토 상세로 이동(구매 유도 아님).
-          // 요금 표시 → payments 아이콘(보조색). 결제 유도 아님.
-          MentorMetaItem(
-            icon: Icons.payments_rounded,
-            text: item.priceSummary,
-            style: AppType.body,
-          ),
+          // 컴플라이언스: 앱 내 가격 표시 제거(결제 유도 방지).
+          // 학교·과목·소개만 노출, 상세 진입은 카드 탭.
         ],
       ),
     );

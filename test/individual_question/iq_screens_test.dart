@@ -45,7 +45,7 @@ void main() {
       )));
       await tester.pumpAndSettle();
       expect(find.text('수열 질문이에요'), findsOneWidget);
-      expect(find.text('답변완료'), findsOneWidget);
+      expect(find.text('답변 도착'), findsOneWidget);
       expect(find.text('5,000캐시'), findsOneWidget);
     });
   });
@@ -217,7 +217,7 @@ void main() {
       );
     }
 
-    testWidgets('학생·답변완료 → 해결 완료 버튼, 취소 버튼 없음',
+    testWidgets('학생·답변 도착(answered) → 해결 완료 버튼, 취소 버튼 없음',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(IqDetailScreen(
         questionId: 'q1',

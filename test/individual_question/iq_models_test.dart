@@ -24,13 +24,13 @@ void main() {
       expect(iqStatusFromDb('weird'), IndividualQuestionStatus.unknown);
     });
 
-    test('상태 한글 라벨(웹 individualQuestionStatusLabel 미러)', () {
+    test('상태 한글 라벨(answered/released 는 앱 전용 새 용어)', () {
       expect(iqStatusLabel(IndividualQuestionStatus.escrowed), '예치중');
       expect(iqStatusLabel(IndividualQuestionStatus.open), '공개중');
       expect(iqStatusLabel(IndividualQuestionStatus.assigned), '답변중');
       expect(iqStatusLabel(IndividualQuestionStatus.claimed), '답변중');
-      expect(iqStatusLabel(IndividualQuestionStatus.answered), '답변완료');
-      expect(iqStatusLabel(IndividualQuestionStatus.released), '완료');
+      expect(iqStatusLabel(IndividualQuestionStatus.answered), '답변 도착');
+      expect(iqStatusLabel(IndividualQuestionStatus.released), '답변완료');
       expect(iqStatusLabel(IndividualQuestionStatus.refunded), '환불');
       expect(iqStatusLabel(IndividualQuestionStatus.expired), '만료');
       expect(iqStatusLabel(IndividualQuestionStatus.canceled), '취소');

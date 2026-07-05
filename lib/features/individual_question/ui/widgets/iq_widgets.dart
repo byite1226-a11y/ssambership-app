@@ -7,8 +7,9 @@ import '../../../../design/widgets/status_pill.dart';
 import '../../../../shared/format/formatters.dart';
 import '../../data/models/individual_question_models.dart';
 
-/// 상태 → 시맨틱 톤(웹 배지색 규약 미러: 완료=info, 답변완료=success,
-/// 진행(예치·공개·답변중)=warning, 종결(환불·만료·취소)=neutral).
+/// 상태 → 시맨틱 톤(웹 배지색 규약 미러: released(답변완료)=info,
+/// answered(답변 도착)=success, 진행(예치·공개·답변중)=warning,
+/// 종결(환불·만료·취소)=neutral). 톤 매핑은 미변경 — 라벨 문구만 앱 전용.
 StatusTone iqStatusTone(IndividualQuestionStatus s) {
   switch (s) {
     case IndividualQuestionStatus.released:

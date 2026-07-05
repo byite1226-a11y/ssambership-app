@@ -113,7 +113,8 @@ IndividualQuestionStatus iqStatusFromDb(String? v) {
   }
 }
 
-/// 상태 한글 라벨(웹 `individualQuestionStatusLabel` 미러 — 코드 비노출).
+/// 상태 한글 라벨(코드 비노출).
+/// ★ answered/released 는 앱 전용 새 용어(답변 도착/답변완료) — 웹은 추후 별도 반영.
 String iqStatusLabel(IndividualQuestionStatus s) {
   switch (s) {
     case IndividualQuestionStatus.escrowed:
@@ -124,9 +125,9 @@ String iqStatusLabel(IndividualQuestionStatus s) {
     case IndividualQuestionStatus.claimed:
       return '답변중';
     case IndividualQuestionStatus.answered:
-      return '답변완료';
+      return '답변 도착';
     case IndividualQuestionStatus.released:
-      return '완료';
+      return '답변완료';
     case IndividualQuestionStatus.refunded:
       return '환불';
     case IndividualQuestionStatus.expired:

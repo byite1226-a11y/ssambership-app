@@ -32,7 +32,7 @@ class IqDetailData {
 }
 
 /// 개별질문 상세 — 학생·멘토 공용. 역할·상태에 따라 액션이 달라진다.
-/// - 학생: 답변완료 → [해결 완료(정산)] / 답변 전 → [질문 취소(환불)]
+/// - 학생: 답변 도착 → [해결 완료(정산)] / 답변 전 → [질문 취소(환불)]
 /// - 멘토: 답변중(수락·지정) → 답변 작성
 /// 변경이 있었으면 pop(true) 로 알린다(호출부 새로고침).
 class IqDetailScreen extends StatefulWidget {
@@ -178,7 +178,7 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
     }
     final bool ok = await _confirm(
       '답변을 등록할까요?',
-      '등록하면 학생에게 답변완료로 표시돼요.\n학생이 해결 완료를 누르면 정산 예정 금액으로 잡혀요.',
+      '등록하면 학생에게 답변 도착으로 표시돼요.\n학생이 해결 완료를 누르면 정산 예정 금액으로 잡혀요.',
       '답변 등록',
     );
     if (!ok) return;

@@ -15,6 +15,19 @@
 
 ---
 
+## 🆕 2026-07-06(2차) 실태 정정 — 웹 브릿지 확정 + 컴플라이언스 반영 (QA-05 처리)
+
+QA 감사(docs/QA_REPORT_2026-07.md QA-05)에서 이 문서의 스테일 판정이 확인되어 아래를 정정한다. **아래 표들의 취소선/정정 표기가 우선한다.**
+
+- **웹 브릿지 동작**: `baseUrl` 은 더 이상 미설정이 아니다 — **운영 도메인 확정(2026-07, `https://ssambership-web.vercel.app`)**. `web_bridge_config.dart` 는 `String.fromEnvironment('WEB_BASE_URL', defaultValue: <운영 도메인>)` 구조로, 릴리즈는 주입 없이 동작하고 스테이징 테스트는 dart-define 오버라이드. 구독관리·정산·약관·개인정보·지원 버튼은 **실제 웹을 연다**.
+- **가격 표시·구독하기 버튼**: 컴플라이언스 커밋 `5002c1d` 로 **앱 내 가격 UI·구매 유도 CTA 가 제거**됨(멘토 카드·상세는 `CommerceNoticeCard` 안내만). "가격 표시 완전작동"/"구독하기 버튼 부분구현" 판정은 폐기.
+- **숏폼 좋아요/스크랩**: 초기 상태 로드가 **이미 구현**됨(`shortform_detail_screen.dart:46-61` `_loadReactionState`). "항상 꺼져 보임" 판정은 폐기(과소 서술).
+- **설정 약관·개인정보**: `openTermsWeb`/`openPrivacyWeb` 배선 완료(`settings_section.dart:87-92`) + 도메인 확정 → **열람 가능**.
+- **설정 알림 토글**: 순수 "로컬 상태만"이 아니라 `NotificationSettingsRepository` 배선 존재(graceful, 실제 라인 `settings_section.dart:32-58`) — 서버 컬럼(`users.notification_enabled`) 준비 시 자동 영속화.
+- **개별질문 작성 스위치(A안, 2026-07 확정)**: `kIndividualQuestionCreateEnabled` 는 컴파일 타임 주입(`--dart-define=IQ_CREATE_ENABLED=true`)으로 전환, **스토어 빌드 기본 off**. 목록·상세·답변 확인은 유지. 게이트: docs/PLAY_STORE_REVIEW_PLAN.md.
+
+---
+
 ## 🆕 2026-07-02 구현 배치(부족 기능 12건) — 결과
 
 무인 배치로 아래를 구현·커밋(각 독립 커밋, 각 커밋 전 flutter test·analyze 통과). **DB·Storage 변경 0, color_tokens 미터치.**
@@ -78,13 +91,13 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 ### 🔴 '보이지만 실제로는 안 되는' 기능 (사용자가 눌렀는데 반응 없음/저장 안 됨)
 | # | 기능 | 증상 | 근거 | 종류 |
 |---|---|---|---|---|
-| 1 | **구독/충전/결제·정산·프로필편집/약관 버튼** | 눌러도 웹 안 열리고 "준비 중" 스낵바만 | `web_bridge_config.dart:14` `baseUrl=''` | **오너 설정값**(URL 확정 시 즉시 동작) |
+| 1 | ~~**구독/충전/결제·정산·프로필편집/약관 버튼**~~ **✅ 해소(2026-07)** | 운영 도메인 확정 — 관리·약관·정산 버튼이 실제 웹을 연다(구매 유도 CTA 는 컴플라이언스로 별도 제거) | `web_bridge_config.dart` `baseUrl`(fromEnvironment, 기본=운영 도메인) | 완료 |
 | 2 | ~~채팅 이미지 첨부~~ **✅ 해결** | 업로드 + 뷰어 + 주석 진입점 모두 완료 | 퀵윈 `c32d53f`, 뷰어 PR #8 `b1fb61a` | 완료 |
 | 3 | **숏폼 영상 재생** | 재생 아이콘 보이나 눌러도 재생 안 됨(썸네일만) | `thumbnail_view.dart:6,29`, `shortform_card.dart:10`, `community_models.dart:67` | **인프라/패키지**(video player 미도입) |
-| 4 | **숏폼 좋아요/스크랩** | 토글은 되나 기존 반응 상태 미로드 → 항상 꺼진 것으로 보임 | `shortform_detail_screen.dart:42-47`(initState에 상태로드 없음) | **앱만** |
+| 4 | ~~**숏폼 좋아요/스크랩**~~ **✅ 해소** | 초기 상태 로드 구현됨 | `shortform_detail_screen.dart:46-61`(`_loadReactionState`) | 완료 |
 | 5 | **커뮤니티 조회수** | "조회 N" 표시되나 글 진입해도 증가 안 함 | `community_read_repository.dart`(incrementView 부재) | **인프라**(증분 RPC) |
 | 6 | **알림 딥링크** | 알림 눌러도 해당 글/스레드로 안 가고 탭만 전환 | `deep_link_service.dart:12`(TODO), `notifications_screen.dart:146-152` | 앱+인프라(푸시) |
-| 7 | **설정 알림 토글** | 켜고/꺼도 저장 안 됨(재진입 시 기본값) | `settings_section.dart:25-46`(로컬 상태만) | **앱만**(+ 저장 백엔드) |
+| 7 | **설정 알림 토글** | 레포 배선은 존재(graceful) — 서버 컬럼 없으면 "이 기기에서만 적용" 안내 | `settings_section.dart:32-58` + `notification_settings_repository.dart` | **인프라**(`users.notification_enabled` 컬럼) |
 | 8 | **회원가입 링크** | "웹에서 가입" 눌러도 "링크 준비 중" | `login_screen.dart:76` | 오너 설정값 |
 
 ### 🟠 미완·스텁 (기능 골격만, 실행 인프라 대기)
@@ -95,7 +108,7 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 - **요금제 라벨/가격/문항수 상수** — `plan_constants.dart` 전부 비움/TODO(요금제명 미표시). → 오너 확정값
 
 ### 실질 출시 판단(핵심)
-- **가장 크리티컬(코어 수익 동선)**: #1 `baseUrl` 미설정 → 구독·충전·결제가 전부 "준비 중". 구독형 앱인데 **가입·구독 진입이 막힘**. URL만 확정하면 즉시 해제(앱 코드 한 곳). **출시 전 필수.**
+- ~~**가장 크리티컬(코어 수익 동선)**: #1 `baseUrl` 미설정~~ **✅ 해소(2026-07)** — 운영 도메인 확정으로 웹 동선 전체가 열린다. 결제 관련 잔여 판단은 스토어 정책(docs/PLAY_STORE_REVIEW_PLAN.md P0-3)이며 이 문서 범위 밖.
 - **범위 의존**: 숏폼(#3 재생)을 출시 범위에 넣으면 미완 노출 → 범위 제외하거나 가려야 함. (첨부는 업로드·이미지 뷰어·주석 모두 완료.)
 - **UX 저하(비차단)**: 딥링크·조회수·숏폼반응·알림토글·페이징·푸시 — 코어 작동엔 지장 없음.
 
@@ -148,8 +161,8 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 | 검색/필터 | 부분구현 | `mentors_screen.dart:177-182`(클라이언트 필터만, 서버 필터 없음) | 정확일치·필드 제한 | 앱만 |
 | 정렬(최신/이름) | 완전작동 | `mentors_screen.dart:27,184-196` | 없음(인기순은 지표없어 제외) | 앱 |
 | 상세 프로필 | 완전작동 | `mentor_detail_screen.dart:30-69`, `repo.fetchExtras`(get_mentor_avg_response_hours RPC) | 없음 | 앱(RPC) |
-| 가격 표시 | 완전작동 | `mentor_models.dart:25-26,143-147`(mentor_plans 실값, 하드코딩 아님) | 없음 | 앱 |
-| 구독하기 버튼 | 부분구현 | `mentor_card.dart:99`, `mentor_detail_screen.dart:109`→`openSubscribeWeb`; `web_bridge_config.dart:14`(baseUrl='') | 🔴 웹 안 열림("준비 중") | 오너 설정값 |
+| ~~가격 표시~~ | **제거됨(컴플라이언스 `5002c1d`)** | 앱 내 가격 UI 삭제 — 모델 필드는 잔존하나 렌더 안 함(`mentor_card.dart:109` 주석) | 의도된 비노출 | 앱 |
+| ~~구독하기 버튼~~ | **제거됨(Commerce-Zero)** | 구매 유도 CTA 삭제 → `CommerceNoticeCard` 비상호작용 안내로 대체(`mentor_detail_screen.dart:148-149`), `openSubscribeWeb` 호출부 0건 | 구독은 웹에서 | 앱 |
 
 ### 4) 알림 (notifications)
 | 기능 | 판정 | 근거 | 사용자 영향 | 종류 |
@@ -168,10 +181,10 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 | 구독현황+주간잔여 | 완전작동 | `mypage_repository.dart:83-113`(get_weekly_question_usage RPC), `student_subscription_section.dart:93-102` | 없음(직전 수정 반영) | 앱(RPC) |
 | 구독 상태 | 완전작동(2분기) | `mypage_models.dart:73-74`(active/만료만) | 만료예정·결제실패 구분 없음(별도 TODO) | 앱만 |
 | 캐시 잔액+내역 | 완전작동 | `mypage_repository.dart:116-152`(cash_wallets·cash_ledger 실쿼리) | 없음 | 앱 |
-| 충전/결제·구독관리 버튼 | 부분구현 | `web_bridge_actions.dart:21-36`; `web_bridge_config.dart:14`(baseUrl='') | 🔴 웹 안 열림("준비 중") | 오너 설정값 |
+| 구독관리·정산관리 버튼 | 완전작동(2026-07 도메인 확정) | `web_bridge_actions.dart`(`openBillingManageWeb`/`openPayoutManageWeb`) → 운영 웹 열림. 충전 CTA(`openRechargeWeb`)는 컴플라이언스로 미배선 | 없음 | 앱 |
 | 설정: 로그아웃 | 완전작동 | `settings_section.dart:65-71`(AuthService.signOut) | 없음 | 앱 |
-| 설정: 알림 토글 | 부분구현 | `settings_section.dart:25-46`(로컬 상태만) | 🔴 저장 안 됨 | 앱만 |
-| 설정: 약관·개인정보 | 미완·스텁 | `settings_section.dart:78-82`("준비 중") | 열람 불가 | 오너 설정값/웹 |
+| 설정: 알림 토글 | 부분구현(graceful) | `settings_section.dart:32-58` + `notification_settings_repository.dart`(레포 배선 존재, 서버 컬럼 대기) | 서버 미비 시 "이 기기에서만 적용" | 인프라(컬럼) |
+| 설정: 약관·개인정보 | 완전작동(2026-07 도메인 확정) | `settings_section.dart:87-92`(`openTermsWeb`/`openPrivacyWeb`) → 운영 웹 열림 | 없음(웹 페이지 법적 문안 게시는 웹 소관) | 앱 |
 | 멘토 대시보드 | 완전작동 | `mypage_repository.dart:154-184`(rooms·threads·settlement_items 실쿼리) | 없음 | 앱 |
 
 ---
@@ -179,7 +192,7 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 ## 인프라 필요 항목 (앱만으로 못 고치는 것)
 | 항목 | 필요 인프라 | 영향 기능 | 인수인계 문서 |
 |---|---|---|---|
-| 웹 도메인 확정 | `WebBridgeConfig.baseUrl` 설정값(오너) | 구독·충전·결제·정산·프로필편집·회원가입 | (S12) `web_bridge_config.dart` 주석 |
+| ~~웹 도메인 확정~~ **✅ 완료(2026-07)** | `WebBridgeConfig.baseUrl` 기본값 = 운영 도메인(오버라이드는 `--dart-define=WEB_BASE_URL`) | 구독관리·정산·약관·개인정보·지원 | `web_bridge_config.dart` 주석 |
 | ~~Storage 버킷 + image_picker~~ **✅ 완료** | 버킷 `question-room-attachments` 실존·연결(퀵윈 `c32d53f`), `DeviceImagePicker`, 뷰어 서명 URL(PR #8) | 채팅 첨부·필기·주석·뷰어 | 완료 |
 | Realtime publication | question_messages·question_threads를 `supabase_realtime`에 포함 | 실시간 채팅(미포함시 폴백) | (S6) `thread_realtime.dart:23` |
 | 숏폼 video player | video player 패키지 + 재생 배선 | 숏폼 영상 | `thumbnail_view.dart` |
@@ -189,11 +202,11 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 | 요금제 상수 | 요금제명·가격·문항수 확정값 | 요금제 라벨 표시 | `plan_constants.dart` |
 
 ## 앱만으로 수정 가능한 것 (인프라 불필요)
-- 숏폼 좋아요/스크랩 초기 상태 로드(initState) — `shortform_detail_screen.dart`
+- ~~숏폼 좋아요/스크랩 초기 상태 로드~~ ✅ 완료(`shortform_detail_screen.dart:46-61`)
 - 커뮤니티 목록 페이징(limit/offset 쿼리) — `community_read_repository.dart`
-- 알림 토글 저장(로컬 영속화) — `settings_section.dart`
+- ~~알림 토글 저장~~ 레포 배선 완료 — 잔여는 서버 컬럼(인프라)
 - 멘토 검색 서버필터/구독상태 다분기 — (표시·정합, CANON_SYNC_TODO 참조)
-- `baseUrl` 한 줄 채우기(오너가 URL만 주면 앱 반영) — 구독/충전/결제 동선 전체 해제
+- ~~`baseUrl` 한 줄 채우기~~ ✅ 완료(2026-07 운영 도메인 확정, fromEnvironment 구조)
 
 ---
 

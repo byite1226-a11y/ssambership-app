@@ -21,7 +21,9 @@
 
 ## P0 — 출시 차단 (후보)
 
-### QA-01 · 개별질문 '앱 내 캐시 예치' 활성 — Google Play 결제 정책 리스크
+### QA-01 · 개별질문 '앱 내 캐시 예치' 활성 — Google Play 결제 정책 리스크 — **✅ 결정·이행 완료(2026-07, A안)**
+
+> **처리(2026-07)**: **A안 확정** — `kIndividualQuestionCreateEnabled = bool.fromEnvironment('IQ_CREATE_ENABLED', defaultValue: false)` 로 전환(`chore/release-config`). 첫 스토어 제출 빌드는 작성 진입점 기본 off, dev/내부 테스트는 dart-define 주입으로 on. on 전환 게이트·의사결정 기록은 docs/PLAY_STORE_REVIEW_PLAN.md 참고. 아래 원문은 감사 시점 기록으로 보존.
 - **위치**: `lib/features/individual_question/iq_flags.dart:14` (`kIndividualQuestionCreateEnabled = true`), 작성 진입점 `lib/features/individual_question/ui/student_iq_list_screen.dart:120-141`, `lib/features/mentors/ui/mentor_detail_screen.dart:153-155`, 예치 안내문 `lib/features/individual_question/ui/iq_create_screen.dart:121`("…캐시가 안전 보관(예치)돼요")
 - **근거**: 결제 실행 자체는 서버 SECURITY DEFINER RPC(`create_individual_question_as_student`)로만 수행되고 앱은 SDK·차감 계산이 없다(Commerce-Zero 준수). 그러나 **기충전 캐시를 앱 안에서 디지털 재화(개별질문)에 소비하는 UX**가 활성 상태이며, `iq_flags.dart:1-14` 스스로 "Play 결제 정책 검토 대상"으로 경고하고 있다. `iq_create_screen.dart:121`의 예치 확인문은 사실상 **개별 상품 단가 노출**이기도 하다(커밋 `5002c1d` 가격표시 제거 취지와 긴장).
 - **사용자 영향**: 정책 위반 판정 시 스토어 리젝/앱 제거. 기능 자체는 정상 동작.
@@ -54,12 +56,16 @@
 
 ## P2 — 다음 마일스톤
 
-### QA-05 · APP_FEATURE_STATUS.md 스테일 다수 — baseUrl 관련 판정 전면 재검토 필요
+### QA-05 · APP_FEATURE_STATUS.md 스테일 다수 — baseUrl 관련 판정 전면 재검토 필요 — **✅ 처리(2026-07)**
+
+> **처리(2026-07)**: 아래 나열 항목(①~⑤ 및 baseUrl 계열 판정) 전부 APP_FEATURE_STATUS.md 의 "🆕 2026-07-06(2차) 실태 정정" 블록 + 해당 표 행 정정으로 반영 완료(`chore/release-config`). 아래 원문은 감사 시점 기록으로 보존.
 - **위치**: `docs/APP_FEATURE_STATUS.md:81, 98, 152, 171, 182` 등 ↔ `lib/core/web_bridge/web_bridge_config.dart:15`
 - **근거**: 문서는 "`baseUrl=''` → 구독·충전·결제 전부 '준비 중', 가장 크리티컬한 출시 차단"으로 반복 서술하나, 실제 `baseUrl = 'https://ssambership-web.vercel.app'`로 설정돼 `isConfigured`(`:36`)=true — 웹이 실제로 열린다. 그 밖의 스테일: ① 멘토 "가격 표시 완전작동"(`:151`) — 실제로는 컴플라이언스로 UI 제거됨(`mentor_card.dart:109`), ② "구독하기 버튼 부분구현"(`:152`) — 버튼 자체가 `CommerceNoticeCard`로 대체·삭제, `openSubscribeWeb` 호출부 0건, ③ 숏폼 반응 "초기 로드 없음"(`:84,137`) — 이미 구현됨(`shortform_detail_screen.dart:46-61`, 과소 서술), ④ 약관·개인정보 "미완 스텁"(`:174`) — `openTermsWeb`/`openPrivacyWeb` 배선 완료(`settings_section.dart:87-92`), ⑤ 라인 드리프트 다수(`_storageReady` 96→97, 회원가입 76→78, priceSummary 143-147→150-151, 알림토글 25-46→32-58 등).
 - **수정안**: STATUS 문서 재감사(2026-07-06 블록처럼 날짜 블록 추가 방식 권장). 라인 앵커는 심볼명 병기로 드리프트 내성 확보.
 
-### QA-06 · web_bridge baseUrl 하드코딩이 파일 자체 규약과 불일치
+### QA-06 · web_bridge baseUrl 하드코딩이 파일 자체 규약과 불일치 — **✅ 결정·이행 완료(2026-07, 도메인 확정)**
+
+> **처리(2026-07)**: 현행 vercel 도메인이 **출시용 운영 웹으로 확정**됨. `baseUrl = String.fromEnvironment('WEB_BASE_URL', defaultValue: <운영 도메인>)` 구조로 전환(`chore/release-config`) — 규약 주석도 "확정 기본값 + 오버라이드"로 교체돼 모순 해소. 빈 값 주입 시 "준비 중" 폴백 유지. 아래 원문은 감사 시점 기록으로 보존.
 - **위치**: `lib/core/web_bridge/web_bridge_config.dart:15` ↔ 같은 파일 주석 `:5-7`("미확정이면 비워두고 앱은 웹을 열지 않음", "가짜 URL 하드코딩 금지")
 - **근거**: vercel 스테이징 도메인이 채워져 있어 폴백 안내("준비 중")가 절대 표시되지 않음. 운영 도메인 확정 전 출시 시 스테이징 웹으로 결제 동선이 열린다.
 - **수정안**: 운영 도메인 확정 시 교체 또는 규약대로 비움. **이 값이 의도된 스테이징 연결인지 사람 판단 필요.**
@@ -144,9 +150,9 @@
 
 ## 사람 판단이 필요한 항목
 
-1. **QA-01**: 개별질문 예치 흐름의 스토어 정책 판단 — `kIndividualQuestionCreateEnabled` 유지/차단 결정 (출시 게이트)
-2. **QA-06**: `baseUrl`의 vercel 스테이징 도메인 — 의도된 연결인지, 운영 도메인 확정 시점
-3. **QA-03/05**: README·HANDOFF·STATUS 문서 정비 범위(부분 패치 vs README 재작성)
-4. **QA-04**: 실서버 `notifications` 테이블 RLS 정책 존재 확인(Supabase 콘솔)
+1. ~~**QA-01**: 개별질문 예치 흐름의 스토어 정책 판단~~ **✅ 결정 완료(2026-07, A안)** — 스토어 빌드 기본 off + dart-define 주입, 게이트는 PLAY_STORE_REVIEW_PLAN.md
+2. ~~**QA-06**: `baseUrl`의 vercel 스테이징 도메인~~ **✅ 결정 완료(2026-07)** — 해당 도메인이 운영 웹으로 확정, fromEnvironment 구조로 이행
+3. **QA-03/05**: README·HANDOFF·STATUS 문서 정비 범위(부분 패치 vs README 재작성) — QA-05 지적분은 처리 완료, README 전면 재작성 여부만 잔여
+4. ~~**QA-04**: 실서버 `notifications` 테이블 RLS 정책 존재 확인~~ **✅ 확인 완료(2026-07-06)** — 스테이징(=운영) 실사: UPDATE RLS `notif_update_recipient_read` 존재, `user_id` 27/27 행 사용(PR #14 리뷰에서 검증)
 
 > 갱신(2026-07-06): QA-10 은 재검증 결과 **오탐으로 철회**(`home_shell.dart:54` 가 게스트를 멘토찾기 탭에서 시작시킴 — 상세는 P2 절). QA-02(raw `$e`)·QA-03(문서 모순)·QA-04(알림 uid 필터)는 `fix/qa-p1-batch` 브랜치에서 수정 적용됨.

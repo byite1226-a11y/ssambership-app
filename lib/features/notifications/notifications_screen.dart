@@ -145,11 +145,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _open(AppNotification n) {
     _markRead(n); // 이동 시 읽음 처리(이미 읽음이면 no-op).
-    // 구독·결제/개별질문 → 마이페이지(진입점 위치), 질문방 → 질문방 탭.
-    final int tab = n.kind == NotificationKind.subscription ||
-            n.kind == NotificationKind.individualQuestion
-        ? AppTab.myPage
-        : AppTab.questionRoom;
+    // 개별질문 → 개별질문 탭(하단 탭 승격), 구독·결제 → 마이페이지(우측 상단
+    // 프로필 push — 가상 목적지), 질문방 → 질문방 탭.
+    final int tab;
+    switch (n.kind) {
+      case NotificationKind.individualQuestion:
+        tab = AppTab.individualQuestion;
+      case NotificationKind.subscription:
+        tab = AppTab.myPage;
+      case NotificationKind.questionRoom:
+      case NotificationKind.other:
+        tab = AppTab.questionRoom;
+    }
     (widget.onDeepLinkTab ?? TabNavigator.go)(tab);
   }
 

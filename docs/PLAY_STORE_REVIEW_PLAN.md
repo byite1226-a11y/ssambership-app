@@ -28,6 +28,29 @@
 | P1-4 INTERNET 권한 | 🟠 release 누락 | 🔴 **잔존 (치명)** | `main/AndroidManifest.xml` 에 `uses-permission INTERNET` 부재 — debug/profile 에만(`:6`). release 빌드 = 전 기능 네트워크 마비 | main 매니페스트 1줄 — **극소** |
 | P1-5 Data safety | 🟠 자료 없음 | 🔴 **잔존** | `docs/DATA_SAFETY_FORM.md` 부재. 신규 기능(차단·탈퇴 진입)은 수집 항목 추가 없음 | 폼 문서 작성 — **중** |
 
+### ✅ 2026-07-06 스토어 트랙 배치 처리 결과 (`fix/store-track-p0`)
+
+위 재판정의 앱 저장소 잔존분을 일괄 처리했다. **총괄표의 판정은 아래가 최신.**
+
+| 항목 | 처리 | 근거 |
+|---|---|---|
+| P1-4 INTERNET | ✅ **해소** | main 매니페스트에 `uses-permission INTERNET` 추가 |
+| P0-6 SDK·versionCode | ✅ **해소** | compileSdk·targetSdk **36**(Play 신규 앱 요건: 2026-08-31부터 API 36) · minSdk 24 명시 고정. versionCode 는 pubspec `+N` 유래 + 증가 규약(HANDOFF §3-1-B) |
+| P1-1 라벨 | ✅ **해소** | `@string/app_name` = '쌤버십' (아이콘은 기해소) |
+| P0-5 릴리즈 서명 | 🔶 **뼈대 완료 / 키 생성 = 사람** | key.properties 조건 로딩 + debug 폴백(빌드 불파괴), example 템플릿 커밋. 키 생성·Play App Signing 은 아래 '사람이 해야 하는 것' §1 |
+| P0-3 (옵션1 확정) | ✅ **이행** | '구독 관리 (웹)' 링크 스토어 빌드 숨김(`kSubscriptionManageLinkEnabled`, dart-define 가역) + off 시 안내 카드 대체. 정산 관리 링크는 유지(지급 관리 — 정책 대상 아님) |
+| P0-4① 가입 스텁 | ✅ **해소** | 확정 가입 경로 부재 → 죽은 어포던스 제거, 순수 안내 문구로(경로 확정 시 signupPath 승격) |
+| P0-4② 숏폼 재생 | ✅ **해소** | 재생 아이콘 오버레이 제거(썸네일로 정리). 재생 도입은 백로그(video_player 도입 시 복원) |
+| P0-1 앱측 잔여 | ✅ **해소** | 탈퇴 확인 다이얼로그(되돌릴 수 없음 고지 + 취소/계속) 후 웹 열기 |
+
+## 👤 사람이 해야 하는 것 (코드 밖 — 스토어 제출 전 필수)
+
+1. **릴리즈 키**: 위 '릴리즈 키 생성 절차' 섹션대로 keystore 생성(keytool) → `android/key.properties` 작성 → 첫 AAB 업로드 시 **Play App Signing 등록**. ★ 키·비밀번호는 레포·클라우드 세션·채팅에 절대 반입 금지.
+2. **Play Console 등록 3종**: ① **Data safety 폼**(P1-5 — 수집 항목표 초안은 원문 P1-5 절) ② **계정 삭제 URL** 기재(P0-1 웹측 — `https://ssambership-web.vercel.app/account/delete`) ③ **App access 테스트 계정**(P1-3 — 학생·멘토 각 1개, 계정 생성은 코드 밖 작업. 요건: 로그인 가능 + 구독·질문 데이터 시드).
+3. **웹 탈퇴 페이지**(웹·앱 통합 검토 묶음): `/account/delete` 실페이지 + delete-account Edge Function(auth.users 삭제 + 데이터 정리) — 웹 레포 소유. 약관(`/legal/terms`)·개인정보(`/legal/privacy`) 페이지에 법적 문안 게시 확인 포함.
+
+---
+
 ### ⚖️ P0-3 · 현재 결제성 노출면 (정책 판단용 — 자의 판정 금지)
 
 스토어 빌드(주입 없음 = `IQ_CREATE_ENABLED` off) 기준:

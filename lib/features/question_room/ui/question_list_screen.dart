@@ -18,6 +18,7 @@ import 'connection_notes_screen.dart';
 import 'new_question_screen.dart';
 import '../../../shared/widgets/commerce_notice_card.dart';
 import 'widgets/thread_card.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 질문 영역(3뎁스). 스레드 카드 목록(최신순) + 새 질문 + 연결노트 플로팅.
 class QuestionListScreen extends StatefulWidget {
@@ -216,7 +217,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('확인 처리에 실패했어요. ($e)')),
+          SnackBar(content: Text('확인 처리에 실패했어요. ${friendlyError(e)}')),
         );
       }
     } finally {

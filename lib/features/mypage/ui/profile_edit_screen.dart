@@ -10,6 +10,7 @@ import '../../../design/widgets/primary_button.dart';
 import '../../../design/widgets/secondary_button.dart';
 import '../data/mypage_models.dart';
 import '../data/profile_edit_repository.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 프로필 수정 — 안전 필드(표시명·학년)만 편집. 역할·이메일·id 는 편집 대상 아님(표시만/제외).
 /// ★ 프로필 이미지는 Storage 버킷 의존이라 이번 범위 밖(버킷 준비 후 별도) — 텍스트 필드는 즉시 작동.
@@ -64,7 +65,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _busy = false);
-        _snack('저장에 실패했어요. ($e)');
+        _snack('저장에 실패했어요. ${friendlyError(e)}');
       }
     }
   }

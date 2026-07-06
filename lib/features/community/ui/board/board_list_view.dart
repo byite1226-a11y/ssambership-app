@@ -10,6 +10,7 @@ import '../../data/community_read_repository.dart';
 import '../../data/community_write_repository.dart';
 import '../widgets/board_post_card.dart';
 import 'board_detail_screen.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 게시판 탭 — 카테고리칩 필터 + 글 리스트(최신순). 카드 탭 → 상세.
 class BoardListView extends StatefulWidget {
@@ -141,7 +142,7 @@ class BoardListViewState extends State<BoardListView> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('글을 불러오지 못했어요.\n$_error',
+          child: Text('글을 불러오지 못했어요.\n${friendlyError(_error!)}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: ColorTokens.danger)),
         ),

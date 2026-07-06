@@ -12,6 +12,7 @@ import '../../design/widgets/primary_button.dart';
 import '../../design/widgets/secondary_button.dart';
 import '../../shared/constants/app_constants.dart';
 import '../dev/dev_flags.dart';
+import '../../shared/errors/friendly_error.dart';
 
 /// 로그인 화면. 이메일+비밀번호 로그인 / 둘러보기(게스트) / 웹 가입 안내(자리).
 ///
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       // 성공 시 router redirect 가 /home 또는 /blocked 로 이동시킨다.
     } on AuthException catch (e) {
-      if (mounted) setState(() => _error = _friendly(e.message));
+      if (mounted) setState(() => _error = friendlyAuthError(e));
     } catch (_) {
       if (mounted) {
         setState(() => _error = '로그인 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
@@ -57,13 +58,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  String _friendly(String raw) {
-    final String m = raw.toLowerCase();
-    if (m.contains('invalid login')) return '이메일 또는 비밀번호가 올바르지 않아요.';
-    if (m.contains('email not confirmed')) return '이메일 인증이 완료되지 않았어요.';
-    return '로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.';
   }
 
   void _browse() {

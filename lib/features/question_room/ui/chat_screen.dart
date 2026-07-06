@@ -17,6 +17,7 @@ import 'attachment_viewer_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/live_message_list.dart';
 import 'widgets/thread_status_pill.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 채팅(3뎁스). 카카오톡식 말풍선(학생=우측/멘토=좌측) + 하단 입력창.
 /// 메시지는 append 전용 — 수정/삭제 없음.
@@ -170,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
         await _uploadPending(pending, messageId: sent?.id);
       }
     } catch (e) {
-      _showError('전송에 실패했어요. ($e)');
+      _showError('전송에 실패했어요. ${friendlyError(e)}');
     } finally {
       if (mounted) {
         setState(() {
@@ -196,7 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       await _refresh(); // 첨부 반영.
     } catch (e) {
-      _showError('이미지 첨부에 실패했어요. ($e)');
+      _showError('이미지 첨부에 실패했어요. ${friendlyError(e)}');
     }
   }
 

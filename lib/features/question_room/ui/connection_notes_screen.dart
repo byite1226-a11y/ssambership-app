@@ -14,6 +14,7 @@ import '../data/models/connection_note.dart';
 import '../data/models/room.dart';
 import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 연결노트(풀스크린). 멘토/학생 노트를 author_role 로 구분.
 /// 본인 노트만 추가/수정한다(쓰기 레포가 본인 author 행만 다룸).
@@ -97,7 +98,7 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장에 실패했어요. ($e)')),
+          SnackBar(content: Text('저장에 실패했어요. ${friendlyError(e)}')),
         );
       }
     } finally {

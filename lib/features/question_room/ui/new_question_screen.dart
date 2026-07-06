@@ -11,6 +11,7 @@ import '../data/models/question_thread.dart';
 import '../data/models/room.dart';
 import '../data/question_room_read_repository.dart';
 import '../data/question_room_write_repository.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 새 질문 작성. 제목·내용·과목(선택) → 스레드 생성 + 첫 메시지 append.
 /// 활성 구독·잔여>0 확인은 호출부(질문영역)에서 게이팅하지만, 실패 에러는 그대로 노출한다.
@@ -98,7 +99,7 @@ class _NewQuestionScreenState extends State<NewQuestionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('질문 등록에 실패했어요. ($e)')),
+          SnackBar(content: Text('질문 등록에 실패했어요. ${friendlyError(e)}')),
         );
       }
     } finally {

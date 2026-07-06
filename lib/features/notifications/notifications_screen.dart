@@ -10,12 +10,14 @@ import '../../design/widgets/empty_state.dart';
 import 'data/app_notification.dart';
 import 'data/notifications_repository.dart';
 import 'ui/widgets/notification_card.dart';
+import '../../shared/errors/friendly_error.dart';
 
-/// 알림 센터(5번째 탭). 받은 알림 조회·읽음 + 탭하면 관련 화면으로 이동(딥링크).
+/// 알림 센터(하단 4번째 탭). 받은 알림 조회·읽음 + 탭하면 관련 화면으로 이동(딥링크).
 /// HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성한다(자체 Scaffold 없음).
 ///
-/// ★ 조회·읽음 중심. 알림 '생성'은 서버/푸시 몫. 앱 범위(질문방·구독)만 노출 —
-///   맞춤의뢰(CR)·환불·개별질문(IQ)은 제외(레포/모델에서 걸러짐).
+/// ★ 조회·읽음 중심. 알림 '생성'은 서버/푸시 몫. 앱 범위(질문방·구독·개별질문)만
+///   노출 — 맞춤의뢰(CR)·환불은 제외(레포/모델에서 걸러짐). 개별질문은 전용
+///   종류(NotificationKind.individualQuestion)로 개별질문 탭에 딥링크된다.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({
     super.key,
@@ -111,7 +113,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       await _repo.markRead(n.id);
     } catch (e) {
-      _showError('읽음 처리에 실패했어요. ($e)');
+      _showError('읽음 처리에 실패했어요. ${friendlyError(e)}');
       return;
     }
     _applyRead(<String>{n.id});
@@ -126,7 +128,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       await _repo.markAllRead(ids);
     } catch (e) {
-      _showError('모두 읽음 처리에 실패했어요. ($e)');
+      _showError('모두 읽음 처리에 실패했어요. ${friendlyError(e)}');
       return;
     }
     _applyRead(ids.toSet());
@@ -250,7 +252,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('알림을 불러오지 못했어요.\n$_error',
+          child: Text('알림을 불러오지 못했어요.\n${friendlyError(_error!)}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: ColorTokens.danger)),
         ),

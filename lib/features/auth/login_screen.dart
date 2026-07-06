@@ -65,16 +65,6 @@ class _LoginScreenState extends State<LoginScreen> {
     context.go(EntryGuard.home);
   }
 
-  void _openWebSignUp() {
-    // 웹 가입 자리 — 웹 URL 미확정이라 지금은 안내만 한다(web_bridge 연결은 후속).
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('회원가입은 웹에서 진행돼요. (링크 준비 중)'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final String? notice =
@@ -153,12 +143,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _loading ? null : _browse,
                   ),
                   const SizedBox(height: AppSpacing.s16),
-                  TextButton(
-                    onPressed: _openWebSignUp,
-                    child: const Text(
-                      '아직 회원이 아니신가요? 웹에서 가입',
-                      style: TextStyle(color: ColorTokens.secondary),
-                    ),
+                  // 가입은 웹에서만 — 확정된 가입 경로가 없어 링크(어포던스)
+                  // 없이 순수 안내만 둔다(죽은 버튼 금지, P0-4).
+                  // 웹 가입 라우트 확정 시 web_bridge 에 signupPath 를 추가해
+                  // 버튼으로 승격한다.
+                  const Text(
+                    '아직 회원이 아니신가요? 회원가입은 웹에서 진행돼요.',
+                    style: TextStyle(color: ColorTokens.secondary),
+                    textAlign: TextAlign.center,
                   ),
                   // ★ 개발 전용 — 출시 빌드에서는 노출되지 않는다.
                   if (kDevToolsEnabled)

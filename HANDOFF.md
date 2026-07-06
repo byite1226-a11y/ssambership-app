@@ -13,6 +13,7 @@
 - **핵심 원칙**
   - **Commerce-Zero**: 앱 안에서 결제·가격 입력·구매를 **하지 않는다**. 구독·충전·정산 등 돈이 오가는 동선은 **웹 페이지를 여는 것**으로만 처리한다.
   - **웹과 백엔드 공유**: 새 백엔드를 만들지 않고 **웹과 같은 Supabase 1개**를 읽기 중심으로 사용한다(RLS 의존).
+    ★ 주의: Supabase 프로젝트명 **`ssambership-staging`(`lbeqxarxothkmzqvpudy`) 이 곧 실제 운영 DB(웹·앱 공용)** 다 — 이름만 보고 스테이징(버려도 되는 DB)으로 오판하지 말 것.
   - **색·디자인은 동업자 소관**: `lib/design/tokens/color_tokens.dart` 의 색 토큰은 **임시 placeholder hex**다. **통째로 갈아엎지 말고** 값만 확정해서 교체한다(구조·역할명 유지).
   - **표시 규칙**: 화면에 내부 DB명·UUID·이벤트 코드·딥링크 경로·영문 코드값 노출 금지(과목·상태 등은 한글 매핑 사용).
 - **위치**: 앱 = `C:\dev\ssambership_app`. 웹 = 별도 저장소(README 기준 `ssambership_web`), **DB(Supabase)는 앱과 공유**.
@@ -96,15 +97,26 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 
 각 항목: **왜 / 어디에 무엇을 / 하면 무엇이 켜지나** + 실제 코드 위치.
 
-### 3-1. 웹 URL 확정 (가장 쉬움, 즉시 효과) ⭐
-- **왜**: 앱의 모든 결제/구독/충전/정산 버튼이 "웹에서 진행돼요 (준비 중)" 안내만 띄우는 상태. 웹 도메인이 미확정이라서.
-- **어디에 무엇을**: `lib/core/web_bridge/web_bridge_config.dart`
-  - `static const String baseUrl = '';` **(line 14)** → 여기에 운영/스테이징 웹 도메인 입력 (예: `https://app.ssambership.com`). **가짜 URL 하드코딩 금지** — 확정값만.
-  - 경로 상수 (line 17~21, 실제 웹 라우트와 다르면 함께 확정):
-    `subscribePath='/subscribe'`, `rechargePath='/wallet/charge'`, `billingManagePath='/account/billing'`, `payoutManagePath='/mentor/payouts'`, `profileEditPath='/mentor/profile'`
-- **하면**: `baseUrl` 한 곳만 채우면 **전체 결제 동선이 자동으로 실제 웹 열기로 전환**된다(외부 브라우저). 비어 있으면 안내 폴백 유지(`isConfigured`, line 24).
-- **구조**: 서비스 `lib/core/web_bridge/web_bridge.dart`(`WebBridge`, launcher 주입 가능), 화면 헬퍼 `web_bridge_actions.dart`(`openSubscribeWeb`/`openRechargeWeb`/`openBillingManageWeb`/`openPayoutManageWeb`/`openProfileEditWeb`). 모든 화면이 이 헬퍼만 호출한다(중복 없음).
+### 3-1. 웹 URL — ✅ 운영 도메인 확정(2026-07)
+- **확정**: `https://ssambership-web.vercel.app` 이 출시용 운영 웹 도메인이다. `lib/core/web_bridge/web_bridge_config.dart` 의 `baseUrl` 은 `String.fromEnvironment('WEB_BASE_URL', defaultValue: <운영 도메인>)` — **릴리즈 빌드는 주입 없이 그대로 동작**한다.
+- **경로 상수(코드 실값, 2026-07 실측)**: `subscribePath='/subscribe'` · `rechargePath='/wallet/charge'` · **`billingManagePath='/subscriptions'`** · `payoutManagePath='/mentor/payouts'` · `profileEditPath='/mentor/profile'` + 정보/지원 경로 `termsPath='/legal/terms'` · `privacyPath='/legal/privacy'` · `supportPath='/support'` · `reviewsPath='/mentor/reviews'` · `accountDeletePath='/account/delete'`.
+- **구조**: 서비스 `lib/core/web_bridge/web_bridge.dart`(`WebBridge`, launcher 주입 가능), 화면 헬퍼 `web_bridge_actions.dart`. 모든 화면이 이 헬퍼만 호출한다(중복 없음). 구매 유도 헬퍼(`openSubscribeWeb`/`openRechargeWeb`)는 컴플라이언스로 **호출부 없음**(관리·조회성 경로만 배선).
+- **폴백 유지**: 빈 값 주입 시(`--dart-define=WEB_BASE_URL=`) `isConfigured=false` → "웹에서 진행(준비 중)" 안내 폴백이 그대로 동작한다.
 - **(선택) 웹→앱 복귀 딥링크**: 결제 완료 후 앱 복귀 스킴은 미구현(핵심은 "웹 열기"까지). 필요 시 앱 스킴 등록(모바일 빌드) + 콜백 라우트 설계.
+
+### 3-1-B. 컴파일 타임 스위치(dart-define) 2종 — 릴리즈 빌드는 주입 불필요
+```bash
+# 개별질문 '작성(캐시 예치)' 켜기 — dev/내부 테스트 전용 (A안, 2026-07 확정)
+flutter run --dart-define=IQ_CREATE_ENABLED=true
+flutter test --dart-define=IQ_CREATE_ENABLED=true   # on 상태 테스트
+
+# 웹 브릿지를 스테이징/로컬 웹으로 오버라이드
+flutter run --dart-define=WEB_BASE_URL=http://127.0.0.1:3000
+
+# 스토어 제출(릴리즈): 아무것도 주입하지 않는다
+#   = IQ 작성 off(기본) + 운영 도메인(기본). 게이트: docs/PLAY_STORE_REVIEW_PLAN.md
+flutter build appbundle
+```
 
 ### 3-2. 이미지 첨부 — ✅ 연결 완료 (실사 정정)
 - **정정(중요)**: 기존 HANDOFF의 "`question-attachments` 버킷 없음 → 오너 생성 필요"는 **오기**였다. Supabase 실사 결과 **실제 버킷 `question-room-attachments` 가 방 참여자 정책과 함께 이미 존재**했고, **첨부 퀵윈(`c32d53f`)으로 앱 연결을 완료**했다.

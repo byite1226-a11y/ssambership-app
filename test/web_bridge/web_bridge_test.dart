@@ -76,13 +76,14 @@ void main() {
     });
 
     test('기본 WebBridge() 는 WebBridgeConfig 설정값을 그대로 반영', () {
-      // 오너가 baseUrl 을 채운 뒤: 기본 생성자도 설정됨 → URL 조립 가능.
-      // (실제 열기는 플랫폼 런처라 유닛에서 호출하지 않고 buildUri 로 확인.)
+      // 운영 도메인 확정(2026-07): 기본 빌드는 설정됨 → URL 조립 가능.
+      // baseUrl 은 --dart-define=WEB_BASE_URL 로 주입 가능하므로, 빈 값 주입
+      // 빌드에서는 '미설정 반영'만 검증한다(주입 겸용 — 어느 모드든 녹색).
       expect(WebBridge().isConfigured, WebBridgeConfig.isConfigured);
-      expect(WebBridgeConfig.isConfigured, isTrue);
+      if (!WebBridgeConfig.isConfigured) return; // 빈 값 주입 모드: 여기까지.
       final Uri? uri = WebBridge().buildUri(WebBridgeConfig.subscribePath);
       expect(uri, isNotNull);
-      expect(uri!.origin, 'https://ssambership-web.vercel.app');
+      expect(uri!.origin, WebBridgeConfig.baseUrl);
       expect(uri.path, WebBridgeConfig.subscribePath);
     });
   });

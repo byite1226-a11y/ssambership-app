@@ -1,18 +1,22 @@
 /// 웹 브릿지 URL 단일 소스(Commerce-Zero). ★ 결제/구독/충전/정산은 앱이 아니라 '웹'에서.
 ///
 /// ══════════════════════════════════════════════════════════════════════
-/// ★★ 오너 확정 지점 ★★
-///   [baseUrl] 이 비어 있으면(미확정) 앱은 웹을 열지 않고 "웹에서 진행(준비 중)"만 안내한다.
-///   운영/스테이징 도메인이 확정되면 [baseUrl] 한 곳만 채우면 전체 동선이 실제 열기로 전환된다.
-///   예) 'https://app.ssambership.com' (← 확정값으로 교체. 가짜 URL 하드코딩 금지.)
-///   경로(*Path)도 실제 웹 라우트와 다르면 함께 확정할 것.
+/// ★★ 운영 도메인 확정(2026-07) ★★
+///   기본값(아래 defaultValue)이 곧 출시용 운영 웹 도메인이다 — 릴리즈 빌드는
+///   별도 주입 없이 그대로 쓴다. 스테이징·로컬 웹 테스트는
+///   `--dart-define=WEB_BASE_URL=https://…` 로 오버라이드한다.
+///   빈 값(`--dart-define=WEB_BASE_URL=`)을 주입하면 웹을 열지 않고
+///   "웹에서 진행(준비 중)" 안내 폴백이 동작한다([isConfigured]).
 /// ══════════════════════════════════════════════════════════════════════
 class WebBridgeConfig {
   WebBridgeConfig._();
 
   /// 웹 베이스 URL. ★끝 슬래시 없음 — buildUri 가 '$baseUrl$path'(path 는 '/…' 시작)로
   /// 조립하므로 슬래시를 붙이면 '//' 이중슬래시가 난다.
-  static const String baseUrl = 'https://ssambership-web.vercel.app';
+  static const String baseUrl = String.fromEnvironment(
+    'WEB_BASE_URL',
+    defaultValue: 'https://ssambership-web.vercel.app',
+  );
 
   /// 결제/구독/충전/정산/프로필 웹 경로. 실제 Next.js 라우트와 대조해 확정(2026-07 실측).
   static const String subscribePath = '/subscribe'; // app/(student)/subscribe

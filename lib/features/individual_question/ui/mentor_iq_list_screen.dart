@@ -21,10 +21,19 @@ class MentorIqListData {
 /// 멘토 — 개별질문 목록.
 /// '수락 대기'(공개형, 위생 필드만)와 '내 질문'(지정형 + 내가 수락한 것)을 담는다.
 class MentorIqListScreen extends StatefulWidget {
-  const MentorIqListScreen({super.key, this.loaderOverride, this.onClaim});
+  const MentorIqListScreen({
+    super.key,
+    this.loaderOverride,
+    this.onClaim,
+    this.embedded = false,
+  });
 
   /// 테스트용 데이터 주입. null 이면 실제 레포 사용.
   final Future<MentorIqListData> Function()? loaderOverride;
+
+  /// true: 하단 탭(HomeShell)에 임베드 — 자체 Scaffold/AppBar 없이 본문만.
+  /// false(기본): 단독 push 화면 — 기존과 동일하게 AppBar 포함.
+  final bool embedded;
 
   /// 테스트용 수락 동작 주입. null 이면 실제 RPC.
   final Future<IqEscrowResult> Function(String questionId)? onClaim;
@@ -128,9 +137,16 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Widget body = _buildBody();
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(title: const Text('개별질문')),
-      body: FutureBuilder<MentorIqListData>(
+      body: body,
+    );
+  }
+
+  Widget _buildBody() {
+    return FutureBuilder<MentorIqListData>(
         future: _future,
         builder:
             (BuildContext context, AsyncSnapshot<MentorIqListData> snap) {
@@ -213,7 +229,6 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
             ),
           );
         },
-      ),
     );
   }
 }

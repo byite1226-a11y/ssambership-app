@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:scribble/scribble.dart';
 
-import '../../../../core/ink/ink_input_mode.dart';
-import '../../../../core/ink/scribble_ink_adapter.dart';
-import '../../../../design/role_accent.dart';
-import '../../../../design/tokens/color_tokens.dart';
+import '../ink_input_mode.dart';
+import '../scribble_ink_adapter.dart';
+import '../../../design/role_accent.dart';
+import '../../../design/tokens/color_tokens.dart';
 
 /// 하단 고정 P0 툴바(모바일 1차).
 ///

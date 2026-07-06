@@ -17,12 +17,16 @@ class AppConstants {
   /// TODO: package_info_plus 도입 시 런타임 값으로 대체(현재는 표시 전용 상수).
   static const String appVersion = '0.1.0';
 
-  /// 하단 탭 (학생 기준 5개). 영문 코드는 노출하지 않으며 라벨만 화면에 쓴다.
+  /// 하단 탭 5개. 영문 코드는 노출하지 않으며 라벨만 화면에 쓴다.
+  /// 개편: 개별질문이 하단 탭으로 승격, 마이페이지는 우측 상단 프로필로 이동.
   static const List<String> bottomTabLabels = <String>[
     '질문방',
     '커뮤니티',
     '멘토 찾기',
     '알림',
-    '마이페이지',
+    '개별질문',
   ];
+
+  /// 마이페이지 화면 타이틀(하단 탭에서 빠져 push 라우트가 됨 — AppBar 표기용).
+  static const String myPageTitle = '마이페이지';
 }

@@ -121,7 +121,7 @@ class _ConnectionNotesScreenState extends State<ConnectionNotesScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('노트를 불러오지 못했어요.\n${snap.error}',
+                child: Text('노트를 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

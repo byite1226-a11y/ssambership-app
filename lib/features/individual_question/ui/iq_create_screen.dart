@@ -8,6 +8,7 @@ import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../data/individual_question_repository.dart';
 import '../data/models/individual_question_models.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 작성 화면 사전 정보(잔액 + 지정형 가격).
 class IqCreatePrefill {
@@ -193,7 +194,7 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('정보를 불러오지 못했어요.\n${snap.error ?? ''}',
+                child: Text('정보를 불러오지 못했어요.\n${friendlyError(snap.error ?? '')}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

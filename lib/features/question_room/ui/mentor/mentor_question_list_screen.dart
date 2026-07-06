@@ -12,6 +12,7 @@ import '../../data/question_room_read_repository.dart';
 import '../../data/thread_status_counts.dart';
 import '../widgets/thread_card.dart';
 import 'mentor_answer_screen.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 멘토 질문 목록(3뎁스). ★ 멘토 고유: 상태 탭(답변 대기 / 진행 중 / 완료) + 과목 필터 + 정렬.
 /// 카드는 S4 ThreadCard 재사용(탭/필터/정렬만 추가). 카드 탭 → 답변 화면.
@@ -86,7 +87,7 @@ class _MentorQuestionListScreenState extends State<MentorQuestionListScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('질문을 불러오지 못했어요.\n${snap.error}',
+                child: Text('질문을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

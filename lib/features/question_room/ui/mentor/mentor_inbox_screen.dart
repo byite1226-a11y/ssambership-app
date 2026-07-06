@@ -15,6 +15,7 @@ import '../../data/question_room_read_repository.dart';
 import '../../data/student_lookup_repository.dart';
 import '../../data/thread_status_counts.dart';
 import 'student_room_home_screen.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 멘토 질문방 1뎁스 = '받은 학생' 목록(카카오톡식 리스트). 본문만(셸이 AppBar/탭 제공).
 ///
@@ -134,7 +135,7 @@ class _MentorInboxScreenState extends State<MentorInboxScreen> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                '학생 목록을 불러오지 못했어요.\n${snap.error}',
+                '학생 목록을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: ColorTokens.danger),
               ),

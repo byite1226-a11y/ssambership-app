@@ -105,7 +105,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text('질문을 불러오지 못했어요.\n${snap.error}',
+                      child: Text('질문을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: ColorTokens.danger)),
                     ),

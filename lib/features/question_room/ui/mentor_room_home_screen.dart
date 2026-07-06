@@ -13,6 +13,7 @@ import 'connection_notes_screen.dart';
 import 'question_list_screen.dart';
 import 'widgets/entrance_card.dart';
 import 'widgets/thread_status_pill.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 멘토방 홈(2뎁스). 얇은 헤더 + 동등한 두 입구(질문/답변·연결노트) 미리보기.
 class MentorRoomHomeScreen extends StatefulWidget {
@@ -75,7 +76,7 @@ class _MentorRoomHomeScreenState extends State<MentorRoomHomeScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('불러오지 못했어요.\n${snap.error}',
+                child: Text('불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

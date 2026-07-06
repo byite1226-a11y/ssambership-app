@@ -9,6 +9,7 @@ import '../../data/community_read_repository.dart';
 import '../../data/community_write_repository.dart';
 import '../board/board_detail_screen.dart';
 import '../widgets/board_post_card.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 내 활동 탭 — 내가 쓴 글 / 좋아요 / 스크랩(읽기). 카드 탭 → 상세.
 class MyActivityView extends StatefulWidget {
@@ -42,7 +43,7 @@ class _MyActivityViewState extends State<MyActivityView> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text('내 활동을 불러오지 못했어요.\n${snap.error}',
+              child: Text('내 활동을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: ColorTokens.danger)),
             ),

@@ -9,6 +9,7 @@ import '../data/individual_question_repository.dart';
 import '../data/models/individual_question_models.dart';
 import 'iq_detail_screen.dart';
 import 'widgets/iq_widgets.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 멘토 화면에 함께 담는 데이터(대기 공개 질문 + 내 질문).
 class MentorIqListData {
@@ -157,7 +158,7 @@ class _MentorIqListScreenState extends State<MentorIqListScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('개별질문을 불러오지 못했어요.\n${snap.error}',
+                child: Text('개별질문을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

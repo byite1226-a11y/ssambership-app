@@ -12,6 +12,7 @@ import '../iq_flags.dart';
 import 'iq_create_screen.dart';
 import 'iq_detail_screen.dart';
 import 'widgets/iq_widgets.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 학생 — 내 개별질문 목록. 작성은 공개형(전체 멘토 대상);
 /// 지정형은 멘토 상세의 '개별질문 하기'에서 진입한다.
@@ -103,7 +104,7 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('개별질문을 불러오지 못했어요.\n${snap.error}',
+                child: Text('개별질문을 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

@@ -17,6 +17,7 @@ import 'data/mentor_models.dart';
 import 'data/mentor_sort.dart';
 import 'ui/mentor_detail_screen.dart';
 import 'ui/widgets/mentor_card.dart';
+import '../../shared/errors/friendly_error.dart';
 
 /// 멘토 찾기 탭(공개·열람 전용). HomeShell 이 AppBar/하단탭을 제공하므로
 /// 이 화면은 본문만 구성한다(자체 Scaffold 없음).
@@ -152,7 +153,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return _ErrorView(message: '멘토 목록을 불러오지 못했어요.\n${snap.error}');
+          return _ErrorView(message: '멘토 목록을 불러오지 못했어요.\n${friendlyError(snap.error!)}');
         }
         final List<MentorListItem> all = snap.data ?? <MentorListItem>[];
         if (all.isEmpty) {

@@ -42,7 +42,7 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 
-    // 앱 범위(질문방·구독)만 남긴다. CR·환불·IQ·미지 유형은 제외.
+    // 앱 범위(질문방·구독·개별질문)만 남긴다. CR·환불·미지 유형은 제외.
     final List<AppNotification> items = rows
         .map(AppNotification.fromMap)
         .where((AppNotification n) => n.inAppScope)

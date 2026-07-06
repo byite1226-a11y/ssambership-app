@@ -282,7 +282,7 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('대화를 불러오지 못했어요.\n$_loadError',
+          child: Text('대화를 불러오지 못했어요.\n${friendlyError(_loadError!)}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: ColorTokens.danger)),
         ),

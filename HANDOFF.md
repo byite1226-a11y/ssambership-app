@@ -104,7 +104,7 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 - **폴백 유지**: 빈 값 주입 시(`--dart-define=WEB_BASE_URL=`) `isConfigured=false` → "웹에서 진행(준비 중)" 안내 폴백이 그대로 동작한다.
 - **(선택) 웹→앱 복귀 딥링크**: 결제 완료 후 앱 복귀 스킴은 미구현(핵심은 "웹 열기"까지). 필요 시 앱 스킴 등록(모바일 빌드) + 콜백 라우트 설계.
 
-### 3-1-B. 컴파일 타임 스위치(dart-define) 2종 — 릴리즈 빌드는 주입 불필요
+### 3-1-B. 컴파일 타임 스위치(dart-define) 3종 — 릴리즈 빌드는 주입 불필요
 ```bash
 # 개별질문 '작성(캐시 예치)' 켜기 — dev/내부 테스트 전용 (A안, 2026-07 확정)
 flutter run --dart-define=IQ_CREATE_ENABLED=true
@@ -113,10 +113,16 @@ flutter test --dart-define=IQ_CREATE_ENABLED=true   # on 상태 테스트
 # 웹 브릿지를 스테이징/로컬 웹으로 오버라이드
 flutter run --dart-define=WEB_BASE_URL=http://127.0.0.1:3000
 
+# '구독 관리 (웹)' 링크 켜기 — dev 전용 (P0-3 옵션1, 2026-07 확정: 스토어 기본 off)
+flutter run --dart-define=SUBS_MANAGE_LINK_ENABLED=true
+
 # 스토어 제출(릴리즈): 아무것도 주입하지 않는다
-#   = IQ 작성 off(기본) + 운영 도메인(기본). 게이트: docs/PLAY_STORE_REVIEW_PLAN.md
+#   = IQ 작성 off + 구독 관리 링크 off + 운영 도메인(전부 기본값).
+#   게이트: docs/PLAY_STORE_REVIEW_PLAN.md
 flutter build appbundle
 ```
+
+**버전 규약**: `pubspec.yaml` 의 `version: x.y.z+N` — **스토어 업로드마다 `+N`(versionCode)을 반드시 1 이상 증가**시킨다(같은 versionCode 재업로드는 Play 가 거부). 표시 버전(x.y.z)은 의미 변경 시에만.
 
 ### 3-2. 이미지 첨부 — ✅ 연결 완료 (실사 정정)
 - **정정(중요)**: 기존 HANDOFF의 "`question-attachments` 버킷 없음 → 오너 생성 필요"는 **오기**였다. Supabase 실사 결과 **실제 버킷 `question-room-attachments` 가 방 참여자 정책과 함께 이미 존재**했고, **첨부 퀵윈(`c32d53f`)으로 앱 연결을 완료**했다.

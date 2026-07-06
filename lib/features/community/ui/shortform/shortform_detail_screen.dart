@@ -210,7 +210,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
                 // 세로 영상 영역(9:16). 실제 재생 대신 썸네일+재생 아이콘.
                 AspectRatio(
                   aspectRatio: 9 / 16,
-                  child: ThumbnailView(url: p.thumbnailUrl, playable: true),
+                  child: ThumbnailView(url: p.thumbnailUrl),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),

@@ -28,7 +28,7 @@ class ShortformCard extends StatelessWidget {
           children: <Widget>[
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: ThumbnailView(url: post.thumbnailUrl, playable: true),
+              child: ThumbnailView(url: post.thumbnailUrl),
             ),
             Padding(
               padding: const EdgeInsets.all(12),

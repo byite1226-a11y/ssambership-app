@@ -16,10 +16,18 @@ import 'widgets/iq_widgets.dart';
 /// 학생 — 내 개별질문 목록. 작성은 공개형(전체 멘토 대상);
 /// 지정형은 멘토 상세의 '개별질문 하기'에서 진입한다.
 class StudentIqListScreen extends StatefulWidget {
-  const StudentIqListScreen({super.key, this.loaderOverride});
+  const StudentIqListScreen({
+    super.key,
+    this.loaderOverride,
+    this.embedded = false,
+  });
 
   /// 테스트용 데이터 주입. null 이면 실제 레포 사용.
   final Future<List<IndividualQuestion>> Function()? loaderOverride;
+
+  /// true: 하단 탭(HomeShell)에 임베드 — 자체 Scaffold/AppBar 없이 본문만.
+  /// false(기본): 단독 push 화면 — 기존과 동일하게 AppBar 포함.
+  final bool embedded;
 
   @override
   State<StudentIqListScreen> createState() => _StudentIqListScreenState();
@@ -75,9 +83,16 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Widget body = _buildBody();
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(title: const Text('개별질문')),
-      body: FutureBuilder<List<IndividualQuestion>>(
+      body: body,
+    );
+  }
+
+  Widget _buildBody() {
+    return FutureBuilder<List<IndividualQuestion>>(
         future: _future,
         builder: (BuildContext context,
             AsyncSnapshot<List<IndividualQuestion>> snap) {
@@ -145,7 +160,6 @@ class _StudentIqListScreenState extends State<StudentIqListScreen> {
             ),
           );
         },
-      ),
     );
   }
 }

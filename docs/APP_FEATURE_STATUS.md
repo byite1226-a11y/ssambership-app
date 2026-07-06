@@ -7,6 +7,14 @@
 
 ---
 
+## 🆕 2026-07-06 하단 탭 개편 + 연결노트 필기 제거 (PR #12)
+
+- **하단 5탭 개편**: `질문방 · 커뮤니티 · 멘토찾기 · 알림 · 개별질문`. **마이페이지는 하단 탭에서 빠져 AppBar 우측 상단 원형 프로필 아이콘(push)** 으로 진입한다(`home_shell.dart`). 알림 딥링크의 `AppTab.myPage` 는 가상 목적지(=100)로 유지 — HomeShell 이 탭 전환 대신 push 처리.
+- **개별질문 탭 승격**: `IndividualQuestionTabScreen` 신설(role 따라 기존 학생/멘토 목록 embedded 재사용). 마이페이지의 중복 진입 섹션 제거. 개별질문 알림 딥링크는 개별질문 탭(`AppTab.individualQuestion`)으로 향한다.
+- **연결노트 필기 제거**: 아래 표들의 "연결노트 필기 완전작동" 판정은 이 시점부로 **제거됨** — 자유 캔버스 필기는 오구현 판단, 필기는 '문제 스캔 위 첨삭'으로 질문방·개별질문에 배치 예정(**docs/SCAN_INK_PLAN.md** 참고). `ink_note/` 모듈 삭제, 공용 `InkToolbar` 는 `lib/core/ink/widgets/` 로 이동(S15 주석이 계속 사용). 버킷 `connection-note-ink` 는 신규 쓰기 중단(기존 객체 보존), `connection_notes.ink_path/ink_thumb_path` 컬럼·모델 필드는 웹 호환 위해 유지(UI 미참조).
+
+---
+
 ## 🆕 2026-07-02 구현 배치(부족 기능 12건) — 결과
 
 무인 배치로 아래를 구현·커밋(각 독립 커밋, 각 커밋 전 flutter test·analyze 통과). **DB·Storage 변경 0, color_tokens 미터치.**
@@ -41,7 +49,7 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 
 | 기능 | 상태 | 커밋 | 저장 규약 |
 |---|---|---|---|
-| **연결노트 필기**(캔버스·P0 툴바·저장·재편집) | ✅ 완전작동 | S13 `2cdb650`·S14-1 `b089e98`·S14-2 `8000006` | 버킷 `connection-note-ink`(비공개), `{roomId}/{authorId}/ink.json`·`thumb.png`. `connection_notes.ink_path`·`ink_thumb_path` 추가 |
+| ~~**연결노트 필기**(캔버스·P0 툴바·저장·재편집)~~ | ❌ **제거됨**(2026-07-06, docs/SCAN_INK_PLAN.md 참고) | S13 `2cdb650`·S14-1 `b089e98`·S14-2 `8000006` (S13 코어는 존치, S14 화면·저장만 삭제) | 버킷 `connection-note-ink` 신규 쓰기 중단(기존 객체 보존). `connection_notes.ink_path`·`ink_thumb_path` 컬럼은 웹 호환 위해 유지 |
 | **질문방 이미지 첨부 업로드** | ✅ 완전작동 | 퀵윈 `c32d53f` | 버킷 `question-room-attachments`(실존), `{roomId}/{threadId}/{ts}_{name}`, `_storageReady=true` |
 | **첨부 이미지 주석**(그리기·평탄화 전송·재편집 저장) | ✅ 완전작동 | S15 `20840dc` | 원본 `scan-annotations` `{roomId}/{attachmentId}/ink.json`, 평탄화 PNG는 기존 첨부 파이프라인으로 전송 |
 | **이미지 뷰어**(말풍선 썸네일·전체화면 줌·팬) + **전송 후 주석 진입점** | ✅ 완전작동 | PR #8 `b1fb61a` | 서명 URL `createSignedUrl`(만료 1h·메모리 캐시), 뷰어 '주석 달기' → S15 화면 재사용 |
@@ -115,7 +123,7 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 | 채팅·답변보기·실시간 | 완전작동 | `chat_screen.dart:91-128`, `thread_realtime.dart:27-87`(postgres_changes) | 실시간은 publication 필요, 미포함시 수동새로고침 폴백 | **인프라**(realtime publication) |
 | 첨부(이미지) 업로드+뷰어 | 완전작동 | `attachment_upload.dart`(`_storageReady=true`, 버킷 `question-room-attachments`), `DeviceImagePicker`, 뷰어 `attachment_viewer_screen.dart`(PR #8) | 없음 | 앱(퀵윈 `c32d53f`·뷰어 `b1fb61a`) |
 | 연결노트(읽기/쓰기) | 완전작동 | `connection_notes_screen.dart:58-97`(notes·upsertMyNote 실쿼리) | 없음 | 앱 |
-| 연결노트 **필기**(캔버스·P0 툴바·저장·재편집) | 완전작동 | `ink_note/`(S14), `ink_note_repository.dart` 주입형 포트 | 없음 | 앱(버킷 `connection-note-ink`) |
+| ~~연결노트 **필기**(캔버스·P0 툴바·저장·재편집)~~ | **제거됨**(2026-07-06) | `ink_note/` 모듈 삭제 — docs/SCAN_INK_PLAN.md 참고. `InkToolbar` 만 `lib/core/ink/widgets/` 로 이동(S15 주석이 사용) | 필기는 스캔 첨삭으로 대체 예정 | 앱 |
 | 첨부 이미지 **주석**(그리기·평탄화 전송·재편집 저장) | 완전작동 | `scan_annotation/`(S15), 진입점=`chat_input_bar` 전송 전 미리보기 '주석 달기' | 없음 | 앱(버킷 `scan-annotations`+기존 첨부 파이프라인) |
 | 답변 확인(confirm) | 완전작동 | `question_list_screen.dart:207-221`, `write_repository.dart:76-99`(UPDATE) | 없음 | 앱 |
 
@@ -153,7 +161,7 @@ Supabase 실사(스테이징 `lbeqxarxothkmzqvpudy`, 마이그레이션 2건 적
 | 딥링크 | 부분구현 | `deep_link_service.dart:12`(TODO), `notifications_screen.dart:146-152`(탭 전환만) | 🔴 특정 글/스레드로 못 감 | 앱+인프라 |
 | 푸시 인프라 | 미완·스텁 | `push_ports.dart:39`, `device_token_registrar.dart:13`(_tableExists=false), `edge_function_push_sender.dart:17`(_deployed=false), `push_trigger.dart`(미연결) | 푸시 안 옴 | **인프라**(FCM+device_tokens+Edge Function) |
 
-### 5) 마이페이지 (mypage)
+### 5) 마이페이지 (mypage) — 2026-07-06부터 하단 탭이 아니라 AppBar 우측 상단 프로필 아이콘(push)으로 진입, 하단 5번째 탭은 개별질문
 | 기능 | 판정 | 근거 | 사용자 영향 | 종류 |
 |---|---|---|---|---|
 | 프로필(이름·이메일·학년) | 완전작동 | `mypage_repository.dart:60-80`(users 실쿼리) | 없음 | 앱 |

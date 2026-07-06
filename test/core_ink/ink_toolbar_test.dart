@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scribble/scribble.dart';
 import 'package:ssambership_app/core/ink/ink_input_mode.dart';
 import 'package:ssambership_app/core/ink/scribble_ink_adapter.dart';
-import 'package:ssambership_app/features/question_room/ink_note/widgets/ink_toolbar.dart';
+import 'package:ssambership_app/core/ink/widgets/ink_toolbar.dart';
 
 /// InkToolbar(P0) — 색·굵기·지우개·전체 지우기·손가락 토글의 notifier 반영 검증.
 /// DB 미접촉, notifier 직접 주입.

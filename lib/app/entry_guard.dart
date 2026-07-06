@@ -19,8 +19,9 @@ class EntryGuard {
   static const String devS3 = '/dev/s3';
 
   /// 게스트가 접근 가능한 하단 탭 인덱스.
-  /// (0 질문방 · 1 커뮤니티 · 2 멘토찾기 · 3 알림 · 4 마이페이지)
+  /// (0 질문방 · 1 커뮤니티 · 2 멘토찾기 · 3 알림 · 4 개별질문)
   /// → 커뮤니티(1)·멘토찾기(2)만 허용. 나머지는 로그인 필요.
+  /// 마이페이지(우측 상단 프로필 push)도 로그인 필요 — HomeShell 이 가드한다.
   static const Set<int> guestAllowedTabs = <int>{1, 2};
 
   static bool isTabAllowedForGuest(int index) =>

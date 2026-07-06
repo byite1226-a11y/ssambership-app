@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ssambership_app/app/app_tabs.dart';
 import 'package:ssambership_app/design/widgets/chip_scroll.dart';
 import 'package:ssambership_app/design/widgets/count_badge.dart';
 import 'package:ssambership_app/features/notifications/data/app_notification.dart';
@@ -135,11 +136,15 @@ void main() {
     expect(tester.widget<CountBadge>(find.byType(CountBadge)).count, 0);
   });
 
-  testWidgets('딥링크: 질문방 알림 → 질문방 탭(0), 구독 알림 → 마이페이지 탭(4)',
+  testWidgets(
+      '딥링크: 질문방 → 질문방 탭, 구독 → 마이페이지(가상 목적지), 개별질문 → 개별질문 탭',
       (WidgetTester tester) async {
     final List<int> tabs = <int>[];
     await tester.pumpWidget(_wrap(NotificationsScreen(
-      repository: _FakeRepo(_sample()),
+      repository: _FakeRepo(<AppNotification>[
+        ..._sample(),
+        _n('f', NotificationKind.individualQuestion, 'F 개별질문 알림'),
+      ]),
       onDeepLinkTab: tabs.add,
     )));
     await tester.pumpAndSettle();
@@ -148,8 +153,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('B 구독 알림'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('F 개별질문 알림'));
+    await tester.pumpAndSettle();
 
-    expect(tabs, <int>[0, 4]);
+    // 마이페이지는 하단 탭에서 빠져 가상 목적지(AppTab.myPage=100)가 되었다
+    // — HomeShell 이 탭 전환 대신 마이페이지를 push 한다.
+    // 개별질문은 하단 탭 승격으로 자기 탭(AppTab.individualQuestion=4)으로 간다.
+    expect(tabs, <int>[
+      AppTab.questionRoom,
+      AppTab.myPage,
+      AppTab.individualQuestion,
+    ]);
   });
 
   testWidgets('빈 상태 안내', (WidgetTester tester) async {

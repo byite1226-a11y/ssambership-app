@@ -9,7 +9,7 @@ import '../../core/ink/ink_document.dart';
 import '../../core/ink/ink_input_mode.dart';
 import '../../core/ink/scribble_ink_adapter.dart';
 import '../../design/tokens/color_tokens.dart';
-import '../question_room/ink_note/widgets/ink_toolbar.dart';
+import '../../core/ink/widgets/ink_toolbar.dart';
 import 'annotation_flattener.dart';
 import 'annotation_sketch.dart';
 import 'data/scan_annotation_repository.dart';

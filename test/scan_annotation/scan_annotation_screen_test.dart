@@ -7,7 +7,7 @@ import 'package:scribble/scribble.dart';
 import 'package:ssambership_app/core/ink/ink_document.dart';
 import 'package:ssambership_app/features/question_room/data/attachments/attachment_upload.dart';
 import 'package:ssambership_app/features/question_room/data/models/question_attachment.dart';
-import 'package:ssambership_app/features/question_room/ink_note/widgets/ink_toolbar.dart';
+import 'package:ssambership_app/core/ink/widgets/ink_toolbar.dart';
 import 'package:ssambership_app/features/scan_annotation/data/scan_annotation_repository.dart';
 import 'package:ssambership_app/features/scan_annotation/scan_annotation_screen.dart';
 

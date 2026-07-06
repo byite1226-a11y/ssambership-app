@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 런처에 표시되는 앱 이름(스토어 등록명과 일치). -->
+    <string name="app_name">쌤버십</string>
+</resources>

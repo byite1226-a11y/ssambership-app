@@ -3,7 +3,7 @@
          병합하지 않으므로 main 에 선언해야 릴리즈 빌드에서 네트워크가 동작한다. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="ssambership_app"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

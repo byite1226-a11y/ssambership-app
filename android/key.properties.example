@@ -1,0 +1,7 @@
+# 릴리즈 서명 설정 템플릿 — 실제 값을 채워 android/key.properties 로 저장한다.
+# ★ key.properties 와 keystore(.jks)는 절대 커밋 금지(android/.gitignore 가 차단).
+#   키 생성 절차·보관 수칙: docs/PLAY_STORE_REVIEW_PLAN.md '릴리즈 키 생성 절차'.
+storePassword=<keystore-비밀번호>
+keyPassword=<키-비밀번호>
+keyAlias=upload
+storeFile=<keystore-절대경로-예:/Users/you/upload-keystore.jks>

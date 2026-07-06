@@ -294,6 +294,24 @@ flutter run --dart-define=WEB_BASE_URL=http://127.0.0.1:3000
 flutter build appbundle
 ```
 
+## 🔑 릴리즈 키 생성 절차 (사람 작업 — 코드/세션에 키 절대 반입 금지)
+
+앱 코드는 `android/key.properties` 가 **있으면 release 키, 없으면 debug 폴백**으로 서명한다(build.gradle.kts — 빌드는 항상 성공). 스토어 업로드 전 아래 절차로 키를 만들고 채운다.
+
+1. **keystore 생성** (오너 로컬 PC에서 — 클라우드 세션·레포에서 실행 금지):
+   ```bash
+   keytool -genkey -v -keystore %USERPROFILE%\upload-keystore.jks ^
+     -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   # macOS/Linux: -keystore ~/upload-keystore.jks (나머지 동일)
+   ```
+   묻는 값: keystore 비밀번호(2회) → 이름/조직/지역(스토어 표기와 무관) → key 비밀번호(Enter=keystore와 동일).
+2. **key.properties 작성**: `android/key.properties.example` 을 복사해 `android/key.properties` 로 저장하고 실제 값 기입. (gitignore 가 커밋을 차단하지만, 그래도 `git status` 로 미추적 확인 습관화.)
+3. **보관 수칙**: keystore(.jks)와 비밀번호는 ① 레포·클라우드 세션·채팅에 절대 올리지 않는다 ② 오프라인 백업 2곳(예: 암호관리자 + 외장매체) ③ 분실 시 Play App Signing 미등록 상태면 앱 업데이트 영구 불가.
+4. **Play App Signing 등록(권장)**: Play Console → 설정 → 앱 서명 → 위 keystore 를 **업로드 키**로 등록(구글이 앱 서명 키를 별도 보관 — 업로드 키 분실 시 재발급 가능해짐). 첫 AAB 업로드 시 자동 안내 흐름을 따라도 된다.
+5. **검증**: `flutter build appbundle --release` 후 `keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab` 로 서명 주체가 debug 가 아닌지 확인.
+
+---
+
 ## 🚦 릴리즈 게이트 — IQ 작성 on 전환 조건
 
 `IQ_CREATE_ENABLED` 를 기본 true 로 되돌리는(또는 스토어 빌드에 주입하는) 조건. **전부 충족 전에는 스토어 제출 빌드에서 off 유지.**

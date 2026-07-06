@@ -27,3 +27,6 @@ pubspec.lock
 **/*.keystore
 **/google-services.json
 **/GoogleService-Info.plist
+
+# 테스트 커버리지 산출물(flutter test --coverage)
+coverage/

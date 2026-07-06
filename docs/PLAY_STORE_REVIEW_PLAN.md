@@ -8,7 +8,61 @@
 
 ---
 
-## 요약 — 현재 상태 진단
+## 🧭 재기준화 (2026-07-06 · master `3792858` 기준) — 이 표가 현행 정본
+
+> 아래 원문(P0/P1 분석·요약·로드맵)은 **2026-07-02 origin 기준**의 분석 기록으로 보존한다. 이후 약 30커밋(웹링크 배선 `4a87639` · 탈퇴 진입 `ac9a4d7` · 사용자 차단 `d0032a2` · 가격표시 제거 `5002c1d` · 아이콘 `9cda0b5` · PR #12~#15)이 반영된 **현재 실태는 이 절이 정본**이다. 원문과 판정이 다르면 이 절이 우선한다.
+
+### 재판정 총괄
+
+| 항목 | 2026-07-02 판정 | **재판정** | 핵심 근거 (master) | 잔존 작업 · 크기 |
+|---|---|---|---|---|
+| P0-1 계정 삭제 | 🔴 전무 | 🔶 **부분해소** | 인앱 진입 `settings_section.dart:113-117` '회원 탈퇴' → `openAccountDeleteWeb` → `/account/delete`(운영 도메인) | 웹 삭제 페이지+Edge Function(웹 레포 소유) **중** · Play Console 삭제 URL 등록 **소** · (선택) 인앱 확인 다이얼로그 **소** |
+| P0-2 약관·개인정보 | 🔴 스텁 | ✅ **해소(앱측)** | `settings_section.dart:88,93` `openTermsWeb`/`openPrivacyWeb` + `support_section.dart:30,35` 지원/리뷰 — "준비 중" 스텁 제거, 운영 도메인으로 실제 열림 | 웹 페이지 법적 문안 게시 확인 + 콘솔 방침 URL 등록(앱 밖) **소** |
+| P0-3 외부 결제 유도 | 🔴 설계 위반 | ⚖️ **정책 판단 필요** | 하단 '현재 노출면' 참고 — 순수 구매 진입점 0(死배선), 관리 링크 2개만 잔존, IQ 작성 스토어 빌드 OFF | 정책 확정 후 관리 링크 2개 유지/제거 결정 · 死헬퍼 정리 **소** |
+| P0-4 죽은 기능 | 🔴 다수 | 🔶 **부분해소(잔존 2건)** | ③반응 초기 로드 해소(`shortform_detail_screen.dart:47-72`) · ④결제·약관 버튼 해소(8경로 실배선). **잔존**: ①회원가입 스텁(`login_screen.dart:72` "(링크 준비 중)", `signupPath` 부재) ②숏폼 재생 아이콘(장식뿐, `thumbnail_view.dart:29-32`, video_player 미도입) | ① 가입 URL 배선 또는 버튼 제거 **소** · ② `playable:false` 숨김 **소**(재생 도입은 **중**) |
+| P0-5 릴리즈 서명 | 🔴 debug 키 | 🔴 **잔존** | `android/app/build.gradle.kts:32` `signingConfig = signingConfigs.getByName("debug")`, `key.properties` 부재(gitignore 준비만 완료 `:12-14`) | keystore 생성+release signingConfig 배선 — **중**(오너 키 보관 결정 포함) |
+| P0-6 SDK·versionCode | 🔴 위임 | 🔴 **잔존** | `build.gradle.kts:9,22-25` 전부 `flutter.*` 위임, `pubspec.yaml:4` `0.1.0+1` | targetSdk 등 명시 고정 + versionCode 정책 — **소** |
+| P1-1 아이콘·라벨 | 🟠 기본값 | 🔶 **부분해소** | 아이콘 ✅ 브랜드 교체(`9cda0b5`, mipmap 전 해상도 + `pubspec.yaml:41-46`). 라벨 🔴 `AndroidManifest.xml:3` 여전히 `ssambership_app` | label='쌤버십' 1줄 — **소** (adaptive icon 은 선택) |
+| P1-2 사용자 차단 | 🟠 없음 | ✅ **해소** | `d0032a2` — `user_blocks_repository.dart` + 피드 필터(`community_read_repository.dart:28-32`, 3개 읽기 경로) + 차단 액션(`block_author_action.dart`) + 관리 화면(`blocked_users_screen.dart`, settings:109 진입) | 운영 프로세스 문서(`UGC_MODERATION_PROCESS.md`) 작성만 — **소** |
+| P1-3 심사관 로그인 | 🟠 불가 | 🔴 **잔존** | 인앱 가입 없음(설계) + 가입 링크 스텁(P0-4①) + 게스트는 커뮤니티·멘토찾기만(`entry_guard.dart:25`) | Play Console App access 테스트 계정(학생·멘토) 등록 — **소**(콘솔 작업) |
+| P1-4 INTERNET 권한 | 🟠 release 누락 | 🔴 **잔존 (치명)** | `main/AndroidManifest.xml` 에 `uses-permission INTERNET` 부재 — debug/profile 에만(`:6`). release 빌드 = 전 기능 네트워크 마비 | main 매니페스트 1줄 — **극소** |
+| P1-5 Data safety | 🟠 자료 없음 | 🔴 **잔존** | `docs/DATA_SAFETY_FORM.md` 부재. 신규 기능(차단·탈퇴 진입)은 수집 항목 추가 없음 | 폼 문서 작성 — **중** |
+
+### ⚖️ P0-3 · 현재 결제성 노출면 (정책 판단용 — 자의 판정 금지)
+
+스토어 빌드(주입 없음 = `IQ_CREATE_ENABLED` off) 기준:
+
+| 노출면 | 위치 | 성격 |
+|---|---|---|
+| "구독 관리 (웹)" 버튼 | `student_subscription_section.dart:78` → `/subscriptions` | 기구독자의 취소·관리(구매 유도 아님) — **판단 대상 1** |
+| "정산 관리 (웹)" 버튼 | `mentor_dashboard_section.dart:77` → `/mentor/payouts` | 멘토 출금 관리(소비자 결제 아님) — **판단 대상 2** |
+| `openSubscribeWeb`/`openRechargeWeb` | `web_bridge_actions.dart` — **프로덕션 호출부 0건**(테스트만) | 死배선. 실수 재배선 방지 위해 삭제 권고 |
+| CommerceNoticeCard 4곳 | question_room:188 · question_list:174 · mentor_detail:149 · cash_section:51 | 비상호작용 안내('구독 사용자 전용이에요' 등, 웹 언급 없음, `kInAppPaymentSteeringEnabled=false`) |
+| 캐시 잔액·정산액 표시 | `cash_section.dart:31-35`('조회만' 배지) · `mentor_dashboard_section.dart:58-63` | 조회 전용 |
+| IQ 목록·상세·답변 확인 | `kIndividualQuestionEnabled=true` 상시 | 조회형(소비 아님) |
+| (OFF 화면 내부) IQ 작성 화면의 금액·'예치' 문구 | `iq_create_screen.dart:122,263-264,292` | 스토어 빌드 미도달. on 전환 게이트 시 재검토 항목(하단 릴리즈 게이트 체크리스트에 기존재) |
+
+### 🚀 스토어 제출 트랙 백로그 (권장 순서 — 기능 무관·1줄짜리 우선)
+
+| # | 작업 | 항목 | 크기 | 비고 |
+|---|---|---|---|---|
+| 1 | main 매니페스트에 INTERNET 권한 1줄 | P1-4 | 극소 | 없으면 release 전면 마비 — 최우선 |
+| 2 | targetSdk·compileSdk·minSdk·versionCode 명시 고정 | P0-6 | 소 | 기능 무영향 |
+| 3 | `android:label="쌤버십"` | P1-1 | 소 | 기능 무영향 |
+| 4 | 릴리즈 keystore 생성 + signingConfig 배선 | P0-5 | 중 | **오너 작업 포함**(키 생성·보관 — 레포에 키 커밋 금지) |
+| 5 | 회원가입 링크: `signupPath` 배선 또는 버튼 제거 | P0-4① | 소 | 웹 가입 URL 확정 필요 |
+| 6 | 숏폼 재생 아이콘 숨김(`playable:false`) | P0-4② | 소 | video_player 도입(중)은 출시 후 선택 |
+| 7 | 웹: `/account/delete` 페이지 + delete-account Edge Function | P0-1 | 중 | **웹 레포 소유** — 앱 밖 |
+| 8 | `docs/DATA_SAFETY_FORM.md` 작성 | P1-5 | 중 | 수집 항목표는 원문 P1-5 에 초안 존재 |
+| 9 | `docs/UGC_MODERATION_PROCESS.md` 작성 | P1-2 | 소 | 코드 완료, 문서만 |
+| 10 | Play Console: 테스트 계정·방침 URL·삭제 URL 등록 | P1-3·P0-1·P0-2 | 소 | 콘솔 작업 |
+| ⚖️ | 구독·정산 '관리' 링크 2개 유지/제거 + 死헬퍼 정리 | P0-3 | 소 | **정책 판단 선행** — 한국 대체결제 신청 여부 포함 |
+
+**요약**: 2026-07-02 "통과 가능성 0% (P0 6건)" → 현재 앱 저장소 잔존은 **빌드 설정 2건(P0-5·P0-6) + 죽은 UI 2건(P0-4①②) + 매니페스트 2건(P1-1 라벨·P1-4 INTERNET)** 이 전부이고 모두 소~중 공수다. 큰 덩어리는 앱 밖(웹 삭제 페이지, 콘솔 등록, 정책 판단)에 있다.
+
+---
+
+## 요약 — 현재 상태 진단 (2026-07-02 기준 · 스테일 — 위 재기준화 절이 정본)
 
 **현재 상태로 제출 시 통과 가능성: 사실상 0% (P0 블로커 6건).**
 
@@ -24,7 +78,7 @@
 
 ---
 
-## 🔴 P0 — 정책 블로커 (즉시 리젝 사유)
+## 🔴 P0 — 정책 블로커 (2026-07-02 기준 분석 원문 — 현행 판정은 재기준화 절)
 
 ### P0-1. 계정 삭제 기능 전무
 
@@ -104,7 +158,7 @@
 
 ---
 
-## 🟠 P1 — 리젝/보류 가능성 높음
+## 🟠 P1 — 리젝/보류 가능성 높음 (2026-07-02 기준 분석 원문 — 현행 판정은 재기준화 절)
 
 ### P1-1. 기본 Flutter 런처 아이콘 + `android:label="ssambership_app"`
 - 유형: 스토어 품질/브랜딩 (사칭·저품질 인상).

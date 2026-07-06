@@ -145,7 +145,7 @@ class _ProfileCircleButton extends StatelessWidget {
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: scheme.primary.withOpacity(0.12),
+            color: scheme.primary.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.person_rounded, size: 22, color: scheme.primary),

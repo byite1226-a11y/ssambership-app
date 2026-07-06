@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **P0** 출시 차단 (후보) | 스토어 리젝·정책 위반 가능 | **1** | QA-01 |
 | **P1** 출시 전 수정 권고 | 정보 노출·핵심 문서 자기모순·보안 확인 | **3** | QA-02 ~ QA-04 |
-| **P2** 다음 마일스톤 | 문서 스테일·데드코드·설계 결정·커버리지 공백 | **10** | QA-05 ~ QA-14 |
+| **P2** 다음 마일스톤 | 문서 스테일·데드코드·설계 결정·커버리지 공백 | **9** | QA-05 ~ QA-14 (QA-10 은 오탐 철회) |
 | **P3** 사소 | 린트·미세 드리프트·의도된 TODO | **4** | QA-15 ~ QA-18 |
 
 **베이스라인(전부 양호)**: analyze `lib/`+`test/` **에러 0·경고 0**(info 린트 67건, 전부 lib/의 `prefer_const` 류) · `flutter test` 3회 연속 250/250 통과 — **flaky 0건** · 신규 테스트 포함 최종 **283/283 통과** · 라인 커버리지 **54.6%**(2,644/4,840) · 시크릿 커밋 0건 · `print`/`debugPrint` 0건 · 미사용 의존성/에셋 0건 · 320×568 소형 뷰포트 오버플로 **0건**.
@@ -76,10 +76,8 @@
 - **위치**: ① `lib/data/repositories/health_repository.dart`(+전이적 `lib/data/models/health_probe.dart`) — 어디서도 import 안 됨, ② `lib/design/widgets/empty_screen.dart` — 실사용은 `empty_state.dart`, ③ `lib/features/onboarding/onboarding_screen.dart` — 라우터 미연결(도달 불가), ④ `openSubscribeWeb`/`openRechargeWeb`(`web_bridge_actions.dart`) 호출부 0건, ⑤ `mentor_price_format.dart:16`('…원' 포맷터)·`mentor_models.dart:150-151`(`priceSummary`) — 가격표시 제거 후 미사용이나 코드 잔존 → **실수 재배선 시 컴플라이언스 재위반 위험**
 - **수정안**: ①~③ 삭제(또는 onboarding은 라우터 연결 결정), ④~⑤는 컴플라이언스 관점에서 삭제 권장(주석으로 사유 남김).
 
-### QA-10 · 게스트 초기 탭이 보호 탭(질문방)
-- **위치**: `lib/app/home_shell.dart:31`(`_index = 0`), 가드는 탭 선택 시점만(`:78-84`)
-- **근거**: 게스트 진입 시 초기 인덱스 0(질문방)이 그대로 표시된다. 데이터는 세션 부재로 비고 RLS로 보호되므로 정보 노출은 없으나, 게스트 허용 탭(커뮤니티·멘토찾기) 정책과 첫 화면이 어긋난다. 신규 테스트(`home_shell_test.dart`)는 '탭 시점 가드'를 스펙으로 고정해 둠.
-- **수정안**: 게스트면 초기 인덱스를 1(커뮤니티)로. `_index = AuthService.instance.isGuest ? AppTab.community : AppTab.questionRoom;` **게스트 첫 화면 정책은 사람 판단 필요.**
+### ~~QA-10 · 게스트 초기 탭이 보호 탭(질문방)~~ — **오탐(철회, 2026-07-06 재검증)**
+- **재검증 결과**: 실제 코드는 `lib/app/home_shell.dart:54` `initState` 에서 `_index = AuthService.instance.isGuest ? 2 : 0;` — **게스트는 허용 탭인 멘토찾기(2)에서 시작한다.** 최초 감사가 필드 선언(`late int _index`, `:31`)만 보고 initState 초기화를 놓친 오탐. 발견 철회, P2 집계 10→9. QA-11(IndexedStack eager build)은 별개 사안으로 유지.
 
 ### QA-11 · IndexedStack 이 게스트에게도 5탭 전부 eager build
 - **위치**: `lib/app/home_shell.dart:33-39, 110`
@@ -148,6 +146,7 @@
 
 1. **QA-01**: 개별질문 예치 흐름의 스토어 정책 판단 — `kIndividualQuestionCreateEnabled` 유지/차단 결정 (출시 게이트)
 2. **QA-06**: `baseUrl`의 vercel 스테이징 도메인 — 의도된 연결인지, 운영 도메인 확정 시점
-3. **QA-10**: 게스트 첫 화면 정책 — 질문방(현행) vs 커뮤니티
-4. **QA-03/05**: README·HANDOFF·STATUS 문서 정비 범위(부분 패치 vs README 재작성)
-5. **QA-04**: 실서버 `notifications` 테이블 RLS 정책 존재 확인(Supabase 콘솔)
+3. **QA-03/05**: README·HANDOFF·STATUS 문서 정비 범위(부분 패치 vs README 재작성)
+4. **QA-04**: 실서버 `notifications` 테이블 RLS 정책 존재 확인(Supabase 콘솔)
+
+> 갱신(2026-07-06): QA-10 은 재검증 결과 **오탐으로 철회**(`home_shell.dart:54` 가 게스트를 멘토찾기 탭에서 시작시킴 — 상세는 P2 절). QA-02(raw `$e`)·QA-03(문서 모순)·QA-04(알림 uid 필터)는 `fix/qa-p1-batch` 브랜치에서 수정 적용됨.

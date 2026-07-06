@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "com.ssambership.ssambership_app"
-    compileSdk = flutter.compileSdkVersion
+    // 명시 고정(P0-6): Google Play 신규 앱 요건 = 2026-08-31부터 targetSdk 36
+    // (Android 16) 이상. Flutter 3.44.4 기본값과 동일 값을 위임 대신 고정해
+    // SDK 업그레이드가 조용히 타깃을 바꾸지 못하게 한다.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -15,12 +18,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.ssambership.ssambership_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // 명시 고정(P0-6). minSdk 24 = Flutter 3.44 기본(Android 7.0).
+        minSdk = 24
+        targetSdk = 36
+        // versionCode/Name 은 pubspec.yaml 의 version(x.y.z+N)에서 온다 —
+        // 스토어 업로드마다 +N 을 반드시 증가(규약: HANDOFF §3-1-B).
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

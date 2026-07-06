@@ -147,7 +147,8 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 
 ## 4. 의도적으로 제외한 것 (버그 아님)
 
-- **맞춤의뢰(CR)·개별질문(IQ)·관리자·회원가입 폼**: 앱 범위 밖(README 핵심 원칙 "제외, 흔적 없이"). 알림·통계·메뉴에서도 노출하지 않음(예: 알림 유형 분류가 CR/환불/IQ를 `NotificationKind.other` 로 숨김 — `lib/features/notifications/data/app_notification.dart`).
+- **맞춤의뢰(CR)·관리자·회원가입 폼**: 앱 범위 밖(README 핵심 원칙 "제외, 흔적 없이"). 알림·통계·메뉴에서도 노출하지 않음(알림 유형 분류가 CR/환불을 `NotificationKind.other` 로 숨김 — `lib/features/notifications/data/app_notification.dart`).
+- **개별질문(IQ)은 더 이상 제외가 아님** — 하단 5탭의 1급 기능으로 승격(§1 참고). `kIndividualQuestionEnabled`(노출)/`kIndividualQuestionCreateEnabled`(작성) 스위치 지배. 알림도 전용 종류(`NotificationKind.individualQuestion`)로 분류되어 개별질문 탭(`AppTab.individualQuestion`=4)으로 딥링크된다.
 - **잔여 질문수(주간 문항수) 숫자 표기 보류**: 값 미확정(특히 프리미엄 FUP). 지금은 숫자 대신 **구독 상태**로 표기(날조 금지). 확정되면 `lib/shared/constants/plan_constants.dart` 의 `planWeeklyQuestionQuota`(현재 전부 `null`)·`planLabels`(현재 전부 `''`)·`planMonthlyPriceCash`(현재 `null`)를 채우면 활성. 구독 요약의 `remaining`도 현재 `null`(`lib/core/entitlement/subscription_summary.dart`).
 - **관리자 계정**: 앱에서 접근 시 차단(`AccessState.blocked`) — 학생·멘토 전용.
 

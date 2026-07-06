@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase 백엔드 통신 필수 — release 소스셋은 debug/profile 매니페스트를
+         병합하지 않으므로 main 에 선언해야 릴리즈 빌드에서 네트워크가 동작한다. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="ssambership_app"
         android:name="${applicationName}"

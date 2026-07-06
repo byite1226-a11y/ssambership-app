@@ -8,6 +8,7 @@ import '../../data/community_read_repository.dart';
 import '../../data/community_write_repository.dart';
 import '../widgets/shortform_card.dart';
 import 'shortform_detail_screen.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 숏폼 탭 — 세로 피드(카드 스크롤). 카드 탭 → 세로 상세.
 class ShortformFeedView extends StatefulWidget {
@@ -97,7 +98,7 @@ class _ShortformFeedViewState extends State<ShortformFeedView> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('숏폼을 불러오지 못했어요.\n$_error',
+          child: Text('숏폼을 불러오지 못했어요.\n${friendlyError(_error!)}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: ColorTokens.danger)),
         ),

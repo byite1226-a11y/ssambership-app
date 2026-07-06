@@ -16,6 +16,7 @@ import '../widgets/block_author_action.dart';
 import '../widgets/comment_tile.dart';
 import '../widgets/reaction_bar.dart';
 import '../widgets/report_sheet.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 게시판 상세 — 본문 + 반응(좋아요·스크랩·신고) + 댓글(읽기+작성).
 /// ★ 작성은 '댓글'만 앱에서. 글 본문 편집/작성은 없음(웹).
@@ -94,7 +95,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
         _liked = !next;
         _likeCount += next ? -1 : 1;
       });
-      _snack('반응 처리에 실패했어요. ($e)');
+      _snack('반응 처리에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -111,7 +112,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _scrapped = !next);
-      _snack('처리에 실패했어요. ($e)');
+      _snack('처리에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -126,7 +127,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
       );
       _snack('신고가 접수되었어요. 운영팀이 검토할게요.');
     } catch (e) {
-      _snack('신고 접수에 실패했어요. ($e)');
+      _snack('신고 접수에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -171,7 +172,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
             widget.read.comments(CommunityPostType.board, widget.post.id);
       });
     } catch (e) {
-      _snack('댓글 등록에 실패했어요. ($e)');
+      _snack('댓글 등록에 실패했어요. ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

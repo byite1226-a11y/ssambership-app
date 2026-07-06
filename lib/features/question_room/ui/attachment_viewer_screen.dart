@@ -7,6 +7,7 @@ import '../../../design/tokens/color_tokens.dart';
 import '../../scan_annotation/scan_annotation_screen.dart';
 import '../data/attachments/attachment_url_resolver.dart';
 import '../data/models/question_attachment.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 첨부 이미지 전체화면 뷰어 — 서명 URL 로 원본을 보여주고(InteractiveViewer 줌·팬),
 /// '주석 달기'로 S15 주석 화면에 진입한다.
@@ -65,7 +66,7 @@ class _AttachmentViewerScreenState extends State<AttachmentViewerScreen> {
       if (!mounted) return;
       setState(() => _preparing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지를 불러오지 못했어요. ($e)')),
+        SnackBar(content: Text('이미지를 불러오지 못했어요. ${friendlyError(e)}')),
       );
     }
   }

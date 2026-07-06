@@ -14,6 +14,7 @@ import '../widgets/comment_tile.dart';
 import '../widgets/reaction_bar.dart';
 import '../widgets/report_sheet.dart';
 import '../widgets/thumbnail_view.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 숏폼 상세 — 세로 영상 영역(썸네일+재생 어포던스) + 반응 + 댓글.
 /// ★ 실제 영상 재생 플러그인 없음(썸네일/재생 아이콘). 작성은 '댓글'만.
@@ -94,7 +95,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
         _liked = !next;
         _likeCount += next ? -1 : 1;
       });
-      _snack('반응 처리에 실패했어요. ($e)');
+      _snack('반응 처리에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -111,7 +112,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _scrapped = !next);
-      _snack('처리에 실패했어요. ($e)');
+      _snack('처리에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -126,7 +127,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
       );
       _snack('신고가 접수되었어요. 운영팀이 검토할게요.');
     } catch (e) {
-      _snack('신고 접수에 실패했어요. ($e)');
+      _snack('신고 접수에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -171,7 +172,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
             widget.read.comments(CommunityPostType.shortform, widget.post.id);
       });
     } catch (e) {
-      _snack('댓글 등록에 실패했어요. ($e)');
+      _snack('댓글 등록에 실패했어요. ${friendlyError(e)}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

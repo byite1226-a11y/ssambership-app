@@ -13,6 +13,7 @@ import '../../question_room/data/mentor_lookup_repository.dart';
 import '../data/individual_question_repository.dart';
 import '../data/models/individual_question_models.dart';
 import 'widgets/iq_widgets.dart';
+import '../../../shared/errors/friendly_error.dart';
 
 /// 상세 화면 데이터 묶음(질문 + 메시지 + 첨부 + 멘토 표시명).
 class IqDetailData {
@@ -209,7 +210,7 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('질문을 불러오지 못했어요.\n${snap.error ?? ''}',
+                  child: Text('질문을 불러오지 못했어요.\n${friendlyError(snap.error ?? '')}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: ColorTokens.danger)),
                 ),

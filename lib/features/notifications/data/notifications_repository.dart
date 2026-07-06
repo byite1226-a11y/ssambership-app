@@ -42,7 +42,7 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 
-    // 앱 범위(질문방·구독)만 남긴다. CR·환불·IQ·미지 유형은 제외.
+    // 앱 범위(질문방·구독·개별질문)만 남긴다. CR·환불·미지 유형은 제외.
     final List<AppNotification> items = rows
         .map(AppNotification.fromMap)
         .where((AppNotification n) => n.inAppScope)
@@ -52,22 +52,38 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
     return NotificationsPage(items: items, hasMore: rows.length >= limit);
   }
 
+  /// 현재 사용자 id. 읽음 처리의 본인 한정 필터에 쓴다(다른 쓰기 레포와 동일 규약
+  /// — RLS 를 최종 방어로 두되 앱 계층에서도 본인 행만 대상).
+  String? get _uid => _client.auth.currentUser?.id;
+
   @override
   Future<void> markRead(String id) async {
-    await _client.from('notifications').update(<String, dynamic>{
-      'is_read': true,
-      'read': true,
-      'read_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', id);
+    final String? uid = _uid;
+    if (uid == null) return; // 세션 없음 — 읽음 처리할 본인 알림도 없다.
+    await _client
+        .from('notifications')
+        .update(<String, dynamic>{
+          'is_read': true,
+          'read': true,
+          'read_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', id)
+        .eq('user_id', uid);
   }
 
   @override
   Future<void> markAllRead(List<String> ids) async {
     if (ids.isEmpty) return;
-    await _client.from('notifications').update(<String, dynamic>{
-      'is_read': true,
-      'read': true,
-      'read_at': DateTime.now().toUtc().toIso8601String(),
-    }).inFilter('id', ids);
+    final String? uid = _uid;
+    if (uid == null) return; // 세션 없음 — no-op.
+    await _client
+        .from('notifications')
+        .update(<String, dynamic>{
+          'is_read': true,
+          'read': true,
+          'read_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .inFilter('id', ids)
+        .eq('user_id', uid);
   }
 }

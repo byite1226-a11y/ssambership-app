@@ -23,6 +23,7 @@ import 'data/models/room.dart';
 import 'data/question_room_read_repository.dart';
 import 'ui/mentor/mentor_inbox_screen.dart';
 import 'ui/mentor_room_home_screen.dart';
+import '../../shared/errors/friendly_error.dart';
 
 /// 질문방 탭(1뎁스). HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성(자체 Scaffold 없음).
 ///
@@ -161,7 +162,7 @@ class _StudentRoomListState extends State<_StudentRoomList> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return _ErrorView(message: '목록을 불러오지 못했어요.\n${snap.error}');
+          return _ErrorView(message: '목록을 불러오지 못했어요.\n${friendlyError(snap.error!)}');
         }
         final List<_RoomItem> all = snap.data ?? <_RoomItem>[];
         if (all.isEmpty) {

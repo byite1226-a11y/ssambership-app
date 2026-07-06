@@ -17,6 +17,7 @@ import '../attachment_viewer_screen.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/live_message_list.dart';
 import '../widgets/thread_status_pill.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 멘토 답변 화면(3뎁스). 학생 채팅의 거울상 — 멘토=우측 / 학생=좌측(MessageBubble 자동 처리).
 ///
@@ -174,7 +175,7 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
         await _uploadPending(pending, messageId: sent?.id);
       }
     } catch (e) {
-      _showError('전송에 실패했어요. ($e)');
+      _showError('전송에 실패했어요. ${friendlyError(e)}');
     } finally {
       if (mounted) {
         setState(() {
@@ -199,7 +200,7 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       );
       await _refresh();
     } catch (e) {
-      _showError('이미지 첨부에 실패했어요. ($e)');
+      _showError('이미지 첨부에 실패했어요. ${friendlyError(e)}');
     }
   }
 
@@ -281,7 +282,7 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('대화를 불러오지 못했어요.\n$_loadError',
+          child: Text('대화를 불러오지 못했어요.\n${friendlyError(_loadError!)}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: ColorTokens.danger)),
         ),

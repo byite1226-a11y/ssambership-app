@@ -7,6 +7,7 @@ import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/primary_button.dart';
 import '../../data/community_labels.dart';
 import '../../data/community_write_repository.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 게시판 글쓰기 — 제목 + 본문 + 카테고리만(이미지 없음, 즉시 공개).
 /// 성공 시 pop(true) 로 알린다(호출부가 목록 새로고침).
@@ -53,7 +54,7 @@ class _BoardWriteScreenState extends State<BoardWriteScreen> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _snack('글 등록에 실패했어요. ($e)');
+      _snack('글 등록에 실패했어요. ${friendlyError(e)}');
       if (mounted) setState(() => _submitting = false);
     }
   }

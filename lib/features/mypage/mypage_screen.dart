@@ -17,6 +17,7 @@ import 'ui/sections/profile_section.dart';
 import 'ui/sections/settings_section.dart';
 import 'ui/sections/student_subscription_section.dart';
 import 'ui/sections/support_section.dart';
+import '../../shared/errors/friendly_error.dart';
 
 /// 마이페이지(보강) — 조회 중심 대시보드. role(student/mentor)별로 내용이 다르다.
 /// ★ Commerce-Zero: 결제·충전·정산 출금은 앱에서 실행하지 않고 '웹'으로만 연결한다.
@@ -84,7 +85,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('내 정보를 불러오지 못했어요.\n${snap.error}',
+                child: Text('내 정보를 불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

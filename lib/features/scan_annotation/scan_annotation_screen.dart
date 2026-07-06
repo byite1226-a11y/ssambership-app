@@ -13,6 +13,7 @@ import '../../core/ink/widgets/ink_toolbar.dart';
 import 'annotation_flattener.dart';
 import 'annotation_sketch.dart';
 import 'data/scan_annotation_repository.dart';
+import '../../shared/errors/friendly_error.dart';
 
 /// 첨부 이미지 위 주석 화면(S15).
 ///
@@ -164,7 +165,7 @@ class _ScanAnnotationScreenState extends State<ScanAnnotationScreen> {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('주석 전송에 실패했어요. ($e)')),
+        SnackBar(content: Text('주석 전송에 실패했어요. ${friendlyError(e)}')),
       );
     }
   }

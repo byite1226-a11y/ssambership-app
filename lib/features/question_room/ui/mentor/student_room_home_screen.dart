@@ -16,6 +16,7 @@ import '../connection_notes_screen.dart';
 import '../widgets/entrance_card.dart';
 import '../widgets/thread_status_pill.dart';
 import 'mentor_question_list_screen.dart';
+import '../../../../shared/errors/friendly_error.dart';
 
 /// 멘토 질문방 2뎁스 = 학생방 홈. S4 멘토방 홈의 거울상(멘토 시점).
 ///
@@ -97,7 +98,7 @@ class _StudentRoomHomeScreenState extends State<StudentRoomHomeScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('불러오지 못했어요.\n${snap.error}',
+                child: Text('불러오지 못했어요.\n${friendlyError(snap.error!)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: ColorTokens.danger)),
               ),

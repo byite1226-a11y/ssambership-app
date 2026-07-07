@@ -423,14 +423,24 @@ class _AttachmentsCard extends StatelessWidget {
                     return const Text('이미지를 불러오지 못했어요.',
                         style: AppTypography.caption);
                   }
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      snap.data!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Text(
-                        '이미지를 불러오지 못했어요.',
-                        style: AppTypography.caption,
+                  return GestureDetector(
+                    onTap: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => _IqAttachmentViewer(
+                          url: snap.data!,
+                          title: a.fileName ?? '첨부 이미지',
+                        ),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        snap.data!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Text(
+                          '이미지를 불러오지 못했어요.',
+                          style: AppTypography.caption,
+                        ),
                       ),
                     ),
                   );
@@ -454,6 +464,42 @@ class _AttachmentsCard extends StatelessWidget {
               ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// 첨부 전체화면 뷰어(줌·팬) — S17 조회 전용.
+/// ★ 질문방 AttachmentViewerScreen 은 roomId/threadId·'주석 달기'(S15)에
+///   결합돼 있어 재사용하지 않는다. 멘토 '첨삭하기' 진입은 S18 에서
+///   AnnotationTarget 포트와 함께 이 화면을 일반화해 연결한다.
+class _IqAttachmentViewer extends StatelessWidget {
+  const _IqAttachmentViewer({required this.url, required this.title});
+
+  final String url;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(title, overflow: TextOverflow.ellipsis),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          maxScale: 6,
+          child: Image.network(
+            url,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Text(
+              '이미지를 불러오지 못했어요.',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ),
       ),
     );
   }

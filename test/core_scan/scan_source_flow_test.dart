@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as pkg;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssambership_app/core/scan/image_downscaler.dart';
 import 'package:ssambership_app/core/scan/scan_source_picker.dart';
@@ -166,47 +166,56 @@ void main() {
     expect(find.textContaining('x.png'), findsNothing);
   });
 
-  group('downscaleIfOversized (§6-4 초과 리사이즈)', () {
-    // ★ testWidgets(fake async)에서는 엔진 코덱(디코드/PNG 인코딩) 콜백이
-    //   진행되지 않아 멈춘다 → 실제 async 를 쓰는 plain test() 로 검증.
-    TestWidgetsFlutterBinding.ensureInitialized();
-
-    Future<Uint8List> encodePng(int w, int h) async {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
-      // 압축이 덜 되도록 셀마다 색이 다른 격자를 그린다(리사이즈 효과 검증용).
-      for (int x = 0; x < w; x += 8) {
-        for (int y = 0; y < h; y += 8) {
-          canvas.drawRect(
-            ui.Rect.fromLTWH(x.toDouble(), y.toDouble(), 8, 8),
-            ui.Paint()..color = ui.Color(0xFF000000 | (x * 7919 + y * 104729)),
-          );
+  group('downscaleIfOversized (§6-4 초과 리사이즈 — S17: JPEG 재인코딩)', () {
+    Uint8List opaquePng(int w, int h) {
+      final pkg.Image im = pkg.Image(width: w, height: h);
+      int seed = 42; // 결정적 LCG 노이즈 — PNG 압축이 안 먹혀 원본이 충분히 커진다.
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF;
+          im.setPixelRgba(
+              x, y, seed & 0xFF, (seed >> 8) & 0xFF, (seed >> 16) & 0xFF, 255);
         }
       }
-      final ui.Image img =
-          await recorder.endRecording().toImage(w, h);
-      final ByteData? data =
-          await img.toByteData(format: ui.ImageByteFormat.png);
-      img.dispose();
-      return data!.buffer.asUint8List();
+      return Uint8List.fromList(pkg.encodePng(im));
     }
 
-    test('초과분은 장변 캡으로 축소돼 한도 안으로 들어온다', () async {
-      final Uint8List big = await encodePng(400, 300);
+    Uint8List transparentPng(int w, int h) {
+      final pkg.Image im = pkg.Image(width: w, height: h, numChannels: 4);
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          im.setPixelRgba(x, y, 200, 40, 90, x.isEven ? 0 : 255); // 실제 투명 픽셀
+        }
+      }
+      return Uint8List.fromList(pkg.encodePng(im));
+    }
+
+    test('초과 사진류 → 장변 캡 + JPEG(품질85) 재인코딩으로 한도 안', () async {
+      final Uint8List big = opaquePng(400, 300);
       final PickedImage src = PickedImage(
-          bytes: big, fileName: 'big.jpg', mimeType: 'image/jpeg');
-      // 원본이 한도를 넘도록 한도를 원본보다 작게 설정(실전 5MB 의 축소판).
+          bytes: big, fileName: 'big.png', mimeType: 'image/png');
       final PickedImage out = await downscaleIfOversized(src,
           maxBytes: big.length - 1, maxLongSide: 40);
 
       expect(out.sizeBytes, lessThanOrEqualTo(big.length - 1));
-      expect(out.mimeType, 'image/png'); // dart:ui 재인코딩은 PNG.
-      expect(out.fileName, 'big.png');
-      final ui.Codec codec = await ui.instantiateImageCodec(out.bytes);
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      expect(frame.image.width, lessThanOrEqualTo(40)); // 장변 캡 적용.
-      frame.image.dispose();
-      codec.dispose();
+      expect(out.mimeType, 'image/jpeg'); // 사진류(불투명)는 JPEG.
+      expect(out.fileName, 'big.jpg');
+      final pkg.Image? decoded = pkg.decodeImage(out.bytes);
+      expect(decoded, isNotNull);
+      expect(decoded!.width, lessThanOrEqualTo(40)); // 장변 캡 적용.
+    });
+
+    test('투명 픽셀이 있으면 PNG 유지(알파 보존)', () async {
+      final Uint8List big = transparentPng(240, 200);
+      final PickedImage src = PickedImage(
+          bytes: big, fileName: 'sticker.png', mimeType: 'image/png');
+      final PickedImage out = await downscaleIfOversized(src,
+          maxBytes: big.length - 1, maxLongSide: 40);
+
+      expect(out.mimeType, 'image/png');
+      expect(out.fileName, 'sticker.png');
+      final pkg.Image? decoded = pkg.decodeImage(out.bytes);
+      expect(decoded!.width, lessThanOrEqualTo(40));
     });
 
     test('한도 이하면 원본 그대로(무손실 통과)', () async {

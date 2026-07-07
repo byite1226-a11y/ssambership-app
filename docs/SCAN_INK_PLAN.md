@@ -105,7 +105,7 @@ DB: `iq_attachments(id, question_id, uploader_id, storage_path, mime, created_at
 
 | 단계 | 내용 | 산출물 |
 |---|---|---|
-| **S16** 스캔 소스 확장 | 촬영(camera) 추가 + `file_picker` 이미지 파일 + 소스 선택 시트. 질문방 첨부에 우선 적용 | `scan_source_picker` + 채팅 입력바 연동 + 위젯 테스트 |
+| **S16** 스캔 소스 확장 — **✅ 완료(2026-07-06, feat/s16-scan-sources)** | 촬영(camera) 추가 + `file_picker` 이미지 파일 + 소스 선택 시트. 질문방 첨부에 우선 적용 | `lib/core/scan/`(scan_source_picker·picked_image·image_downscaler) + 소스 시트 + 채팅/멘토 답변 입력바 연동 + 위젯 테스트 9케이스 |
 | **S17** 개별질문 첨부 | `iq_attachments` 테이블·버킷·RLS + 작성 화면 첨부 영역 + 상세 화면 이미지 뷰어 재사용 | 레포·화면 + fake 주입 테스트 |
 | **S18** 개별질문 첨삭 | `AnnotationTarget` 포트 추가로 `ScanAnnotationScreen` 을 IQ 에 연결. 학생(질문 위 표시)·멘토(답변 첨삭) 양방향 | 포트 + 진입점 2곳 + 흐름 테스트 |
 | **S19** PDF 스캔 | `pdfx` 래스터화 + 페이지 선택 그리드 + 다중 페이지(최대 5) | rasterizer + 페이지 선택 UI |

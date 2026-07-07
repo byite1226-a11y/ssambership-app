@@ -7,6 +7,9 @@
 	<!-- image_picker(질문 첨부): 사진 선택 시 필요. 없으면 iOS 런타임 크래시. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>질문에 첨부할 이미지를 선택하기 위해 사진 보관함 접근이 필요해요.</string>
+	<!-- image_picker 촬영(S16): 카메라 사용 사유. 없으면 촬영 진입 시 크래시. -->
+	<key>NSCameraUsageDescription</key>
+	<string>문제를 촬영해 질문에 첨부하기 위해 카메라를 사용해요.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

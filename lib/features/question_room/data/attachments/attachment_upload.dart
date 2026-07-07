@@ -1,10 +1,12 @@
-import 'dart:typed_data';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/scan/picked_image.dart';
 import '../../../../core/supabase/supabase_client.dart';
 import '../../../../shared/errors/app_error.dart';
 import '../models/question_attachment.dart';
+
+// PickedImage 는 S16 에서 core/scan 으로 이동 — 기존 import 경로 하위호환.
+export '../../../../core/scan/picked_image.dart' show PickedImage;
 
 /// 첨부 업로드 제한 안내(고정 문구). 기획 안전 규칙: 교재 전체 스캔/PDF 등 금지.
 const String kAttachmentRestrictionText =
@@ -21,21 +23,6 @@ const List<String> kAllowedImageMimeTypes = <String>[
 
 /// 최대 첨부 크기(5MB).
 const int kMaxAttachmentBytes = 5 * 1024 * 1024;
-
-/// 선택된 이미지(메모리). 실제 파일 선택기(image_picker)는 아직 미도입 → 주입 포트로 분리.
-class PickedImage {
-  const PickedImage({
-    required this.bytes,
-    required this.fileName,
-    required this.mimeType,
-  });
-
-  final Uint8List bytes;
-  final String fileName;
-  final String mimeType;
-
-  int get sizeBytes => bytes.length;
-}
 
 /// 선택 이미지 검증. 통과하면 null, 아니면 사용자에게 보여줄 한글 사유.
 String? validatePickedImage(PickedImage image) {

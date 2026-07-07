@@ -15,8 +15,11 @@ import '../../data/thread_messages_controller.dart';
 import '../../data/thread_realtime.dart';
 import '../attachment_viewer_screen.dart';
 import '../widgets/chat_input_bar.dart';
+import '../widgets/scan_source_sheet.dart';
 import '../widgets/live_message_list.dart';
 import '../widgets/thread_status_pill.dart';
+import '../../../../core/scan/image_downscaler.dart';
+import '../../../../core/scan/scan_source_picker.dart';
 import '../../../../shared/errors/friendly_error.dart';
 
 /// 멘토 답변 화면(3뎁스). 학생 채팅의 거울상 — 멘토=우측 / 학생=좌측(MessageBubble 자동 처리).
@@ -32,6 +35,7 @@ class MentorAnswerScreen extends StatefulWidget {
     required this.thread,
     required this.studentName,
     this.imagePicker = const DeviceImagePicker(),
+    this.scanPicker = const DeviceScanSourcePicker(),
     this.uploader = const SupabaseAttachmentUploader(),
     this.realtimeFactory = _defaultRealtime,
   });
@@ -39,6 +43,9 @@ class MentorAnswerScreen extends StatefulWidget {
   final QuestionThread thread;
   final String studentName;
   final ImagePickerPort imagePicker;
+
+  /// 스캔 소스 포트(S16: 촬영·파일). 테스트에서 fake 주입.
+  final ScanSourcePort scanPicker;
   final AttachmentUploaderPort uploader;
   final ThreadRealtimePort Function(String threadId) realtimeFactory;
 
@@ -204,13 +211,26 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
     }
   }
 
+  /// 첨부(S16): 소스 선택 시트(촬영/갤러리/파일) → 선택 → 검증 → 미리보기.
+  /// 갤러리는 기존 imagePicker 포트(하위호환), 촬영·파일은 scanPicker 포트.
   Future<void> _attach() async {
-    if (!widget.imagePicker.isAvailable) {
-      _showError('이미지 선택 기능은 준비 중이에요. (image_picker 인수인계)');
-      return;
+    final ScanSource? source = await showScanSourceSheet(context);
+    if (source == null || !mounted) return; // 시트 취소 — 무동작.
+    try {
+      final PickedImage? picked = source == ScanSource.gallery
+          ? await widget.imagePicker.pickImage()
+          : await widget.scanPicker.pick(source);
+      await _acceptPicked(picked);
+    } catch (e) {
+      // PDF 폴백 안내(AppError) 포함 — 원문 비노출 규약.
+      _showError(friendlyError(e));
     }
-    final PickedImage? img = await widget.imagePicker.pickImage();
-    if (img == null) return;
+  }
+
+  /// 선택 결과 공통 처리: 5MB 초과 리사이즈(§6-4) → 검증 → 미리보기 세팅.
+  Future<void> _acceptPicked(PickedImage? picked) async {
+    if (picked == null) return;
+    final PickedImage img = await downscaleIfOversized(picked);
     final String? invalid = validatePickedImage(img);
     if (invalid != null) {
       _showError(invalid);

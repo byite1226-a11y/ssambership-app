@@ -12,6 +12,8 @@
 ///                         {roomId}/{authorId}/thumb.png    ← 목록용 썸네일
 ///   scan-annotations:     {roomId}/{attachmentId}/ink.json ← 스캔 주석 원본(S15)
 ///                         {roomId}/{attachmentId}/flat.png ← 평탄화 출력(S15)
+///   individual-question-attachments(기존 IQ 버킷 재사용, S18 — 신설 아님):
+///                         {questionId}/annotations/{원본첨부id}.json ← IQ 첨삭 원본
 class InkStoragePaths {
   InkStoragePaths._();
 
@@ -40,6 +42,13 @@ class InkStoragePaths {
   /// 스캔 주석 평탄화 이미지 경로(S15, 첨부·미리보기용).
   static String annotationFlattened(String roomId, String attachmentId) =>
       '${_seg(roomId)}/${_seg(attachmentId)}/$_flatFile';
+
+  /// 개별질문 첨삭 원본 경로(S18) — 기존 `individual-question-attachments`
+  /// 버킷 상대. 첫 세그먼트=질문 uuid 라 당사자 스토리지 정책을 그대로 만족한다
+  /// (버킷·정책 신설 불요, 기획안 §7-3 의 iq-annotations 신설은 폐기).
+  /// 이 JSON 은 attachments 테이블에 행을 등록하지 않는다(표시용 첨부 아님).
+  static String iqAnnotationDocument(String questionId, String attachmentId) =>
+      '${_seg(questionId)}/annotations/${_seg(attachmentId)}.json';
 
   /// 경로 세그먼트 검증 — 빈 값·구분자 포함 ID 는 호출부 버그.
   static String _seg(String id) {

@@ -12,34 +12,54 @@ import '../../design/tokens/color_tokens.dart';
 import '../../core/ink/widgets/ink_toolbar.dart';
 import 'annotation_flattener.dart';
 import 'annotation_sketch.dart';
+import 'annotation_target.dart';
 import 'data/scan_annotation_repository.dart';
 import '../../shared/errors/friendly_error.dart';
 
-/// 첨부 이미지 위 주석 화면(S15).
+/// 첨부 이미지 위 주석 화면(S15, S18 에서 전송 대상 포트화).
 ///
 /// ★ 재사용: S13 코어(InkCoordinateMapper·ScribbleInkAdapter·InkDocument)와
 ///   S14 툴바(InkToolbar)를 그대로 쓴다 — 재구현하지 않는다.
 /// ★ 좌표 정합(기획서 잠금): 캔버스를 fit 된 이미지 영역과 '정확히 같은 사각형'에
 ///   올려, 스트로크는 이미지 정규화 좌표(0..1)로 저장/복원한다. InteractiveViewer
 ///   줌·팬은 이미지와 캔버스가 같은 레이어라 추가 보정 없이 함께 변환된다.
+/// ★ 전송 대상(S18): [target] 이 있으면 완료 결과를 그 포트로 보낸다.
+///   없으면 기존처럼 [roomId]/[threadId] 의 질문방 스레드 첨부로 보낸다
+///   (기존 호출부 무변경 — 옵션 추가 방식).
 class ScanAnnotationScreen extends StatefulWidget {
   const ScanAnnotationScreen({
     super.key,
     required this.background,
-    required this.roomId,
-    required this.threadId,
+    this.roomId,
+    this.threadId,
+    this.target,
     this.initial,
     this.repository,
+    this.title,
+    this.initialPenColor,
     @visibleForTesting this.backgroundImageOverride,
-  });
+  }) : assert(
+          target != null || (roomId != null && threadId != null),
+          'target 이 없으면 roomId/threadId(질문방 기본 경로)가 필요하다.',
+        );
 
   /// 배경 이미지 바이트(질문방 첨부 또는 갤러리 선택). 디코딩해서 배경·평탄화에 쓴다.
   final Uint8List background;
 
-  final String roomId;
+  /// 질문방 기본 경로의 대상 방. [target] 사용 시 무시된다.
+  final String? roomId;
 
-  /// 평탄화 PNG 를 첨부로 보낼 대상 스레드.
-  final String threadId;
+  /// 평탄화 PNG 를 첨부로 보낼 대상 스레드. [target] 사용 시 무시된다.
+  final String? threadId;
+
+  /// 완료 결과 전송 포트(S18). null 이면 질문방 기본 경로(S15 현행 동작).
+  final AnnotationTarget? target;
+
+  /// 앱바 제목. null 이면 기존 '사진에 주석 달기'.
+  final String? title;
+
+  /// 시작 펜 색(멘토 첨삭 = 빨강 프리셋, §6-2). null 이면 엔진 기본색.
+  final Color? initialPenColor;
 
   /// 재편집 진입 시 복원할 기존 주석(정규화 좌표). null 이면 새 주석.
   final InkDocument? initial;
@@ -57,7 +77,7 @@ class ScanAnnotationScreen extends StatefulWidget {
 
 class _ScanAnnotationScreenState extends State<ScanAnnotationScreen> {
   late final ScribbleNotifier _notifier;
-  late final ScanAnnotationRepository _repo;
+  late final AnnotationTarget _target;
 
   ui.Image? _bg;
   Size? _imageSize;
@@ -72,9 +92,16 @@ class _ScanAnnotationScreenState extends State<ScanAnnotationScreen> {
   @override
   void initState() {
     super.initState();
-    _repo = widget.repository ?? ScanAnnotationRepository.supabase();
+    _target = widget.target ??
+        QuestionRoomAnnotationTarget(
+          repository: widget.repository ?? ScanAnnotationRepository.supabase(),
+          roomId: widget.roomId!,
+          threadId: widget.threadId!,
+        );
     _inputMode = widget.initial?.inputMode ?? InkInputMode.penOnly;
     _notifier = ScribbleInkAdapter.createNotifier(mode: _inputMode);
+    final Color? preset = widget.initialPenColor;
+    if (preset != null) _notifier.setColor(preset);
     _loadBackground();
   }
 
@@ -153,11 +180,8 @@ class _ScanAnnotationScreenState extends State<ScanAnnotationScreen> {
         background: _bg!,
         normalizedSketch: normalized,
       );
-      await _repo.submit(
-        roomId: widget.roomId,
-        threadId: widget.threadId,
-        document: document,
-        flattenedPng: png,
+      await _target.submit(
+        AnnotationResult(document: document, flattenedPng: png),
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -175,7 +199,7 @@ class _ScanAnnotationScreenState extends State<ScanAnnotationScreen> {
     return Scaffold(
       backgroundColor: ColorTokens.page,
       appBar: AppBar(
-        title: const Text('사진에 주석 달기'),
+        title: Text(widget.title ?? '사진에 주석 달기'),
         actions: <Widget>[
           TextButton(
             onPressed: _submitting || _bg == null ? null : _onDone,

@@ -55,6 +55,7 @@
 | **S14-2** 필기 저장 계층 | `8000006` | `ink_note_repository`(주입형 포트) + `ConnectionNote` 에 `inkPath`·`inkThumbPath` + 재편집 + 경로 규약 정합 수정 — **제거됨**(모듈 삭제. `connection_notes.ink_path/ink_thumb_path` 컬럼·모델 필드는 웹 호환 위해 유지, UI 미참조) |
 | **첨부 퀵윈** | `c32d53f` | `attachment_upload` 버킷명 정정·경로 roomId 접두·`_storageReady=true` + `chat_screen`/`mentor_answer_screen` 배선 |
 | **S15** 첨부 이미지 주석 | `20840dc` | `scan_annotation/` 4모듈(화면·flattener·sketch 헬퍼·repository). 진입점 = 채팅 입력바의 **전송 전 이미지 미리보기 '주석 달기'** |
+| **S16** 스캔 소스 확장 | (feat/s16-scan-sources) | `lib/core/scan/` 신설 — `ScanSource`(촬영·갤러리·파일)·`ScanSourcePort`·`DeviceScanSourcePicker`(image_picker 품질85+장변4096캡, `file_picker ^11.0.2` 이미지 확장자만·PDF는 S19 폴백 안내)·`downscaleIfOversized`(5MB 초과 축소). 채팅·멘토답변 첨부가 소스 선택 시트 경유. `PickedImage` 는 core/scan 으로 이동(attachment_upload 가 re-export — 기존 경로 호환) |
 
 ### 모듈 지도
 ```

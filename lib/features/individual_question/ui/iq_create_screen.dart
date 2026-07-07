@@ -6,7 +6,15 @@ import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
+import '../../../core/scan/image_downscaler.dart';
+import '../../../core/scan/picked_image.dart';
+import '../../../core/scan/scan_source_picker.dart';
+import '../../question_room/data/attachments/attachment_upload.dart'
+    show ImagePickerPort, validatePickedImage;
+import '../../question_room/data/attachments/device_image_picker.dart';
+import '../../question_room/ui/widgets/scan_source_sheet.dart';
 import '../data/individual_question_repository.dart';
+import '../data/iq_attachments_repository.dart';
 import '../data/models/individual_question_models.dart';
 import '../../../shared/errors/friendly_error.dart';
 
@@ -31,6 +39,9 @@ class IqCreateScreen extends StatefulWidget {
     this.mentorName,
     this.prefillOverride,
     this.submitOverride,
+    this.scanPicker = const DeviceScanSourcePicker(),
+    this.galleryPicker = const DeviceImagePicker(),
+    this.attachments = const SupabaseIqAttachmentsRepository(),
   });
 
   final String? mentorId;
@@ -49,6 +60,15 @@ class IqCreateScreen extends StatefulWidget {
     String? idempotencyKey,
   })? submitOverride;
 
+  /// 스캔 소스 포트(S16 시트의 촬영·파일). 테스트에서 fake 주입.
+  final ScanSourcePort scanPicker;
+
+  /// 갤러리 포트(하위호환 주입 지점).
+  final ImagePickerPort galleryPicker;
+
+  /// 첨부 업로드 포트(S17: 버킷 업로드 + RPC 행 등록). 테스트에서 fake 주입.
+  final IqAttachmentsPort attachments;
+
   bool get isDirect => mentorId != null;
 
   @override
@@ -64,6 +84,15 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
 
   late Future<IqCreatePrefill> _future;
   bool _submitting = false;
+
+  /// 첨부 대기 이미지(최대 5장, §6-1). 제출 성공 후엔 '업로드 실패분'만 남는다.
+  final List<PickedImage> _images = <PickedImage>[];
+
+  /// 질문 생성 RPC 성공 후의 질문(부분 실패 재시도 기준).
+  /// null 아님 = 질문(텍스트)은 이미 등록됨 — 재제출 금지, 첨부 재시도만.
+  IndividualQuestion? _created;
+
+  static const int _maxImages = 5;
 
   @override
   void initState() {
@@ -96,7 +125,82 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
     return cash * 100;
   }
 
+  /// 첨부 추가 — S16 소스 시트(촬영/갤러리/파일) 재사용.
+  Future<void> _addImage() async {
+    if (_images.length >= _maxImages) {
+      _snack('사진은 최대 $_maxImages장까지 첨부할 수 있어요.');
+      return;
+    }
+    final ScanSource? source = await showScanSourceSheet(context);
+    if (source == null || !mounted) return;
+    try {
+      final PickedImage? picked = source == ScanSource.gallery
+          ? await widget.galleryPicker.pickImage()
+          : await widget.scanPicker.pick(source);
+      if (picked == null) return;
+      final PickedImage img = await downscaleIfOversized(picked);
+      final String? invalid = validatePickedImage(img);
+      if (invalid != null) {
+        _snack(invalid);
+        return;
+      }
+      if (mounted) setState(() => _images.add(img));
+    } catch (e) {
+      _snack(friendlyError(e)); // PDF 폴백 안내(AppError) 포함.
+    }
+  }
+
+  void _removeImage(int index) => setState(() => _images.removeAt(index));
+
+  /// 첨부 업로드 — 실패분은 [_images] 에 남겨 재시도 가능(작업물 유실 금지).
+  /// 반환: 전부 성공 여부.
+  Future<bool> _uploadImages(String questionId) async {
+    final List<PickedImage> failed = <PickedImage>[];
+    for (final PickedImage img in List<PickedImage>.of(_images)) {
+      try {
+        await widget.attachments.upload(questionId: questionId, image: img);
+      } catch (_) {
+        failed.add(img);
+      }
+    }
+    if (!mounted) return failed.isEmpty;
+    setState(() {
+      _images
+        ..clear()
+        ..addAll(failed);
+    });
+    return failed.isEmpty;
+  }
+
+  /// 부분 실패 후 재시도(질문은 이미 등록됨 — 재생성 없음).
+  Future<void> _retryUpload() async {
+    final IndividualQuestion? q = _created;
+    if (q == null || _submitting) return;
+    setState(() => _submitting = true);
+    final bool ok = await _uploadImages(q.id);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      _finishSuccess();
+    } else {
+      _snack('첨부 ${_images.length}장 업로드에 실패했어요. 다시 시도해 주세요.');
+    }
+  }
+
+  void _finishSuccess() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('질문이 전달됐어요. 캐시는 해결 완료 전까지 안전 보관돼요.'),
+      ),
+    );
+    Navigator.of(context).pop(true);
+  }
+
   Future<void> _submit(IqCreatePrefill prefill) async {
+    // 질문이 이미 생성됐다면(첨부 부분 실패 상태) 재생성 금지 — 재시도만.
+    if (_created != null) return _retryUpload();
+
     if (_submitting) return;
     final String title = _titleController.text.trim();
     final String body = _bodyController.text.trim();
@@ -147,7 +251,7 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         String? designatedMentorId,
         String? idempotencyKey,
       }) submit = widget.submitOverride ?? _repo.createAsStudent;
-      await submit(
+      final IndividualQuestion created = await submit(
         type: widget.isDirect
             ? IndividualQuestionType.direct
             : IndividualQuestionType.open,
@@ -158,13 +262,21 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         designatedMentorId: widget.mentorId,
         idempotencyKey: 'iqapp-${DateTime.now().microsecondsSinceEpoch}',
       );
+      _created = created;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('질문이 전달됐어요. 캐시는 해결 완료 전까지 안전 보관돼요.'),
-        ),
-      );
-      Navigator.of(context).pop(true);
+      if (_images.isEmpty) {
+        _finishSuccess();
+        return;
+      }
+      // 질문 생성 성공 → 첨부 업로드(경로에 질문 id 필요 — 생성 후에만 가능).
+      final bool allUploaded = await _uploadImages(created.id);
+      if (!mounted) return;
+      if (allUploaded) {
+        _finishSuccess();
+      } else {
+        _snack('질문은 등록됐어요. 첨부 ${_images.length}장 업로드에 실패해 '
+            '아래에서 다시 시도할 수 있어요.');
+      }
     } catch (e) {
       _snack(iqFailureMessage(e));
     } finally {
@@ -285,6 +397,22 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
             border: OutlineInputBorder(),
           ),
         ),
+        const SizedBox(height: 12),
+        _AttachArea(
+          images: _images,
+          maxImages: _maxImages,
+          locked: _created != null, // 부분 실패 상태: 목록 편집 대신 재시도.
+          onAdd: _submitting ? null : _addImage,
+          onRemove: _submitting ? null : _removeImage,
+        ),
+        if (_created != null) ...<Widget>[
+          const SizedBox(height: 10),
+          Text(
+            '질문은 등록됐어요. 남은 첨부 ${_images.length}장을 다시 업로드하거나, '
+            '첨부 없이 완료할 수 있어요.',
+            style: const TextStyle(color: ColorTokens.danger, fontSize: 13),
+          ),
+        ],
         if (insufficient) ...<Widget>[
           const SizedBox(height: 10),
           // ★ 스토어 정책: 결제 유도 링크 없이 '안내'만.
@@ -295,11 +423,109 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         ],
         const SizedBox(height: 18),
         PrimaryButton(
-          label: '질문 등록',
+          label: _created == null ? '질문 등록' : '첨부 다시 업로드',
           onPressed:
               _submitting || directPriceMissing ? null : () => _submit(prefill),
         ),
+        if (_created != null) ...<Widget>[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _submitting ? null : _finishSuccess,
+            child: const Text('첨부 없이 완료'),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+/// 첨부 영역 — 썸네일 미리보기 + 개별 삭제 + 추가 버튼(최대 [maxImages]장).
+class _AttachArea extends StatelessWidget {
+  const _AttachArea({
+    required this.images,
+    required this.maxImages,
+    required this.locked,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<PickedImage> images;
+  final int maxImages;
+  final bool locked;
+  final VoidCallback? onAdd;
+  final void Function(int index)? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text('문제 스캔 첨부 (${images.length}/$maxImages)',
+              style: AppTypography.caption),
+          if (images.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                for (int i = 0; i < images.length; i++)
+                  Stack(
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          images[i].bytes,
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 72,
+                            height: 72,
+                            color: ColorTokens.elevated,
+                            child: const Icon(Icons.image_rounded,
+                                color: ColorTokens.muted),
+                          ),
+                        ),
+                      ),
+                      if (!locked)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Semantics(
+                            button: true,
+                            label: '첨부 삭제',
+                            child: GestureDetector(
+                              onTap: onRemove == null
+                                  ? null
+                                  : () => onRemove!(i),
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(2),
+                                child: const Icon(Icons.close,
+                                    size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
+          if (!locked) ...<Widget>[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: images.length >= maxImages ? null : onAdd,
+              icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+              label: const Text('사진 첨부'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

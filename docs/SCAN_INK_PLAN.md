@@ -93,11 +93,11 @@
 | 용도 | 버킷 | 경로 | RLS |
 |---|---|---|---|
 | 질문방 스캔 첨삭 원본 | `scan-annotations` (기존) | `{roomId}/{attachmentId}/ink.json` | 방 참여자, 첫 세그먼트=roomId (기존 유지) |
-| 개별질문 첨부(스캔·평탄화 PNG) | `iq-attachments` (신설) | `{questionId}/{attachmentId}.png` | 질문 학생 + 배정 멘토 select/insert, 첫 세그먼트=questionId |
-| 개별질문 첨삭 원본 | `iq-annotations` (신설) | `{questionId}/{attachmentId}/ink.json` | 〃 |
+| 개별질문 첨부 | ~~`iq-attachments` (신설)~~ → **기존 `individual-question-attachments` 재사용**(2026-07-07 실서버 실사 정정) | `{questionId}/{ts}-{salt}.{ext}` — 첫 세그먼트=질문 uuid | 당사자(`user_is_party_for_individual_question_storage_path`). 행 등록은 SECURITY DEFINER RPC `add_individual_question_attachment`(테이블 SELECT-only 규약) |
+| 개별질문 첨삭 원본 | `iq-annotations` (S18 착수 시 실서버 재실사 후 결정 — 신설 여부 미정) | `{questionId}/{attachmentId}/ink.json` | 〃 |
 | ~~연결노트 필기~~ | `connection-note-ink` | — | **신규 쓰기 중단(deprecated)**. 기존 객체는 보존, 마이그레이션 불요 |
 
-DB: `iq_attachments(id, question_id, uploader_id, storage_path, mime, created_at)` 테이블 신설. `connection_notes.ink_path / ink_thumb_path` 컬럼은 웹 호환을 위해 **삭제하지 않고 방치**(모델 필드도 유지, UI 는 참조하지 않음).
+~~DB: `iq_attachments(...)` 테이블 신설~~ → **폐기(2026-07-07)**: 기존 웹 스키마 `individual_question_attachments(id, question_id, message_id, storage_path, file_name, mime_type, created_at)` 가 이미 존재해 재사용한다. `connection_notes.ink_path / ink_thumb_path` 컬럼은 웹 호환을 위해 **삭제하지 않고 방치**(모델 필드도 유지, UI 는 참조하지 않음).
 
 **7-4. 스토어 정책 메모** — 필기·첨삭 자체는 결제 요소가 없어 Play 결제 정책과 무관하다. 다만 개별질문 '작성' 진입은 기존 `kIndividualQuestionCreateEnabled` 스위치 아래에 있으므로, 첨부 UI 도 같은 스위치의 지배를 받게 배치한다(스위치 off 시 작성 화면 자체가 닫히므로 추가 분기 불요).
 
@@ -106,7 +106,7 @@ DB: `iq_attachments(id, question_id, uploader_id, storage_path, mime, created_at
 | 단계 | 내용 | 산출물 |
 |---|---|---|
 | **S16** 스캔 소스 확장 — **✅ 완료(2026-07-06, feat/s16-scan-sources)** | 촬영(camera) 추가 + `file_picker` 이미지 파일 + 소스 선택 시트. 질문방 첨부에 우선 적용 | `lib/core/scan/`(scan_source_picker·picked_image·image_downscaler) + 소스 시트 + 채팅/멘토 답변 입력바 연동 + 위젯 테스트 9케이스 |
-| **S17** 개별질문 첨부 | `iq_attachments` 테이블·버킷·RLS + 작성 화면 첨부 영역 + 상세 화면 이미지 뷰어 재사용 | 레포·화면 + fake 주입 테스트 |
+| **S17** 개별질문 첨부 — **✅ 완료(2026-07-07, feat/s17-iq-attachments)** | ~~테이블·버킷 신설~~ → 기존 스키마 재사용 + 첨부 등록 RPC 초안(적용 대기) + 작성 화면 첨부 영역(S16 시트, 최대 5장, 부분 실패 재시도) + 상세 탭→줌·팬 뷰어 | `iq_attachments_repository` + RPC SQL 초안 + fake 주입 테스트 6케이스 |
 | **S18** 개별질문 첨삭 | `AnnotationTarget` 포트 추가로 `ScanAnnotationScreen` 을 IQ 에 연결. 학생(질문 위 표시)·멘토(답변 첨삭) 양방향 | 포트 + 진입점 2곳 + 흐름 테스트 |
 | **S19** PDF 스캔 | `pdfx` 래스터화 + 페이지 선택 그리드 + 다중 페이지(최대 5) | rasterizer + 페이지 선택 UI |
 | P1 후보 | 압력→선폭, 형광펜, 자동 크롭·기울기 보정, 첨삭 전/후 비교 토글 | — |

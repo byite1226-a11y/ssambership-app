@@ -56,6 +56,7 @@
 | **첨부 퀵윈** | `c32d53f` | `attachment_upload` 버킷명 정정·경로 roomId 접두·`_storageReady=true` + `chat_screen`/`mentor_answer_screen` 배선 |
 | **S15** 첨부 이미지 주석 | `20840dc` | `scan_annotation/` 4모듈(화면·flattener·sketch 헬퍼·repository). 진입점 = 채팅 입력바의 **전송 전 이미지 미리보기 '주석 달기'** |
 | **S16** 스캔 소스 확장 | (feat/s16-scan-sources) | `lib/core/scan/` 신설 — `ScanSource`(촬영·갤러리·파일)·`ScanSourcePort`·`DeviceScanSourcePicker`(image_picker 품질85+장변4096캡, `file_picker ^11.0.2` 이미지 확장자만·PDF는 S19 폴백 안내)·`downscaleIfOversized`(5MB 초과 축소). 채팅·멘토답변 첨부가 소스 선택 시트 경유. `PickedImage` 는 core/scan 으로 이동(attachment_upload 가 re-export — 기존 경로 호환) |
+| **S17** 개별질문 첨부 | (feat/s17-iq-attachments) | 기존 웹 스키마 재사용(`individual_question_attachments`·`individual-question-attachments` 버킷·당사자 RLS). 행 등록 RPC `add_individual_question_attachment` **초안만**(supabase/migrations/, 적용은 사람 승인 대기). `iq_attachments_repository`(업로드+RPC 한 메서드) + 작성 화면 첨부(최대 5장·부분 실패 재시도) + 상세 탭→뷰어. `downscaleIfOversized` 를 package:image JPEG(품질85) 재인코딩으로 교체(투명 PNG 만 PNG 유지) |
 
 ### 모듈 지도
 ```
@@ -79,6 +80,7 @@ lib/features/scan_annotation/          ← 첨부 이미지 주석(S15)
 | ~~연결노트 필기 썸네일~~ | `connection-note-ink` | `{roomId}/{authorId}/thumb.png` | (동일 — deprecated) |
 | 스캔 주석 원본(재편집용) | `scan-annotations` | `{roomId}/{attachmentId}/ink.json` | 방 참여자 insert/select/update, **첫 세그먼트=roomId** |
 | 스캔 주석 평탄화 PNG | (기존 첨부 파이프라인으로 전송) | — | 첨부와 동일 규약 |
+| 개별질문 첨부(S17) | `individual-question-attachments`(기존·웹 공유) | `{questionId}/{ts}-{salt}.{ext}` — **첫 세그먼트=질문 uuid** | 당사자 스토리지 RLS + 행 등록은 RPC `add_individual_question_attachment` 만(테이블 SELECT-only) |
 
 - `connection_notes` 에 `ink_path`·`ink_thumb_path`(nullable, 코멘트 포함) 컬럼 추가 — **웹 기존 코드 무영향**.
 - 필기·주석 스트로크는 화면 픽셀이 아니라 **이미지 기준 0..1 정규화 좌표**로 저장(저장 직전 `InkCoordinateMapper` normalize, 복원 시 denormalize). 기기·줌과 무관하게 첨삭 위치가 보존된다.

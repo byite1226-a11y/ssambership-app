@@ -20,6 +20,8 @@ import 'widgets/live_message_list.dart';
 import 'widgets/thread_status_pill.dart';
 import '../../../core/scan/image_downscaler.dart';
 import '../../../core/scan/scan_source_picker.dart';
+import '../../../core/scan/pdf_rasterizer.dart';
+import '../../../core/scan/widgets/scan_pick_expander.dart';
 import '../../../shared/errors/friendly_error.dart';
 
 /// 채팅(3뎁스). 카카오톡식 말풍선(학생=우측/멘토=좌측) + 하단 입력창.
@@ -34,6 +36,7 @@ class ChatScreen extends StatefulWidget {
     required this.mentorName,
     this.imagePicker = const DeviceImagePicker(),
     this.scanPicker = const DeviceScanSourcePicker(),
+    this.pdfRasterizer = const PdfxRasterizer(),
     this.uploader = const SupabaseAttachmentUploader(),
     this.realtimeFactory = _defaultRealtime,
   });
@@ -46,6 +49,9 @@ class ChatScreen extends StatefulWidget {
 
   /// 스캔 소스 포트(S16: 촬영·파일). 테스트에서 fake 주입.
   final ScanSourcePort scanPicker;
+
+  /// PDF 래스터라이저 포트(S19: 파일 소스 PDF → 페이지 선택). fake 주입 지점.
+  final PdfRasterizerPort pdfRasterizer;
 
   /// 첨부 업로드 포트(기본: 저장소 미준비 — 인수인계).
   final AttachmentUploaderPort uploader;
@@ -208,8 +214,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// 첨부(S16): 소스 선택 시트(촬영/갤러리/파일) → 선택 → 검증 → 미리보기.
+  /// 첨부(S16/S19): 소스 시트 → 선택 → (PDF 면 페이지 선택) → 검증 → 미리보기.
   /// 갤러리는 기존 imagePicker 포트(하위호환), 촬영·파일은 scanPicker 포트.
+  /// PDF 분기는 expandScanPick(소스 계층)이 담당 — 이 화면은 모른다.
   Future<void> _attach() async {
     final ScanSource? source = await showScanSourceSheet(context);
     if (source == null || !mounted) return; // 시트 취소 — 무동작.
@@ -217,7 +224,14 @@ class _ChatScreenState extends State<ChatScreen> {
       final PickedImage? picked = source == ScanSource.gallery
           ? await widget.imagePicker.pickImage()
           : await widget.scanPicker.pick(source);
-      await _acceptPicked(picked);
+      if (!mounted) return;
+      final List<PickedImage> images = await expandScanPick(
+        context,
+        picked: picked,
+        rasterizer: widget.pdfRasterizer,
+        maxCount: 1, // 대기 슬롯 1(전송 전 미리보기 1장).
+      );
+      if (images.isNotEmpty) await _acceptPicked(images.first);
     } catch (e) {
       // PDF 폴백 안내(AppError) 포함 — 원문 비노출 규약.
       _showError(friendlyError(e));
@@ -225,8 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// 선택 결과 공통 처리: 5MB 초과 리사이즈(§6-4) → 검증 → 미리보기 세팅.
-  Future<void> _acceptPicked(PickedImage? picked) async {
-    if (picked == null) return; // 취소.
+  Future<void> _acceptPicked(PickedImage picked) async {
     final PickedImage img = await downscaleIfOversized(picked);
     final String? invalid = validatePickedImage(img);
     if (invalid != null) {

@@ -10,7 +10,7 @@ enum ScanSource { camera, gallery, file }
 /// 스캔 장변 캡(§6-4 규약): 촬영·갤러리는 선택 시점에 이 값으로 리사이즈된다.
 const double kScanMaxLongSidePx = 4096;
 
-/// 파일 소스 허용 확장자(이미지만 — PDF 는 S19).
+/// 파일 소스 허용 '이미지' 확장자.
 const List<String> kScanFileExtensions = <String>[
   'jpg',
   'jpeg',
@@ -19,9 +19,11 @@ const List<String> kScanFileExtensions = <String>[
   'heic',
 ];
 
-/// PDF 선택 시 폴백 안내(§6-4 계열 문구). S19 에서 래스터화 지원 예정.
-const String kScanPdfNotSupportedText =
-    'PDF는 곧 지원 예정이에요. 지금은 촬영하거나 이미지로 올려 주세요.';
+/// 파일 소스 선택 대화상자에 노출할 전체 확장자(이미지 + PDF, S19).
+const List<String> kScanFilePickerExtensions = <String>[
+  ...kScanFileExtensions,
+  'pdf',
+];
 
 /// 스캔 소스 통합 포트 — 어떤 소스든 결과는 기존 [PickedImage] 계약.
 ///
@@ -70,12 +72,14 @@ class DeviceScanSourcePicker implements ScanSourcePort {
     );
   }
 
-  /// 파일 소스 — 이미지 확장자만 허용(FileType.custom). PDF 는 안내 후 거부.
+  /// 파일 소스 — 이미지 + PDF 허용(FileType.custom, S19).
+  /// PDF 는 그대로 [PickedImage] 로 반환 — 페이지 래스터화·선택은 상위
+  /// 소스 계층(expandScanPick)이 담당한다(화면별 분기 금지).
   Future<PickedImage?> _pickFile() async {
     // file_picker 11.x: 정적 FilePicker.pickFiles (구 .platform 싱글턴 제거됨).
     final FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: kScanFileExtensions,
+      allowedExtensions: kScanFilePickerExtensions,
       withData: true, // 메모리 bytes 로 통일(PickedImage 계약).
     );
     final PlatformFile? file =
@@ -83,14 +87,11 @@ class DeviceScanSourcePicker implements ScanSourcePort {
     if (file == null) return null; // 사용자 취소.
 
     final String name = file.name;
-    // 확장자 필터를 우회한 선택(플랫폼별 편차) 방어 — PDF 는 S19 폴백 안내.
-    if (name.toLowerCase().endsWith('.pdf')) {
-      throw const AppError(kScanPdfNotSupportedText);
-    }
-    final bool allowed = kScanFileExtensions
+    // 확장자 필터를 우회한 선택(플랫폼별 편차) 방어 — 미지원 확장자 일반 거부.
+    final bool allowed = kScanFilePickerExtensions
         .any((String ext) => name.toLowerCase().endsWith('.$ext'));
     if (!allowed) {
-      throw const AppError('이미지(JPG·PNG·WEBP·HEIC) 파일만 올릴 수 있어요.');
+      throw const AppError('이미지(JPG·PNG·WEBP·HEIC)나 PDF 파일만 올릴 수 있어요.');
     }
     if (file.bytes == null) {
       throw const AppError('파일을 읽지 못했어요. 다시 선택해 주세요.');

@@ -68,7 +68,7 @@
 
 **6-3. 입력 모드(팜 리젝션)** — `InkInputMode` 정책을 그대로 사용한다. 기본은 `penOnly`(스타일러스 포인터만 스트로크로 인식 → 손바닥 무시), 툴바 토글로 `fingerAllowed` 전환. 스타일러스 압력값은 scribble 포인트의 pressure 로 이미 저장되므로, 압력→선폭 매핑은 어댑터 옵션 추가만으로 켤 수 있다(P1, 기본 off).
 
-**6-4. 상태·예외** — 업로드 실패 시 스트로크는 로컬에 유지한 채 재시도 안내(작업 유실 금지). 5MB 초과 스캔은 업로드 전 리사이즈(image_picker `imageQuality: 85` 유지 + 장변 4096px 캡). PDF 래스터화 실패·암호화 PDF 는 "이미지로 촬영해서 올려 주세요" 폴백 안내.
+**6-4. 상태·예외** — 업로드 실패 시 스트로크는 로컬에 유지한 채 재시도 안내(작업 유실 금지). 크기 규약 2단: ① 촬영·갤러리 **선택 시점** image_picker `imageQuality: 85` + 장변 4096px 캡 ② 그래도 **5MB 초과면 업로드 전 장변 2560px·JPEG 품질85 재인코딩**(`downscaleIfOversized` — S16 은 4096 이었으나 S17 재작성 때 2560 으로 변경, 투명 픽셀만 PNG 유지). PDF 래스터화 실패·암호화 PDF 는 "이미지로 촬영해서 올려 주세요" 폴백 안내.
 
 ## 7. 기술 설계
 
@@ -84,7 +84,7 @@
 **7-2. 신규 모듈**
 
 - `lib/core/scan/scan_source_picker.dart` — 촬영·갤러리·파일 3소스 통합 포트. 촬영은 기존 `image_picker` 의 `ImageSource.camera` 로 커버(신규 의존성 없음). 파일은 `file_picker` 도입.
-- `lib/core/scan/pdf_rasterizer.dart` — PDF 페이지 → PNG. 후보: `pdfx`(플러그인, iOS/Android 네이티브 렌더) 우선, 불가 시 P0 는 이미지 스캔만 출시하고 PDF 는 P1 로 미룬다(§11 리스크).
+- `lib/core/scan/pdf_rasterizer.dart` — PDF 페이지 → PNG. ~~후보: `pdfx` 우선~~ → **`pdfx ^2.9.2` 확정(2026-07-07 S19)**: Flutter 3.44.4·기존 의존성과 충돌 없이 해석, Android(pdfium)/iOS(CoreGraphics) 네이티브 렌더.
 - `lib/features/individual_question/data/iq_attachments_repository.dart` — 개별질문 첨부 업로드/조회. 업로더 포트는 질문방 것을 재사용하되 버킷·경로만 다르다.
 - `ScanAnnotationScreen` 일반화 — 현재 시그니처가 `roomId`/`threadId` 에 결합되어 있으므로, 전송 대상을 포트로 추상화한 `AnnotationTarget`(질문방 스레드 첨부 / 개별질문 첨부)을 주입받도록 **옵션 추가**(기존 호출부 무영향).
 
@@ -108,7 +108,7 @@
 | **S16** 스캔 소스 확장 — **✅ 완료(2026-07-06, feat/s16-scan-sources)** | 촬영(camera) 추가 + `file_picker` 이미지 파일 + 소스 선택 시트. 질문방 첨부에 우선 적용 | `lib/core/scan/`(scan_source_picker·picked_image·image_downscaler) + 소스 시트 + 채팅/멘토 답변 입력바 연동 + 위젯 테스트 9케이스 |
 | **S17** 개별질문 첨부 — **✅ 완료(2026-07-07, feat/s17-iq-attachments)** | ~~테이블·버킷 신설~~ → 기존 스키마 재사용 + 첨부 등록 RPC 초안(적용 대기) + 작성 화면 첨부 영역(S16 시트, 최대 5장, 부분 실패 재시도) + 상세 탭→줌·팬 뷰어 | `iq_attachments_repository` + RPC SQL 초안 + fake 주입 테스트 6케이스 |
 | **S18** 개별질문 첨삭 — **✅ 완료(2026-07-07, feat/s18-iq-annotation)** | `AnnotationTarget` 포트(질문방 기본/IQ/로컬 캡처)로 `ScanAnnotationScreen` 일반화(옵션 추가만 — 기존 호출부 무변경). 학생(작성 화면 '필기하기' — 전송 전 로컬 첨삭, 평탄화본이 첨부 대체 + 화면 생존 동안 이어 그리기)·멘토(상세 '첨삭하기' — 빨강 프리셋, ink.json 이어 그리기 제안, 완료 시 항상 새 첨부) 양방향. **앱 요구 DB 변경 0**(버킷·테이블·RPC 전부 기존 재사용. 단, ink.json 재저장(upsert)을 위한 스토리지 UPDATE 정책 1건은 실서버 검토에서 발견돼 운영 적용 — `20260707T1130_..._annotations.sql` 기록 참고) | `annotation_target` + `iq_annotation_repository` + 진입점 2곳 + fake 주입 테스트 16케이스 |
-| **S19** PDF 스캔 | `pdfx` 래스터화 + 페이지 선택 그리드 + 다중 페이지(최대 5) | rasterizer + 페이지 선택 UI |
+| **S19** PDF 스캔 — **✅ 완료(2026-07-07, feat/s19-pdf-scan)** | `pdfx ^2.9.2` 채택(3.44.4 호환·Android/iOS 네이티브 렌더) — `PdfRasterizerPort` + 페이지 선택 그리드(지연 썸네일·다중 최대 5·남은 슬롯 연동) + `expandScanPick` 소스 계층 공통 처리(채팅·멘토 답변·IQ 작성 자동 적용, 화면별 분기 없음). 본렌더 장변 2560px(§6-4 downscale 규약과 수렴 — A4 기준 300DPI 급). S16 의 PDF 거부는 '미지원 확장자' 일반 방어로 축소. 암호화·손상·0페이지 → 촬영/이미지 폴백 안내 | `pdf_rasterizer` + `pdf_page_select_screen` + `scan_pick_expander` + fake 주입 테스트 9케이스 + **실기기 QA 실행 시트(docs/MANUAL_QA_RUN_2026-07.md)** |
 | P1 후보 | 압력→선폭, 형광펜, 자동 크롭·기울기 보정, 첨삭 전/후 비교 토글 | — |
 
 각 단계는 기존 시리즈와 동일하게 mock/fake 주입으로 DB 비의존 테스트를 갖추고 squash 머지한다.
@@ -126,7 +126,7 @@
 
 ## 11. 리스크와 오픈 이슈
 
-- **PDF 렌더 의존성** — `pdfx` 는 네이티브 바인딩이라 플랫폼별 검증 비용이 있다. S19 를 독립 단계로 분리한 이유이며, 일정 압박 시 P0 는 이미지 스캔만으로 출시 가능하다.
-- **대용량 스캔** — 고해상 촬영 + 평탄화 PNG 는 수 MB 가 될 수 있다. 장변 4096px 캡과 품질 85 압축을 규약으로 두고, 초과 시 업로드 전 리사이즈한다.
+- **PDF 렌더 의존성 — S19 채택 완료(2026-07-07)**: `pdfx ^2.9.2` 도입. 네이티브 바인딩이라 헤드리스 검증이 불가한 부분(실렌더 화질·플랫폼별 편차)은 **실기기 QA 항목**으로 이관(docs/MANUAL_QA_RUN_2026-07.md A-5~A-8·B-6). 렌더 실패는 촬영/이미지 폴백으로 출시 차단 요인이 아니다.
+- **대용량 스캔** — 고해상 촬영 + 평탄화 PNG 는 수 MB 가 될 수 있다. 선택 시점 장변 4096px 캡·품질 85 를 1차 규약으로 두고, 5MB 초과 시 업로드 전 **장변 2560px·JPEG 품질85** 로 재인코딩한다(§6-4 — S17 에서 2560 확정).
 - **iOS HEIC** — 기존 mime 추론에 heic 이 이미 포함되어 있으나, 평탄화 출력은 항상 PNG 이므로 수신 호환 문제는 없다.
 - **첨삭 원본 보존 정책 — ✅ 확정(2026-07-07, S18)**: 기본안대로 **첨삭 = 항상 새 첨부**(원본 불변·덮어쓰기 금지). 재편집 UX 는 레이어 대신 ink.json(`{questionId}/annotations/{원본첨부id}.json`, 같은 원본 기준 upsert)으로 지원 — 같은 원본에 다시 첨삭하면 이어 그리기를 제안하고, 완료할 때마다 첨부가 하나 더 생긴다.

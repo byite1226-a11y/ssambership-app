@@ -8,8 +8,10 @@ import '../../../design/tokens/typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../design/widgets/primary_button.dart';
 import '../../../core/scan/image_downscaler.dart';
+import '../../../core/scan/pdf_rasterizer.dart';
 import '../../../core/scan/picked_image.dart';
 import '../../../core/scan/scan_source_picker.dart';
+import '../../../core/scan/widgets/scan_pick_expander.dart';
 import '../../question_room/data/attachments/attachment_upload.dart'
     show ImagePickerPort, validatePickedImage;
 import '../../question_room/data/attachments/device_image_picker.dart';
@@ -44,6 +46,7 @@ class IqCreateScreen extends StatefulWidget {
     this.submitOverride,
     this.scanPicker = const DeviceScanSourcePicker(),
     this.galleryPicker = const DeviceImagePicker(),
+    this.pdfRasterizer = const PdfxRasterizer(),
     this.attachments = const SupabaseIqAttachmentsRepository(),
     this.annotateOverride,
   });
@@ -69,6 +72,9 @@ class IqCreateScreen extends StatefulWidget {
 
   /// 갤러리 포트(하위호환 주입 지점).
   final ImagePickerPort galleryPicker;
+
+  /// PDF 래스터라이저 포트(S19: 파일 소스 PDF → 페이지 선택). fake 주입 지점.
+  final PdfRasterizerPort pdfRasterizer;
 
   /// 첨부 업로드 포트(S17: 버킷 업로드 + RPC 행 등록). 테스트에서 fake 주입.
   final IqAttachmentsPort attachments;
@@ -142,6 +148,8 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
   }
 
   /// 첨부 추가 — S16 소스 시트(촬영/갤러리/파일) 재사용.
+  /// PDF(S19)는 expandScanPick 이 페이지 선택 그리드로 확장한다 — 남은
+  /// 첨부 슬롯 수를 상한으로 넘겨 페이지당 1장씩 붙는다(§6-1).
   Future<void> _addImage() async {
     if (_images.length >= _maxImages) {
       _snack('사진은 최대 $_maxImages장까지 첨부할 수 있어요.');
@@ -153,21 +161,28 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
       final PickedImage? picked = source == ScanSource.gallery
           ? await widget.galleryPicker.pickImage()
           : await widget.scanPicker.pick(source);
-      if (picked == null) return;
-      final PickedImage img = await downscaleIfOversized(picked);
-      final String? invalid = validatePickedImage(img);
-      if (invalid != null) {
-        _snack(invalid);
-        return;
-      }
-      if (mounted) {
+      if (!mounted) return;
+      final List<PickedImage> expanded = await expandScanPick(
+        context,
+        picked: picked,
+        rasterizer: widget.pdfRasterizer,
+        maxCount: _maxImages - _images.length, // 슬롯 연동 상한.
+      );
+      for (final PickedImage one in expanded) {
+        final PickedImage img = await downscaleIfOversized(one);
+        final String? invalid = validatePickedImage(img);
+        if (invalid != null) {
+          _snack(invalid);
+          continue; // 한 장 불량이 나머지 페이지를 막지 않는다.
+        }
+        if (!mounted) return;
         setState(() {
           _images.add(img);
           _inks.add(null);
         });
       }
     } catch (e) {
-      _snack(friendlyError(e)); // PDF 폴백 안내(AppError) 포함.
+      _snack(friendlyError(e)); // PDF 열기 실패 폴백 안내(AppError) 포함.
     }
   }
 

@@ -58,6 +58,7 @@
 | **S16** 스캔 소스 확장 | (feat/s16-scan-sources) | `lib/core/scan/` 신설 — `ScanSource`(촬영·갤러리·파일)·`ScanSourcePort`·`DeviceScanSourcePicker`(image_picker 품질85+장변4096캡, `file_picker ^11.0.2` 이미지 확장자만·PDF는 S19 폴백 안내)·`downscaleIfOversized`(5MB 초과 축소). 채팅·멘토답변 첨부가 소스 선택 시트 경유. `PickedImage` 는 core/scan 으로 이동(attachment_upload 가 re-export — 기존 경로 호환) |
 | **S17** 개별질문 첨부 | (feat/s17-iq-attachments) | 기존 웹 스키마 재사용(`individual_question_attachments`·`individual-question-attachments` 버킷·당사자 RLS). 행 등록 RPC `add_individual_question_attachment` **초안만**(supabase/migrations/, 적용은 사람 승인 대기 → **2026-07-07 운영 적용·검증 완료**). `iq_attachments_repository`(업로드+RPC 한 메서드) + 작성 화면 첨부(최대 5장·부분 실패 재시도) + 상세 탭→뷰어. `downscaleIfOversized` 를 package:image JPEG(품질85) 재인코딩으로 교체(투명 PNG 만 PNG 유지) |
 | **S18** 개별질문 첨삭 | (feat/s18-iq-annotation) | **앱 요구 DB 변경 0**(단, ink.json upsert 용 스토리지 UPDATE 정책 1건은 실서버 검토에서 발견돼 운영 적용 — 아래 저장 규약 표). `AnnotationTarget` 포트로 `ScanAnnotationScreen` 전송 대상 일반화(질문방 기본/IQ/로컬 캡처 — 옵션 추가만, 기존 호출부 무변경). 학생: 작성 화면 첨부 썸네일 '필기하기'(전송 전 로컬 첨삭 — 평탄화본이 첨부 대체, 원본+스트로크는 화면 생존 동안 보관해 이어 그리기). 멘토: 상세 '첨삭하기'(빨강 프리셋) — 완료 시 ① ink.json 을 첨부 버킷 `{questionId}/annotations/{원본첨부id}.json` 에 upsert(재편집용, **테이블 행 미등록**) ② 평탄화 PNG 를 새 첨부로 등록(원본 불변·덮어쓰기 금지). 같은 원본 재첨삭 시 이어 그리기 제안. 부수 수정: 상세 `_refresh` 의 setState-Future 버그(해결완료·환불 후 새로고침도 같은 경로) |
+| **S19** PDF 스캔 | (feat/s19-pdf-scan) | **`pdfx ^2.9.2` 도입**(신규 의존성 — 3.44.4·기존 deps 충돌 없음, Android/iOS 네이티브 렌더). `lib/core/scan/pdf_rasterizer.dart`(포트+구현, 본렌더 장변 2560px — downscale 규약과 수렴) + `widgets/pdf_page_select_screen.dart`(지연 썸네일 그리드·다중 최대 5·선택 순번 배지) + `widgets/scan_pick_expander.dart`(소스 계층 공통: 이미지 1장/PDF 는 그리드, 1페이지 PDF 는 그리드 생략, 남은 슬롯 상한). 채팅·멘토 답변·IQ 작성 **자동 적용(화면별 분기 없음)**. S16 의 "PDF 곧 지원" 거부 → 실지원 전환('미지원 확장자' 일반 방어만 유지). 암호화·손상·0페이지 폴백 문구. **실기기 QA 실행 시트 신설(docs/MANUAL_QA_RUN_2026-07.md)** — 필기 시리즈(S13~S19) 마감 |
 
 ### 모듈 지도
 ```
@@ -96,7 +97,7 @@ lib/features/individual_question/data/
 - **첨부 업로더(`SupabaseAttachmentUploader`)는 재구현 금지** — 주석 평탄화 PNG 전송도 이 기존 파이프라인을 호출한다.
 
 ### 잔여 (다음 작업)
-- **실기기 스타일러스 QA(에뮬레이터 불가)**: 필압·팜리젝션·손가락 줌 공존·기기 간 좌표 정합·평탄화 정확도. **S18 완료로 필기 진입점(질문방+IQ 양방향)이 전부 갖춰져 지금이 최적기** — docs/MANUAL_QA_CHECKLIST.md §1 참고.
+- **실기기 QA 실행(에뮬레이터 불가)**: 스타일러스(필압·팜리젝션·좌표 정합)에 더해 S19 실 PDF 렌더 화질·대용량·암호화 폴백까지 — **실행 절차·빌드 명령·계정 준비가 docs/MANUAL_QA_RUN_2026-07.md 에 시트로 준비됨(필기 시리즈 S13~S19 마감 — 지금 실행).**
 - **IQ 첨삭 메시지 연동(후속)**: 멘토 첨삭 새 첨부의 `p_message_id` 는 현재 null — 답변 메시지와 묶으려면 RPC 의 message_id 소유 검증 보강과 함께 진행.
 - ~~이미지 뷰어(서명 URL) + 전송 후 주석 진입점~~ **✅ 완료(PR #8 `b1fb61a`)**: 채팅 말풍선 이미지 썸네일 + 전체화면 뷰어(줌·팬) + 뷰어에서 '주석 달기'로 전송된 이미지에 주석(S15 화면 재사용). 서명 URL은 `attachment_url_resolver.dart`(만료 1h·메모리 캐시).
 

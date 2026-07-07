@@ -1,12 +1,13 @@
--- S17: 개별질문 첨부 등록 RPC (v1)
--- (2026-07-07 운영 DB 실측: 이 v1 본문·grant 그대로 적용되어 있음 확인 — 재실행 불요.
---  message_id 소속 검증을 보강한 v2 는 20260707T1500_iqa_rpc_message_id_check.sql 참조.)
+-- S19: add_individual_question_attachment v2 — p_message_id 소속 질문 검증 추가
 --
--- 배경: individual_question_attachments 는 SELECT-only(RLS: iqa_select_party)이고
---       모든 IQ 쓰기는 SECURITY DEFINER RPC 규약이다. 첨부 '행 등록' RPC 만 부재해
---       이 함수 1개를 신설한다. 테이블·정책·버킷은 변경하지 않는다.
--- 규약: 스토리지 경로 첫 세그먼트 = 질문 uuid (기존 스토리지 정책
---       user_is_party_for_individual_question_storage_path 와 동일 규약).
+-- 배경: 운영 DB 실측(2026-07-07) 결과 v1 RPC 는 이미 적용되어 있었다
+--       (20260707T0100 초안과 동일 본문·grant). v1 은 p_message_id 가
+--       다른 질문의 메시지여도 행 등록을 허용하는 경미한 틈이 있어
+--       (attachments 에 복합 FK 부재), 소속 검증 1건을 보강한다.
+-- 변경: p_message_id 가 null 이 아니면 해당 메시지가 p_question_id 소속인지
+--       확인, 불일치 시 errcode 22023 거부. 그 외 본문·시그니처·grant 불변
+--       (auth 체크 / 당사자 검증 / 경로 첫 세그먼트=질문 uuid / authenticated 한정).
+-- 규약: 테이블·RLS 정책·버킷 무변경. SECURITY DEFINER RPC 1개 교체(additive 보강).
 
 create or replace function public.add_individual_question_attachment(
   p_question_id uuid,
@@ -41,6 +42,17 @@ begin
   -- (남의 질문 파일 경로를 내 질문 행으로 등록하는 것을 막는다).
   if split_part(p_storage_path, '/', 1) <> p_question_id::text then
     raise exception 'STORAGE_PATH_MISMATCH' using errcode = '22023';
+  end if;
+
+  -- 메시지 소속 검증(v2): 다른 질문의 메시지를 이 질문의 첨부로 묶는 것을 막는다
+  -- (individual_question_attachments 에 (message_id, question_id) 복합 FK 부재 보완).
+  if p_message_id is not null and not exists (
+    select 1
+    from public.individual_question_messages m
+    where m.id = p_message_id
+      and m.question_id = p_question_id
+  ) then
+    raise exception 'MESSAGE_NOT_IN_QUESTION' using errcode = '22023';
   end if;
 
   insert into public.individual_question_attachments

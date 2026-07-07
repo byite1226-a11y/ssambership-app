@@ -31,6 +31,9 @@ dependencies:
   scribble: ^0.10.0+1
   file_picker: ^11.0.2
   image: ^4.8.0
+  # PDF 스캔(S19): 페이지 -> PNG 래스터화(Android/iOS 네이티브 렌더 - pdfium/CoreGraphics).
+  # 기획안 §7-2 1순위. 어댑터: lib/core/scan/pdf_rasterizer.dart (포트 뒤 격리).
+  pdfx: ^2.9.2
 
 dev_dependencies:
   flutter_test:

@@ -24,5 +24,12 @@ String scanMimeFromName(String name) {
   if (n.endsWith('.png')) return 'image/png';
   if (n.endsWith('.webp')) return 'image/webp';
   if (n.endsWith('.heic')) return 'image/heic';
+  if (n.endsWith('.pdf')) return 'application/pdf'; // S19: 파일 소스 PDF.
   return 'image/jpeg'; // jpg/jpeg 및 기타 기본.
 }
+
+/// PDF 선택 결과 판별(S19) — 소스 계층이 페이지 래스터화 분기에 쓴다.
+/// (화면은 이 판별을 직접 쓰지 않는다 — expandScanPick 뒤에 숨김.)
+bool isPdfPickedImage(PickedImage picked) =>
+    picked.mimeType.toLowerCase() == 'application/pdf' ||
+    picked.fileName.toLowerCase().endsWith('.pdf');

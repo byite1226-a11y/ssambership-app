@@ -30,7 +30,7 @@ Future<ScanSource?> showScanSourceSheet(BuildContext context) {
           _SourceTile(
             icon: Icons.folder_rounded,
             label: '파일',
-            caption: 'JPG·PNG·WEBP·HEIC 이미지 파일',
+            caption: 'JPG·PNG·WEBP·HEIC 이미지 · PDF 문서',
             source: ScanSource.file,
           ),
           SizedBox(height: 8),

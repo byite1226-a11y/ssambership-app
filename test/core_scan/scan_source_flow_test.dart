@@ -136,10 +136,11 @@ void main() {
     expect(find.textContaining('g.png'), findsOneWidget);
   });
 
-  testWidgets('PDF 거부: AppError 폴백 안내가 원문 비노출 규약으로 표시',
+  testWidgets('미지원 확장자 거부: AppError 폴백 안내가 원문 비노출 규약으로 표시',
       (WidgetTester tester) async {
-    final _FakeScanPort scan =
-        _FakeScanPort(error: const AppError(kScanPdfNotSupportedText));
+    // S19 이후 PDF 는 지원 — 소스 포트의 '미지원 확장자' 일반 방어만 남는다.
+    final _FakeScanPort scan = _FakeScanPort(
+        error: const AppError('이미지(JPG·PNG·WEBP·HEIC)나 PDF 파일만 올릴 수 있어요.'));
     await tester.pumpWidget(_chat(scan: scan));
     await tester.pump();
     await _openSheet(tester);
@@ -147,7 +148,8 @@ void main() {
     await tester.tap(find.text('파일'));
     await tester.pumpAndSettle();
 
-    expect(find.text(kScanPdfNotSupportedText), findsOneWidget);
+    expect(find.text('이미지(JPG·PNG·WEBP·HEIC)나 PDF 파일만 올릴 수 있어요.'),
+        findsOneWidget);
   });
 
   testWidgets('시트 취소(바깥 탭) → 아무 포트도 호출되지 않는다(무동작)',

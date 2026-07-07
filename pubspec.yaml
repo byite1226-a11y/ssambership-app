@@ -30,6 +30,7 @@ dependencies:
   # (기획서 4-2 권장안. 온디바이스·무료. 어댑터: lib/core/ink/scribble_ink_adapter.dart)
   scribble: ^0.10.0+1
   file_picker: ^11.0.2
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:

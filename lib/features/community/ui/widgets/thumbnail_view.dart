@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../../design/tokens/color_tokens.dart';
 
 /// 숏폼 썸네일 표시. 네트워크 이미지 실패/부재 시 중립 배경으로 폴백(깨진 이미지 금지).
-/// [playable] 이면 재생 아이콘 오버레이(어포던스 — 실제 재생 플러그인은 없음).
+///
+/// ★ 재생 아이콘 오버레이 없음 — 영상 재생 미지원 상태에서 재생될 것처럼
+///   보이는 어포던스는 Broken Functionality(P0-4). video_player 도입 시
+///   오버레이·탭 재생을 함께 복원한다(docs/PLAY_STORE_REVIEW_PLAN.md 백로그).
 class ThumbnailView extends StatelessWidget {
-  const ThumbnailView({super.key, this.url, this.playable = false});
+  const ThumbnailView({super.key, this.url});
 
   final String? url;
-  final bool playable;
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +28,6 @@ class ThumbnailView extends StatelessWidget {
           )
         else
           const _Placeholder(),
-        if (playable)
-          const Center(
-            child: Icon(Icons.play_circle_fill, size: 52, color: Colors.white),
-          ),
       ],
     );
   }

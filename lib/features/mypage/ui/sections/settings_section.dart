@@ -44,6 +44,36 @@ class _SettingsSectionState extends State<SettingsSection> {
     if (saved != null && mounted) setState(() => _notify = saved);
   }
 
+  /// 회원 탈퇴 — 웹 열기 전에 되돌릴 수 없음 고지 + 재확인(P0-1 앱측 잔여).
+  /// '계속'을 눌러야만 기존 웹 브릿지 액션을 그대로 호출한다.
+  Future<void> _confirmAccountDelete() async {
+    final bool? proceed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('회원 탈퇴'),
+        content: const Text(
+            '탈퇴하면 계정과 데이터가 삭제되며 되돌릴 수 없어요.\n'
+            '탈퇴 절차는 웹 페이지에서 진행돼요. 계속할까요?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '계속',
+              style: TextStyle(color: ColorTokens.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (proceed == true && mounted) {
+      await openAccountDeleteWeb(context);
+    }
+  }
+
   /// 토글 변경 → 로컬 즉시 반영 + 영속화 시도. 실패해도 로컬은 유지(앱 안 죽음).
   Future<void> _onNotifyChanged(bool v) async {
     setState(() {
@@ -113,7 +143,7 @@ class _SettingsSectionState extends State<SettingsSection> {
             MyPageRow(
               icon: Icons.person_remove_rounded,
               label: '회원 탈퇴',
-              onTap: () => openAccountDeleteWeb(context),
+              onTap: _confirmAccountDelete,
             ),
             const SizedBox(height: 12),
             SecondaryButton(

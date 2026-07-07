@@ -14,6 +14,8 @@ import '../../../../shared/format/formatters.dart';
 import '../../data/mypage_models.dart';
 import '../widgets/mypage_section.dart';
 import '../../../../core/web_bridge/web_bridge_actions.dart';
+import '../../../../core/commerce/commerce_policy.dart';
+import '../../../../shared/widgets/commerce_notice_card.dart';
 
 /// 학생 구독 현황 섹션 — 멘토별 카드(요금제·갱신일·상태). "질문하러 가기"·"결제 관리(웹)".
 /// ★ 잔여 질문수 미확정이면 숫자 대신 구독 상태로만 표기(S4와 동일, 날조 금지).
@@ -71,12 +73,17 @@ class StudentSubscriptionSection extends StatelessWidget {
             onPressed: onGoToQuestions,
           ),
           const SizedBox(height: 8),
-          SecondaryButton(
-            label: '구독 관리 (웹)',
-            icon: Icons.open_in_new_rounded,
-            neutral: true,
-            onPressed: () => openBillingManageWeb(context),
-          ),
+          // P0-3 옵션1: 구독 관리 링크는 스토어 빌드에서 숨기고 안내로 대체
+          // (kSubscriptionManageLinkEnabled — dev 는 dart-define 주입으로 on).
+          if (kSubscriptionManageLinkEnabled)
+            SecondaryButton(
+              label: '구독 관리 (웹)',
+              icon: Icons.open_in_new_rounded,
+              neutral: true,
+              onPressed: () => openBillingManageWeb(context),
+            )
+          else
+            const CommerceNoticeCard(text: kSubscriptionManageNoticeText),
         ],
       ),
     );

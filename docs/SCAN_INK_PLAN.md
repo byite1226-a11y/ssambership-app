@@ -94,7 +94,7 @@
 |---|---|---|---|
 | 질문방 스캔 첨삭 원본 | `scan-annotations` (기존) | `{roomId}/{attachmentId}/ink.json` | 방 참여자, 첫 세그먼트=roomId (기존 유지) |
 | 개별질문 첨부 | ~~`iq-attachments` (신설)~~ → **기존 `individual-question-attachments` 재사용**(2026-07-07 실서버 실사 정정) | `{questionId}/{ts}-{salt}.{ext}` — 첫 세그먼트=질문 uuid | 당사자(`user_is_party_for_individual_question_storage_path`). 행 등록은 SECURITY DEFINER RPC `add_individual_question_attachment`(테이블 SELECT-only 규약) |
-| 개별질문 첨삭 원본 | ~~`iq-annotations` (신설)~~ → **기존 `individual-question-attachments` 재사용**(2026-07-07 S18 확정 — 신설 폐기) | `{questionId}/annotations/{원본첨부id}.json` — 첫 세그먼트=질문 uuid 라 기존 당사자 정책을 그대로 만족(정책 추가 0). **attachments 테이블에 행을 등록하지 않는다**(표시용 첨부가 아님 — 목록은 테이블 기준이라 자연히 숨겨진다) | 〃 |
+| 개별질문 첨삭 원본 | ~~`iq-annotations` (신설)~~ → **기존 `individual-question-attachments` 재사용**(2026-07-07 S18 확정 — 신설 폐기) | `{questionId}/annotations/{원본첨부id}.json` — 첫 세그먼트=질문 uuid. **attachments 테이블에 행을 등록하지 않는다**(표시용 첨부가 아님 — 목록은 테이블 기준이라 자연히 숨겨진다) | 당사자. 이 버킷의 정책 구성(2026-07-07 운영 적용): SELECT/INSERT 는 당사자 전체 경로, **UPDATE 는 `annotations/` 프리픽스 한정**(`iqa_storage_update_party_annotations` — ink.json 같은 경로 upsert 용. 원본 첨부는 계속 덮어쓰기 불가 = '원본 불변' 규약의 정책 레벨 근거) |
 | ~~연결노트 필기~~ | `connection-note-ink` | — | **신규 쓰기 중단(deprecated)**. 기존 객체는 보존, 마이그레이션 불요 |
 
 ~~DB: `iq_attachments(...)` 테이블 신설~~ → **폐기(2026-07-07)**: 기존 웹 스키마 `individual_question_attachments(id, question_id, message_id, storage_path, file_name, mime_type, created_at)` 가 이미 존재해 재사용한다. `connection_notes.ink_path / ink_thumb_path` 컬럼은 웹 호환을 위해 **삭제하지 않고 방치**(모델 필드도 유지, UI 는 참조하지 않음).
@@ -107,7 +107,7 @@
 |---|---|---|
 | **S16** 스캔 소스 확장 — **✅ 완료(2026-07-06, feat/s16-scan-sources)** | 촬영(camera) 추가 + `file_picker` 이미지 파일 + 소스 선택 시트. 질문방 첨부에 우선 적용 | `lib/core/scan/`(scan_source_picker·picked_image·image_downscaler) + 소스 시트 + 채팅/멘토 답변 입력바 연동 + 위젯 테스트 9케이스 |
 | **S17** 개별질문 첨부 — **✅ 완료(2026-07-07, feat/s17-iq-attachments)** | ~~테이블·버킷 신설~~ → 기존 스키마 재사용 + 첨부 등록 RPC 초안(적용 대기) + 작성 화면 첨부 영역(S16 시트, 최대 5장, 부분 실패 재시도) + 상세 탭→줌·팬 뷰어 | `iq_attachments_repository` + RPC SQL 초안 + fake 주입 테스트 6케이스 |
-| **S18** 개별질문 첨삭 — **✅ 완료(2026-07-07, feat/s18-iq-annotation)** | `AnnotationTarget` 포트(질문방 기본/IQ/로컬 캡처)로 `ScanAnnotationScreen` 일반화(옵션 추가만 — 기존 호출부 무변경). 학생(작성 화면 '필기하기' — 전송 전 로컬 첨삭, 평탄화본이 첨부 대체 + 화면 생존 동안 이어 그리기)·멘토(상세 '첨삭하기' — 빨강 프리셋, ink.json 이어 그리기 제안, 완료 시 항상 새 첨부) 양방향. **DB 변경 0**(버킷·정책·RPC 전부 기존 재사용) | `annotation_target` + `iq_annotation_repository` + 진입점 2곳 + fake 주입 테스트 16케이스 |
+| **S18** 개별질문 첨삭 — **✅ 완료(2026-07-07, feat/s18-iq-annotation)** | `AnnotationTarget` 포트(질문방 기본/IQ/로컬 캡처)로 `ScanAnnotationScreen` 일반화(옵션 추가만 — 기존 호출부 무변경). 학생(작성 화면 '필기하기' — 전송 전 로컬 첨삭, 평탄화본이 첨부 대체 + 화면 생존 동안 이어 그리기)·멘토(상세 '첨삭하기' — 빨강 프리셋, ink.json 이어 그리기 제안, 완료 시 항상 새 첨부) 양방향. **앱 요구 DB 변경 0**(버킷·테이블·RPC 전부 기존 재사용. 단, ink.json 재저장(upsert)을 위한 스토리지 UPDATE 정책 1건은 실서버 검토에서 발견돼 운영 적용 — `20260707T1130_..._annotations.sql` 기록 참고) | `annotation_target` + `iq_annotation_repository` + 진입점 2곳 + fake 주입 테스트 16케이스 |
 | **S19** PDF 스캔 | `pdfx` 래스터화 + 페이지 선택 그리드 + 다중 페이지(최대 5) | rasterizer + 페이지 선택 UI |
 | P1 후보 | 압력→선폭, 형광펜, 자동 크롭·기울기 보정, 첨삭 전/후 비교 토글 | — |
 

@@ -17,8 +17,10 @@ import 'models/individual_question_models.dart';
 /// IQ 첨삭 원본(ink.json)·원본 첨부 바이트를 넣고 빼는 최소 포트(S18).
 ///
 /// ★ 버킷은 기존 `individual-question-attachments` 하나다 — 첨삭 JSON 도
-///   `{questionId}/annotations/{원본첨부id}.json` 으로 같은 버킷에 넣는다.
-///   첫 세그먼트=질문 uuid 규약을 그대로 만족하므로 정책 추가가 없다.
+///   `{questionId}/annotations/{원본첨부id}.json` 으로 같은 버킷에 넣는다
+///   (첫 세그먼트=질문 uuid 규약 동일). 같은 경로 재저장(upsert)은
+///   `annotations/` 프리픽스 한정 UPDATE 정책이 허용한다 — 원본 첨부는
+///   덮어쓰기 불가(supabase/migrations/20260707T1130_... 기록 참고).
 abstract class IqAnnotationStore {
   /// 같은 경로 덮어쓰기(upsert) — 이어 그리기 저장.
   Future<void> upsertDocument({required String path, required Uint8List bytes});

@@ -29,6 +29,7 @@ dependencies:
   # 연결노트 필기·스캔 주석(S13~): 필압·팜리젝션·undo/redo·JSON직렬화·PNG export 내장
   # (기획서 4-2 권장안. 온디바이스·무료. 어댑터: lib/core/ink/scribble_ink_adapter.dart)
   scribble: ^0.10.0+1
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:

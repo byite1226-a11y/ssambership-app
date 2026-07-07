@@ -6,7 +6,7 @@
 build/
 .pub-cache/
 .pub/
-pubspec.lock
+# pubspec.lock 은 커밋한다(앱 저장소 표준 — 재현 가능한 의존성 해석). 2026-07-07 정책 전환.
 
 # IDE
 .idea/

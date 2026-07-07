@@ -165,6 +165,7 @@ flutter build appbundle
 - 레퍼런스: 토스 + 클래스101. **맞춤의뢰(CR)는 앱 범위 밖**이므로 관련 디자인 불필요.
 
 ### 3-6. 빌드·출시
+- **pubspec.lock 은 커밋한다**(앱 저장소 표준 — 팀·CI·출시 빌드가 같은 의존성 해석을 재현. 2026-07-07 S19 에서 .gitignore 제외를 제거하고 정책 전환).
 - **네이티브 폴더**: `android/`·`ios/` (현재 untracked 상태로 존재). 없거나 갱신 필요 시:
   `flutter create . --org com.ssambership --project-name ssambership_app --platforms=android,ios` (기존 `lib/`·`pubspec.yaml` 보존, 누락 폴더만 생성). 패키지명 `com.ssambership.app` 권장.
 - **.env 원격 전환**(출시): 로컬 → 원격 production 값 교체(README 참조)

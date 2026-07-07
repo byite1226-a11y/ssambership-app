@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/ink/ink_document.dart';
 import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
@@ -13,6 +14,8 @@ import '../../question_room/data/attachments/attachment_upload.dart'
     show ImagePickerPort, validatePickedImage;
 import '../../question_room/data/attachments/device_image_picker.dart';
 import '../../question_room/ui/widgets/scan_source_sheet.dart';
+import '../../scan_annotation/annotation_target.dart';
+import '../../scan_annotation/scan_annotation_screen.dart';
 import '../data/individual_question_repository.dart';
 import '../data/iq_attachments_repository.dart';
 import '../data/models/individual_question_models.dart';
@@ -42,6 +45,7 @@ class IqCreateScreen extends StatefulWidget {
     this.scanPicker = const DeviceScanSourcePicker(),
     this.galleryPicker = const DeviceImagePicker(),
     this.attachments = const SupabaseIqAttachmentsRepository(),
+    this.annotateOverride,
   });
 
   final String? mentorId;
@@ -69,6 +73,13 @@ class IqCreateScreen extends StatefulWidget {
   /// 첨부 업로드 포트(S17: 버킷 업로드 + RPC 행 등록). 테스트에서 fake 주입.
   final IqAttachmentsPort attachments;
 
+  /// 테스트용 필기 화면 진입 오버라이드(S18). null 이면 실제
+  /// [ScanAnnotationScreen] push. 인자는 (배경 원본, 기존 스트로크).
+  final Future<AnnotationResult?> Function(
+    PickedImage background,
+    InkDocument? initial,
+  )? annotateOverride;
+
   bool get isDirect => mentorId != null;
 
   @override
@@ -87,6 +98,11 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
 
   /// 첨부 대기 이미지(최대 5장, §6-1). 제출 성공 후엔 '업로드 실패분'만 남는다.
   final List<PickedImage> _images = <PickedImage>[];
+
+  /// 슬롯별 로컬 첨삭 상태(S18) — [_images] 와 같은 인덱스로 함께 증감한다.
+  /// 필기 완료 시 평탄화본이 [_images] 의 슬롯을 '대체'하지만, 화면 생존 동안
+  /// 원본 배경과 스트로크는 여기 보관해 이어 그리기(재편집)를 지원한다(§3).
+  final List<_DraftInk?> _inks = <_DraftInk?>[];
 
   /// 질문 생성 RPC 성공 후의 질문(부분 실패 재시도 기준).
   /// null 아님 = 질문(텍스트)은 이미 등록됨 — 재제출 금지, 첨부 재시도만.
@@ -144,13 +160,70 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
         _snack(invalid);
         return;
       }
-      if (mounted) setState(() => _images.add(img));
+      if (mounted) {
+        setState(() {
+          _images.add(img);
+          _inks.add(null);
+        });
+      }
     } catch (e) {
       _snack(friendlyError(e)); // PDF 폴백 안내(AppError) 포함.
     }
   }
 
-  void _removeImage(int index) => setState(() => _images.removeAt(index));
+  void _removeImage(int index) => setState(() {
+        _images.removeAt(index);
+        _inks.removeAt(index);
+      });
+
+  /// '필기하기'(S18) — 전송 전 로컬 첨삭. 완료된 평탄화본이 해당 첨부를
+  /// 대체한다(업로드 전 단계). 재진입 시 보관해 둔 원본+스트로크로 이어 그린다.
+  Future<void> _annotateImage(int index) async {
+    final _DraftInk? ink = _inks[index];
+    final PickedImage background = ink?.original ?? _images[index];
+    final AnnotationResult? result = await (widget.annotateOverride ??
+        _pushAnnotationScreen)(background, ink?.document);
+    if (result == null || !mounted) return;
+
+    final int dot = background.fileName.lastIndexOf('.');
+    final String base =
+        dot <= 0 ? background.fileName : background.fileName.substring(0, dot);
+    // 평탄화 PNG 도 일반 첨부와 같은 크기 규약(§6-4)을 통과시킨다.
+    final PickedImage flattened = await downscaleIfOversized(PickedImage(
+      bytes: result.flattenedPng,
+      fileName: '$base-ink.png',
+      mimeType: 'image/png',
+    ));
+    final String? invalid = validatePickedImage(flattened);
+    if (invalid != null) {
+      _snack(invalid);
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _images[index] = flattened; // 원본 슬롯 대체(전송 전 로컬 단계).
+      _inks[index] = _DraftInk(original: background, document: result.document);
+    });
+  }
+
+  /// 실제 필기 화면 진입(테스트에서는 [IqCreateScreen.annotateOverride] 로 대체).
+  Future<AnnotationResult?> _pushAnnotationScreen(
+    PickedImage background,
+    InkDocument? initial,
+  ) async {
+    final LocalAnnotationTarget target = LocalAnnotationTarget();
+    final bool? done = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => ScanAnnotationScreen(
+          background: background.bytes,
+          initial: initial,
+          target: target,
+          title: '필기하기',
+        ),
+      ),
+    );
+    return done == true ? target.result : null;
+  }
 
   /// 첨부 업로드 — 실패분은 [_images] 에 남겨 재시도 가능(작업물 유실 금지).
   /// 반환: 전부 성공 여부.
@@ -168,6 +241,10 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
       _images
         ..clear()
         ..addAll(failed);
+      // 제출 후에는 잠금 상태(재시도만)라 첨삭 상태는 더 쓰지 않는다 — 길이만 정합.
+      _inks
+        ..clear()
+        ..addAll(List<_DraftInk?>.filled(failed.length, null));
     });
     return failed.isEmpty;
   }
@@ -404,6 +481,7 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
           locked: _created != null, // 부분 실패 상태: 목록 편집 대신 재시도.
           onAdd: _submitting ? null : _addImage,
           onRemove: _submitting ? null : _removeImage,
+          onAnnotate: _submitting ? null : _annotateImage,
         ),
         if (_created != null) ...<Widget>[
           const SizedBox(height: 10),
@@ -439,7 +517,8 @@ class _IqCreateScreenState extends State<IqCreateScreen> {
   }
 }
 
-/// 첨부 영역 — 썸네일 미리보기 + 개별 삭제 + 추가 버튼(최대 [maxImages]장).
+/// 첨부 영역 — 썸네일 미리보기 + 개별 삭제 + '필기하기'(S18) +
+/// 추가 버튼(최대 [maxImages]장).
 class _AttachArea extends StatelessWidget {
   const _AttachArea({
     required this.images,
@@ -447,6 +526,7 @@ class _AttachArea extends StatelessWidget {
     required this.locked,
     required this.onAdd,
     required this.onRemove,
+    required this.onAnnotate,
   });
 
   final List<PickedImage> images;
@@ -454,6 +534,7 @@ class _AttachArea extends StatelessWidget {
   final bool locked;
   final VoidCallback? onAdd;
   final void Function(int index)? onRemove;
+  final void Function(int index)? onAnnotate;
 
   @override
   Widget build(BuildContext context) {
@@ -511,6 +592,29 @@ class _AttachArea extends StatelessWidget {
                             ),
                           ),
                         ),
+                      if (!locked)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Semantics(
+                            button: true,
+                            label: '필기하기',
+                            child: GestureDetector(
+                              onTap: onAnnotate == null
+                                  ? null
+                                  : () => onAnnotate!(i),
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(3),
+                                child: const Icon(Icons.draw_rounded,
+                                    size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
               ],
@@ -528,6 +632,18 @@ class _AttachArea extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 슬롯별 로컬 첨삭 상태(S18) — 평탄화본이 슬롯을 대체한 뒤에도 이어 그리기가
+/// 가능하도록 '원본 배경'과 '최신 스트로크'를 화면 생존 동안 보관한다.
+class _DraftInk {
+  const _DraftInk({required this.original, required this.document});
+
+  /// 첨삭 전 원본 이미지 — 재편집 배경(평탄화본 위에 다시 그리지 않는다).
+  final PickedImage original;
+
+  /// 최신 정규화(0..1) 스트로크 문서.
+  final InkDocument document;
 }
 
 /// 공개형 금액 placeholder(웹 정본 `OPEN_INDIVIDUAL_QUESTION_PRICE_PLACEHOLDER_CASH`

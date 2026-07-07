@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_service.dart';
+import '../../../core/ink/ink_document.dart';
 import '../../../design/spacing_tokens.dart';
 import '../../../design/tokens/color_tokens.dart';
 import '../../../design/tokens/typography.dart';
@@ -10,7 +13,9 @@ import '../../../design/widgets/primary_button.dart';
 import '../../../design/widgets/secondary_button.dart';
 import '../../../shared/format/formatters.dart';
 import '../../question_room/data/mentor_lookup_repository.dart';
+import '../../scan_annotation/scan_annotation_screen.dart';
 import '../data/individual_question_repository.dart';
+import '../data/iq_annotation_repository.dart';
 import '../data/models/individual_question_models.dart';
 import 'widgets/iq_widgets.dart';
 import '../../../shared/errors/friendly_error.dart';
@@ -42,6 +47,8 @@ class IqDetailScreen extends StatefulWidget {
     required this.questionId,
     this.loaderOverride,
     this.roleOverride,
+    this.annotationsOverride,
+    this.annotateLauncherOverride,
   });
 
   final String questionId;
@@ -52,8 +59,37 @@ class IqDetailScreen extends StatefulWidget {
   /// 테스트용 역할 주입. null 이면 AuthService 의 현재 역할.
   final AppRole? roleOverride;
 
+  /// 테스트용 첨삭 레포 주입(S18). null 이면 Supabase 기본.
+  final IqAnnotationRepository? annotationsOverride;
+
+  /// 테스트용 첨삭 화면 진입 오버라이드(S18) — 실 화면 push 회피.
+  /// true 반환 = 새 첨부 전송됨(목록 새로고침).
+  final Future<bool?> Function(IqAnnotateRequest request)?
+      annotateLauncherOverride;
+
   @override
   State<IqDetailScreen> createState() => _IqDetailScreenState();
+}
+
+/// 첨삭 화면 진입 요청(S18) — 배경 원본 + (있으면) 이어 그릴 스트로크.
+class IqAnnotateRequest {
+  const IqAnnotateRequest({
+    required this.questionId,
+    required this.sourceAttachmentId,
+    required this.background,
+    this.initial,
+  });
+
+  final String questionId;
+
+  /// 첨삭 대상 원본 첨부 id — ink.json 경로의 키.
+  final String sourceAttachmentId;
+
+  /// 배경 원본 바이트.
+  final Uint8List background;
+
+  /// 이어 그리기 선택 시 복원할 기존 스트로크. null 이면 새로 시작.
+  final InkDocument? initial;
 }
 
 class _IqDetailScreenState extends State<IqDetailScreen> {
@@ -103,7 +139,14 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
     );
   }
 
-  void _refresh() => setState(() => _future = _load());
+  // ★ 화살표 클로저(`=> _future = _load()`)는 Future 를 반환해 setState 의
+  //   디버그 assert 에 걸린다(해결완료·환불·첨삭 후 새로고침이 전부 이 경로).
+  void _refresh() {
+    final Future<IqDetailData> next = _load();
+    setState(() {
+      _future = next;
+    });
+  }
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -169,6 +212,87 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
       await _repo.refund(widget.questionId);
       _snack('질문을 취소했어요. 캐시가 지갑으로 돌아왔어요.');
     });
+  }
+
+  /// 멘토 '첨삭하기'(S18) — 원본 바이트 + 기존 ink.json 을 준비해 첨삭 화면으로.
+  /// 같은 원본의 기존 첨삭이 있으면 이어 그리기/새로 시작을 먼저 고른다.
+  /// 완료 시 새 첨부가 하나 더 생긴다(원본 불변·덮어쓰기 금지, §11 기본안).
+  Future<void> _annotateAttachment(IqAttachment attachment) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final IqAnnotationRepository annotations =
+          widget.annotationsOverride ?? IqAnnotationRepository.supabase();
+      final Uint8List background =
+          await annotations.downloadAttachment(attachment.storagePath);
+      InkDocument? initial = await annotations.loadAnnotation(
+        questionId: widget.questionId,
+        sourceAttachmentId: attachment.id,
+      );
+      if (!mounted) return;
+      if (initial != null) {
+        final bool? resume = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext ctx) => AlertDialog(
+            title: const Text('이전 첨삭이 있어요'),
+            content: const Text(
+                '이 이미지에 남겨 둔 첨삭을 불러와 이어 그릴 수 있어요.\n'
+                '완료하면 원본은 그대로 두고 새 첨삭본이 추가돼요.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('새로 시작'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('불러오기'),
+              ),
+            ],
+          ),
+        );
+        if (resume == null || !mounted) return; // 뒤로가기 = 진입 취소.
+        if (!resume) initial = null;
+      }
+      final IqAnnotateRequest request = IqAnnotateRequest(
+        questionId: widget.questionId,
+        sourceAttachmentId: attachment.id,
+        background: background,
+        initial: initial,
+      );
+      final bool? sent = await (widget.annotateLauncherOverride ??
+          _pushAnnotationScreen)(request);
+      if (sent == true && mounted) {
+        _changed = true;
+        _refresh();
+        _snack('첨삭본을 새 첨부로 등록했어요. 원본은 그대로 있어요.');
+      }
+    } catch (e) {
+      _snack('첨삭을 시작하지 못했어요. ${friendlyError(e)}');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// 실제 첨삭 화면 push(테스트에서는 launcher 오버라이드로 대체).
+  /// 기본 펜은 빨강 프리셋(§6-2).
+  Future<bool?> _pushAnnotationScreen(IqAnnotateRequest request) {
+    final IqAnnotationRepository annotations =
+        widget.annotationsOverride ?? IqAnnotationRepository.supabase();
+    return Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => ScanAnnotationScreen(
+          background: request.background,
+          initial: request.initial,
+          title: '첨삭하기',
+          initialPenColor: Colors.red,
+          target: IqAnnotationTarget(
+            repository: annotations,
+            questionId: request.questionId,
+            sourceAttachmentId: request.sourceAttachmentId,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _submitAnswer() async {
@@ -285,7 +409,12 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
         ),
         if (data.attachments.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
-          _AttachmentsCard(attachments: data.attachments, repo: _repo),
+          _AttachmentsCard(
+            attachments: data.attachments,
+            repo: _repo,
+            // 첨삭 진입은 멘토만(§3). 학생의 전송 전 필기는 작성 화면 쪽.
+            onAnnotate: isMentor && !_busy ? _annotateAttachment : null,
+          ),
         ],
         if (data.messages.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
@@ -389,15 +518,26 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
   }
 }
 
-/// 첨부 카드 — 이미지는 서명 URL 로 인라인 표시, 그 외 파일은 이름만(조회 전용).
+/// 첨부 카드 — 이미지는 서명 URL 로 인라인 표시, 그 외 파일은 이름만.
+/// [onAnnotate] 가 있으면(멘토) 이미지 첨부마다 '첨삭하기'를 노출한다(S18).
 class _AttachmentsCard extends StatelessWidget {
-  const _AttachmentsCard({required this.attachments, required this.repo});
+  const _AttachmentsCard({
+    required this.attachments,
+    required this.repo,
+    this.onAnnotate,
+  });
 
   final List<IqAttachment> attachments;
   final IndividualQuestionRepository repo;
+  final void Function(IqAttachment attachment)? onAnnotate;
 
   bool _isImage(IqAttachment a) =>
       (a.mimeType ?? '').toLowerCase().startsWith('image/');
+
+  /// 서명 URL 조회 — async 래핑으로 동기 throw(클라이언트 부재 등)도
+  /// FutureBuilder 의 에러 분기로 흘린다(빌드 크래시 방지).
+  Future<String> _signedUrl(IqAttachment a) async =>
+      repo.signedAttachmentUrl(a.storagePath);
 
   @override
   Widget build(BuildContext context) {
@@ -408,9 +548,9 @@ class _AttachmentsCard extends StatelessWidget {
           const Text('첨부', style: AppTypography.caption),
           for (final IqAttachment a in attachments) ...<Widget>[
             const SizedBox(height: 8),
-            if (_isImage(a))
+            if (_isImage(a)) ...<Widget>[
               FutureBuilder<String>(
-                future: repo.signedAttachmentUrl(a.storagePath),
+                future: _signedUrl(a),
                 builder:
                     (BuildContext context, AsyncSnapshot<String> snap) {
                   if (snap.connectionState != ConnectionState.done) {
@@ -429,6 +569,9 @@ class _AttachmentsCard extends StatelessWidget {
                         builder: (_) => _IqAttachmentViewer(
                           url: snap.data!,
                           title: a.fileName ?? '첨부 이미지',
+                          onAnnotate: onAnnotate == null
+                              ? null
+                              : () => onAnnotate!(a),
                         ),
                       ),
                     ),
@@ -445,8 +588,17 @@ class _AttachmentsCard extends StatelessWidget {
                     ),
                   );
                 },
-              )
-            else
+              ),
+              if (onAnnotate != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => onAnnotate!(a),
+                    icon: const Icon(Icons.draw_rounded, size: 18),
+                    label: const Text('첨삭하기'),
+                  ),
+                ),
+            ] else
               Row(
                 children: <Widget>[
                   const Icon(Icons.attach_file,
@@ -469,15 +621,20 @@ class _AttachmentsCard extends StatelessWidget {
   }
 }
 
-/// 첨부 전체화면 뷰어(줌·팬) — S17 조회 전용.
-/// ★ 질문방 AttachmentViewerScreen 은 roomId/threadId·'주석 달기'(S15)에
-///   결합돼 있어 재사용하지 않는다. 멘토 '첨삭하기' 진입은 S18 에서
-///   AnnotationTarget 포트와 함께 이 화면을 일반화해 연결한다.
+/// 첨부 전체화면 뷰어(줌·팬). [onAnnotate] 가 있으면(멘토, S18) '첨삭하기'를
+/// 노출한다 — 뷰어를 닫고 상세 화면의 첨삭 흐름으로 넘긴다.
+/// ★ 질문방 AttachmentViewerScreen 은 roomId/threadId 에 결합돼 있어
+///   재사용하지 않는다(전송은 AnnotationTarget 포트가 담당).
 class _IqAttachmentViewer extends StatelessWidget {
-  const _IqAttachmentViewer({required this.url, required this.title});
+  const _IqAttachmentViewer({
+    required this.url,
+    required this.title,
+    this.onAnnotate,
+  });
 
   final String url;
   final String title;
+  final VoidCallback? onAnnotate;
 
   @override
   Widget build(BuildContext context) {
@@ -487,6 +644,18 @@ class _IqAttachmentViewer extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(title, overflow: TextOverflow.ellipsis),
+        actions: <Widget>[
+          if (onAnnotate != null)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop(); // 뷰어를 닫고 첨삭 흐름으로.
+                onAnnotate!();
+              },
+              icon: const Icon(Icons.draw_rounded, color: Colors.white),
+              label: const Text('첨삭하기',
+                  style: TextStyle(color: Colors.white)),
+            ),
+        ],
       ),
       body: Center(
         child: InteractiveViewer(

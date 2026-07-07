@@ -13,9 +13,15 @@ void main() {
       expect(expired.statusLabel, '구독 만료');
     });
 
-    test('planLabel: 요금제명 미확정(planLabels 비어있음) → null (날조 없음)', () {
+    test('planLabel: 확정 라벨(2026-07) — tier 코드를 한글 라벨로 매핑', () {
       const SubscriptionCardInfo c = SubscriptionCardInfo(
           mentorName: '멘토', isActive: true, planTier: 'standard');
+      expect(c.planLabel, '스탠다드');
+    });
+
+    test('planLabel: 미지의 tier 코드 → null (영문 코드 날조·노출 없음)', () {
+      const SubscriptionCardInfo c = SubscriptionCardInfo(
+          mentorName: '멘토', isActive: true, planTier: 'unknown_tier');
       expect(c.planLabel, isNull);
     });
   });

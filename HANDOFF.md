@@ -59,6 +59,7 @@
 | **S17** 개별질문 첨부 | (feat/s17-iq-attachments) | 기존 웹 스키마 재사용(`individual_question_attachments`·`individual-question-attachments` 버킷·당사자 RLS). 행 등록 RPC `add_individual_question_attachment` **초안만**(supabase/migrations/, 적용은 사람 승인 대기 → **2026-07-07 운영 적용·검증 완료**). `iq_attachments_repository`(업로드+RPC 한 메서드) + 작성 화면 첨부(최대 5장·부분 실패 재시도) + 상세 탭→뷰어. `downscaleIfOversized` 를 package:image JPEG(품질85) 재인코딩으로 교체(투명 PNG 만 PNG 유지) |
 | **S18** 개별질문 첨삭 | (feat/s18-iq-annotation) | **앱 요구 DB 변경 0**(단, ink.json upsert 용 스토리지 UPDATE 정책 1건은 실서버 검토에서 발견돼 운영 적용 — 아래 저장 규약 표). `AnnotationTarget` 포트로 `ScanAnnotationScreen` 전송 대상 일반화(질문방 기본/IQ/로컬 캡처 — 옵션 추가만, 기존 호출부 무변경). 학생: 작성 화면 첨부 썸네일 '필기하기'(전송 전 로컬 첨삭 — 평탄화본이 첨부 대체, 원본+스트로크는 화면 생존 동안 보관해 이어 그리기). 멘토: 상세 '첨삭하기'(빨강 프리셋) — 완료 시 ① ink.json 을 첨부 버킷 `{questionId}/annotations/{원본첨부id}.json` 에 upsert(재편집용, **테이블 행 미등록**) ② 평탄화 PNG 를 새 첨부로 등록(원본 불변·덮어쓰기 금지). 같은 원본 재첨삭 시 이어 그리기 제안. 부수 수정: 상세 `_refresh` 의 setState-Future 버그(해결완료·환불 후 새로고침도 같은 경로) |
 | **S19** PDF 스캔 | (feat/s19-pdf-scan) | **`pdfx ^2.9.2` 도입**(신규 의존성 — 3.44.4·기존 deps 충돌 없음, Android/iOS 네이티브 렌더). `lib/core/scan/pdf_rasterizer.dart`(포트+구현, 본렌더 장변 2560px — downscale 규약과 수렴) + `widgets/pdf_page_select_screen.dart`(지연 썸네일 그리드·다중 최대 5·선택 순번 배지) + `widgets/scan_pick_expander.dart`(소스 계층 공통: 이미지 1장/PDF 는 그리드, 1페이지 PDF 는 그리드 생략, 남은 슬롯 상한). 채팅·멘토 답변·IQ 작성 **자동 적용(화면별 분기 없음)**. S16 의 "PDF 곧 지원" 거부 → 실지원 전환('미지원 확장자' 일반 방어만 유지). 암호화·손상·0페이지 폴백 문구. **실기기 QA 실행 시트 신설(docs/MANUAL_QA_RUN_2026-07.md)** — 필기 시리즈(S13~S19) 마감 |
+| **S20** iOS 빌드 준비 | (claude/ios-build-session-expansion) | **Dart 코드 변경 0 — iOS 네이티브 설정만.** ① **P0 수정**: `Info.plist` 에 `LSApplicationQueriesSchemes`(https·http) — `web_bridge.dart:25` 의 `canLaunchUrl` 이 iOS 에서 무조건 false 였던 버그(약관·개인정보·지원·탈퇴 등 웹 링크 전 경로 침묵 실패) ② `ios/Podfile` 신설(`platform :ios, '13.0'` — 배포 타깃·supabase 요건 일치) ③ `PrivacyInfo.xcprivacy` 신설 + pbxproj Resources 배선(Apple 필수 매니페스트) ④ 표시명 '쌤버십'(Android 라벨 일치) ⑤ `ITSAppUsesNonExemptEncryption=false`. **빌드 실행·서명·제출 절차와 Apple 심사 리스크는 docs/IOS_BUILD_PLAN.md**(Play 계획서의 iOS 대응) — 번들 ID 확정(업로드 후 불변)은 오너 결정 대기 |
 
 ### 모듈 지도
 ```
@@ -170,7 +171,8 @@ flutter build appbundle
   `flutter create . --org com.ssambership --project-name ssambership_app --platforms=android,ios` (기존 `lib/`·`pubspec.yaml` 보존, 누락 폴더만 생성). 패키지명 `com.ssambership.app` 권장.
 - **.env 원격 전환**(출시): 로컬 → 원격 production 값 교체(README 참조)
   `SUPABASE_URL=https://<project-ref>.supabase.co` / `SUPABASE_ANON_KEY=<remote-anon-key>`. 원격이면 플랫폼 분기 없이 그대로 사용.
-- **Android**: 릴리스 빌드·서명 키·Play Store 등록. **iOS**: 번들ID·서명·App Store 등록.
+- **Android**: 릴리스 빌드·서명 키·Play Store 등록(게이트: docs/PLAY_STORE_REVIEW_PLAN.md).
+- **iOS**: 설정 정합은 S20 에서 완료(Podfile·프라이버시 매니페스트·plist 3종 — 위 S20 행). 남은 것 = macOS 실빌드 검증 + 번들 ID 확정(현재 `com.ssambership.ssambershipApp`, **첫 업로드 후 변경 불가**) + Apple Developer 가입·서명·App Store Connect 등록 — **절차·심사 리스크 전부 docs/IOS_BUILD_PLAN.md**. ⚠️ iOS 빌드에선 `SUBS_MANAGE_LINK_ENABLED` 주입 금지(Apple 3.1.1 — Play 보다 엄격).
 
 ---
 
@@ -230,4 +232,4 @@ test/         위젯·로직 테스트(250개, DB 비의존). 폴더: data/ widg
 3. `supabase_realtime` publication에 질문 테이블 포함 → 실시간 켜짐(없어도 폴백 동작).
 4. Firebase 도입 + `device_tokens` DDL(`_tableExists=true`) + `send-push` 배포(`_deployed=true`) + `PushTrigger` 연결 → 푸시 켜짐.
 5. `color_tokens.dart` hex 확정.
-6. `.env` 원격 전환 + Android/iOS 빌드·서명·스토어 등록.
+6. `.env` 원격 전환 + Android/iOS 빌드·서명·스토어 등록 — iOS 는 설정 정합 완료(S20), 절차는 docs/IOS_BUILD_PLAN.md.

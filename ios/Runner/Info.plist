@@ -10,10 +10,21 @@
 	<!-- image_picker 촬영(S16): 카메라 사용 사유. 없으면 촬영 진입 시 크래시. -->
 	<key>NSCameraUsageDescription</key>
 	<string>문제를 촬영해 질문에 첨부하기 위해 카메라를 사용해요.</string>
+	<!-- web_bridge: iOS 는 canLaunchUrl 조회 대상 스킴을 여기 선언해야 true 가 나온다.
+	     없으면 약관·개인정보·지원·탈퇴 등 웹 링크 전부가 조용히 실패(P0). -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+	</array>
+	<!-- 표준 HTTPS 암호화만 사용(면제 대상) — 업로드마다 수출규정 문답 생략. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- 홈 화면 표시명 — Android 라벨('쌤버십')·스토어 등록명과 일치. -->
 	<key>CFBundleDisplayName</key>
-	<string>Ssambership App</string>
+	<string>쌤버십</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

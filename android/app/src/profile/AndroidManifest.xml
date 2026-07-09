@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 개발용 로컬 Supabase(http) 통신 허용 — release 에는 병합되지 않음. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

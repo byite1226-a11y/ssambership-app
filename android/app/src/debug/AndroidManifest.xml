@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 개발용 로컬 Supabase(http://10.0.2.2 / LAN IP) 통신 허용.
+         debug 소스셋에만 존재하므로 release 빌드에는 병합되지 않는다 —
+         출시(원격 https)는 cleartext 차단 상태 유지. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

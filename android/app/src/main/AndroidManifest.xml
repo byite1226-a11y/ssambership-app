@@ -44,5 +44,12 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- web_bridge(url_launcher): Android 11+ package visibility.
+             canLaunchUrl() 이 https 브라우저를 조회하려면 아래 선언이 필수 —
+             없으면 항상 false 를 반환해 결제/구독 웹 열기가 실패한다. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>

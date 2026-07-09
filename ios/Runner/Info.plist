@@ -4,6 +4,14 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- 개발용 로컬 Supabase(http://127.0.0.1 / LAN IP) 통신 허용.
+	     NSAllowsLocalNetworking 은 '로컬 네트워크'에만 cleartext 를 허용하므로
+	     출시(원격 https://*.supabase.co)에는 영향 없음 — ATS 전체 해제 아님. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<!-- image_picker(질문 첨부): 사진 선택 시 필요. 없으면 iOS 런타임 크래시. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>질문에 첨부할 이미지를 선택하기 위해 사진 보관함 접근이 필요해요.</string>

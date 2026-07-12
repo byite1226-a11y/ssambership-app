@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/supabase/supabase_client.dart';
 import '../../../../design/tokens/color_tokens.dart';
@@ -123,6 +124,24 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
     } catch (_) {
       return const <QuestionAttachment>[];
     }
+  }
+
+  /// 파일(비이미지) 첨부 탭 → 단기 서명 URL 발급 후 외부 앱으로 열기(첨부 v2 §2-6).
+  Future<void> _openFile(QuestionAttachment a) async {
+    try {
+      final String url = await _resolver.signedUrl(a.storagePath);
+      final bool ok = await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication);
+      if (!ok) _showError('파일을 열 수 없어요. 잠시 후 다시 시도해 주세요.');
+    } catch (e) {
+      _showError('파일을 여는 데 실패했어요. ${friendlyError(e)}');
+    }
+  }
+
+  /// 첨부 행 실시간 insert 수신 → 첨부만 재조회(상대방 첨부 즉시 반영, 첨부 v2 결정 ③).
+  Future<void> _reloadAttachments() async {
+    final List<QuestionAttachment> atts = await _loadAttachments();
+    if (mounted) setState(() => _attachments = atts);
   }
 
   Future<void> _refresh() async {
@@ -330,6 +349,8 @@ class _MentorAnswerScreenState extends State<MentorAnswerScreen> {
       attachments: _attachments,
       resolver: _resolver,
       onOpenImage: _openImage,
+      onOpenFile: _openFile,
+      onAttachmentInsert: _reloadAttachments,
     );
   }
 }

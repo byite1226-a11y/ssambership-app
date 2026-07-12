@@ -120,11 +120,14 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
           fileOptions: FileOptions(contentType: image.mimeType, upsert: false),
         );
 
+    // 첨부 v2 계약 §2-5: 발신자 기록(정렬·좌우 배치용). RLS 가 본인 uid 만 허용.
+    final String? authorId = _client.auth.currentUser?.id;
     final Map<String, dynamic> row = await _client
         .from('question_attachments')
         .insert(<String, dynamic>{
           'thread_id': threadId,
           if (messageId != null) 'message_id': messageId,
+          if (authorId != null) 'author_id': authorId,
           'storage_path': objectPath,
           'file_name': image.fileName,
           'mime_type': image.mimeType,

@@ -14,6 +14,7 @@ class _FakeRealtime implements ThreadRealtimePort {
   void start({
     required void Function(QuestionMessage) onMessageInsert,
     void Function()? onThreadUpdate,
+    void Function()? onAttachmentInsert,
   }) {
     _onInsert = onMessageInsert;
   }

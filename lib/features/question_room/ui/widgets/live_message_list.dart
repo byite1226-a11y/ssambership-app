@@ -8,6 +8,7 @@ import '../../data/models/question_message.dart';
 import '../../data/thread_messages_controller.dart';
 import '../../data/thread_realtime.dart';
 import 'message_bubble.dart';
+import 'message_file_attachment.dart';
 import 'message_image_attachment.dart';
 
 /// 실시간 메시지 목록. [controller] 를 렌더하고 [realtime] 구독을 시작/정리한다.
@@ -26,6 +27,8 @@ class LiveMessageList extends StatefulWidget {
     this.attachments = const <QuestionAttachment>[],
     this.resolver,
     this.onOpenImage,
+    this.onOpenFile,
+    this.onAttachmentInsert,
   });
 
   final ThreadMessagesController controller;
@@ -45,6 +48,13 @@ class LiveMessageList extends StatefulWidget {
   /// 이미지 첨부 탭 시(전체화면 뷰어 진입 등).
   final void Function(QuestionAttachment)? onOpenImage;
 
+  /// 파일(비이미지) 첨부 탭 시(서명 URL 열기 등). null 이면 칩 탭 무동작.
+  final void Function(QuestionAttachment)? onOpenFile;
+
+  /// 첨부 행 insert 실시간 수신 시(부모가 첨부 재조회). publication 에
+  /// question_attachments 가 포함돼 있을 때만 도착한다(웹 117 마이그레이션).
+  final VoidCallback? onAttachmentInsert;
+
   @override
   State<LiveMessageList> createState() => _LiveMessageListState();
 }
@@ -59,6 +69,7 @@ class _LiveMessageListState extends State<LiveMessageList> {
     widget.realtime.start(
       onMessageInsert: (QuestionMessage m) => widget.controller.add(m),
       onThreadUpdate: widget.onThreadUpdate,
+      onAttachmentInsert: widget.onAttachmentInsert,
     );
     _jumpToEndSoon();
   }
@@ -103,24 +114,23 @@ class _LiveMessageListState extends State<LiveMessageList> {
     );
   }
 
-  /// 메시지 + 이미지 첨부를 시간순으로 병합한다.
-  /// - 메시지에 연결된(message_id 일치) 이미지 첨부는 그 말풍선 안에 썸네일로.
-  /// - 연결이 없는(예: 이미지-only 전송·주석 평탄화) 이미지 첨부는 독립 행으로.
+  /// 메시지 + 첨부(이미지·파일)를 시간순으로 병합한다(첨부 v2 계약 §2-4·§2-6).
+  /// - 메시지에 연결된(message_id 일치) 첨부는 그 말풍선 안에(이미지=썸네일, 그 외=파일 칩).
+  /// - 연결이 없는 standalone 첨부는 독립 행 — author_id 기준 좌/우 정렬,
+  ///   미기록(null, 레거시)은 중앙 중립 카드.
   List<_Row> _buildRows() {
     final List<QuestionMessage> messages = widget.controller.items;
     final AttachmentUrlResolver? resolver = widget.resolver;
 
-    final List<QuestionAttachment> images = resolver == null
+    final List<QuestionAttachment> atts = resolver == null
         ? const <QuestionAttachment>[]
-        : widget.attachments
-            .where((QuestionAttachment a) => isImageAttachment(a.mimeType))
-            .toList();
+        : widget.attachments;
     final Set<String> msgIds =
         messages.map((QuestionMessage m) => m.id).toSet();
     final Map<String, List<QuestionAttachment>> linked =
         <String, List<QuestionAttachment>>{};
     final List<QuestionAttachment> standalone = <QuestionAttachment>[];
-    for (final QuestionAttachment a in images) {
+    for (final QuestionAttachment a in atts) {
       final String? mid = a.messageId;
       if (mid != null && msgIds.contains(mid)) {
         linked.putIfAbsent(mid, () => <QuestionAttachment>[]).add(a);
@@ -133,37 +143,54 @@ class _LiveMessageListState extends State<LiveMessageList> {
     for (final QuestionMessage m in messages) {
       final bool mine =
           widget.currentUid != null && m.authorId == widget.currentUid;
-      final List<Widget> thumbs = <Widget>[
+      final List<Widget> chips = <Widget>[
         for (final QuestionAttachment a in linked[m.id] ?? const <QuestionAttachment>[])
-          MessageImageAttachment(
-            attachment: a,
-            resolver: resolver!,
-            onOpen: () => widget.onOpenImage?.call(a),
-          ),
+          _attachmentWidget(a, resolver!),
       ];
       rows.add(_Row(
         m.createdAt,
-        MessageBubble(message: m, mine: mine, attachments: thumbs),
+        MessageBubble(message: m, mine: mine, attachments: chips),
       ));
     }
     for (final QuestionAttachment a in standalone) {
-      rows.add(_Row(a.createdAt, _standaloneImage(a, resolver!)));
+      rows.add(_Row(a.createdAt, _standaloneAttachment(a, resolver!)));
     }
     rows.sort((_Row x, _Row y) => x.time.compareTo(y.time));
     return rows;
   }
 
-  Widget _standaloneImage(QuestionAttachment a, AttachmentUrlResolver resolver) {
+  /// 첨부 1건 위젯(계약 §2-6): image/* → 썸네일+뷰어, 그 외 → 파일 칩(탭=열기).
+  Widget _attachmentWidget(QuestionAttachment a, AttachmentUrlResolver resolver,
+      {double imageSize = 180}) {
+    if (isImageAttachment(a.mimeType)) {
+      return MessageImageAttachment(
+        attachment: a,
+        resolver: resolver,
+        onOpen: () => widget.onOpenImage?.call(a),
+        size: imageSize,
+      );
+    }
+    return MessageFileAttachment(
+      attachment: a,
+      onOpen: () => widget.onOpenFile?.call(a),
+    );
+  }
+
+  /// standalone 첨부 행(계약 §2-4·§2-5): author_id == 내 uid → 우측, 상대 → 좌측,
+  /// 미기록(null, 레거시) → 중앙 중립 카드.
+  Widget _standaloneAttachment(
+      QuestionAttachment a, AttachmentUrlResolver resolver) {
+    final String? author = a.authorId;
+    final Alignment alignment = author == null
+        ? Alignment.center
+        : (widget.currentUid != null && author == widget.currentUid)
+            ? Alignment.centerRight
+            : Alignment.centerLeft;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Align(
-        alignment: Alignment.center,
-        child: MessageImageAttachment(
-          attachment: a,
-          resolver: resolver,
-          onOpen: () => widget.onOpenImage?.call(a),
-          size: 220,
-        ),
+        alignment: alignment,
+        child: _attachmentWidget(a, resolver, imageSize: 220),
       ),
     );
   }

@@ -15,28 +15,30 @@ void main() {
 
     setUp(() => opened = <Uri>[]);
 
-    test('openSubscribe: subscribePath + mentor 쿼리 반영', () async {
-      final WebOpenResult r = await make().openSubscribe(mentorId: 'm-123');
+    test('openBillingManage: billingManagePath + src 쿼리 반영', () async {
+      final WebOpenResult r = await make().openBillingManage();
       expect(r, WebOpenResult.opened);
       expect(opened.single.origin, 'https://web.test');
-      expect(opened.single.path, WebBridgeConfig.subscribePath);
-      expect(opened.single.queryParameters['mentor'], 'm-123');
+      expect(opened.single.path, WebBridgeConfig.billingManagePath);
       expect(opened.single.queryParameters['src'], 'app');
     });
 
-    test('openSubscribe: mentorId 없으면 mentor 쿼리 없음', () async {
-      await make().openSubscribe();
-      expect(opened.single.queryParameters.containsKey('mentor'), false);
+    test('buildUri: 추가 쿼리는 기존 쿼리와 병합된다', () {
+      final Uri? uri = make().buildUri(
+        WebBridgeConfig.billingManagePath,
+        <String, String>{'src': 'app', 'from': 'mypage'},
+      );
+      expect(uri, isNotNull);
+      expect(uri!.queryParameters['src'], 'app');
+      expect(uri.queryParameters['from'], 'mypage');
     });
 
-    test('충전/결제관리/정산/프로필 각 경로로 조립', () async {
+    test('결제관리/정산/프로필 각 경로로 조립', () async {
       final WebBridge b = make();
-      await b.openRecharge();
       await b.openBillingManage();
       await b.openPayoutManage();
       await b.openProfileEdit();
       expect(opened.map((Uri e) => e.path).toList(), <String>[
-        WebBridgeConfig.rechargePath,
         WebBridgeConfig.billingManagePath,
         WebBridgeConfig.payoutManagePath,
         WebBridgeConfig.profileEditPath,
@@ -54,7 +56,7 @@ void main() {
       final WebOpenResult r = await WebBridge(
         baseUrl: 'https://web.test',
         launcher: (Uri u) async => false,
-      ).openSubscribe();
+      ).openBillingManage();
       expect(r, WebOpenResult.failed);
     });
   });
@@ -69,10 +71,10 @@ void main() {
           return true;
         },
       );
-      expect(await b.openSubscribe(mentorId: 'x'), WebOpenResult.notConfigured);
-      expect(await b.openRecharge(), WebOpenResult.notConfigured);
+      expect(await b.openBillingManage(), WebOpenResult.notConfigured);
+      expect(await b.openPayoutManage(), WebOpenResult.notConfigured);
       expect(called, false); // 가짜 URL 을 만들지도, 열지도 않는다.
-      expect(b.buildUri(WebBridgeConfig.subscribePath), isNull);
+      expect(b.buildUri(WebBridgeConfig.billingManagePath), isNull);
     });
 
     test('기본 WebBridge() 는 WebBridgeConfig 설정값을 그대로 반영', () {
@@ -81,10 +83,10 @@ void main() {
       // 빌드에서는 '미설정 반영'만 검증한다(주입 겸용 — 어느 모드든 녹색).
       expect(WebBridge().isConfigured, WebBridgeConfig.isConfigured);
       if (!WebBridgeConfig.isConfigured) return; // 빈 값 주입 모드: 여기까지.
-      final Uri? uri = WebBridge().buildUri(WebBridgeConfig.subscribePath);
+      final Uri? uri = WebBridge().buildUri(WebBridgeConfig.billingManagePath);
       expect(uri, isNotNull);
       expect(uri!.origin, WebBridgeConfig.baseUrl);
-      expect(uri.path, WebBridgeConfig.subscribePath);
+      expect(uri.path, WebBridgeConfig.billingManagePath);
     });
   });
 }

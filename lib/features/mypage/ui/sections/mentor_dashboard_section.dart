@@ -6,7 +6,9 @@ import '../../../../design/widgets/secondary_button.dart';
 import '../../data/mypage_models.dart';
 import '../../format/cash_format.dart';
 import '../widgets/mypage_section.dart';
+import '../../../../core/commerce/commerce_policy.dart';
 import '../../../../core/web_bridge/web_bridge_actions.dart';
+import '../../../../shared/widgets/commerce_notice_card.dart';
 
 /// 멘토 대시보드 — 답변·정산 요약(조회만). 정산 출금/관리는 웹.
 /// ★ IQ(개별질문)·CR(의뢰결제)는 앱 범위 밖 → 표시하지 않는다. 구독·질문방 중심.
@@ -70,12 +72,17 @@ class MentorDashboardSection extends StatelessWidget {
             onPressed: onGoToQuestions,
           ),
           const SizedBox(height: 8),
-          SecondaryButton(
-            label: '정산 관리 (웹)',
-            icon: Icons.open_in_new_rounded,
-            neutral: true,
-            onPressed: () => openPayoutManageWeb(context),
-          ),
+          // P0-3 잔존 처리: 정산 관리 링크도 스토어 빌드에서 숨기고 안내로 대체
+          // (kPayoutManageLinkEnabled — dev 는 dart-define 주입으로 on).
+          if (kPayoutManageLinkEnabled)
+            SecondaryButton(
+              label: '정산 관리 (웹)',
+              icon: Icons.open_in_new_rounded,
+              neutral: true,
+              onPressed: () => openPayoutManageWeb(context),
+            )
+          else
+            const CommerceNoticeCard(text: kPayoutManageNoticeText),
         ],
       ),
     );

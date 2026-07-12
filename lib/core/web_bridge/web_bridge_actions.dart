@@ -2,27 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'web_bridge.dart';
 
-/// 화면용 웹 브릿지 동선 헬퍼 — 모든 결제/구독/충전/정산 버튼이 여기만 호출한다(통일).
+/// 화면용 웹 브릿지 동선 헬퍼 — 모든 관리/정보성 웹 링크 버튼이 여기만 호출한다(통일).
 ///
 /// ★ Commerce-Zero: 앱은 결제하지 않는다. 웹을 열거나(설정 완료 시) 안내만 한다(미확정 시).
 ///   [bridge] 는 테스트 주입용(기본: 실제 WebBridge — WebBridgeConfig 사용).
-
-Future<void> openSubscribeWeb(
-  BuildContext context, {
-  String? mentorId,
-  WebBridge? bridge,
-}) async {
-  final WebOpenResult r =
-      await (bridge ?? WebBridge()).openSubscribe(mentorId: mentorId);
-  if (r == WebOpenResult.opened || !context.mounted) return;
-  _showNotice(context, r, '구독은 웹에서 진행돼요. (준비 중)');
-}
-
-Future<void> openRechargeWeb(BuildContext context, {WebBridge? bridge}) async {
-  final WebOpenResult r = await (bridge ?? WebBridge()).openRecharge();
-  if (r == WebOpenResult.opened || !context.mounted) return;
-  _showNotice(context, r, '충전은 웹에서 진행돼요. (준비 중)');
-}
+/// ★ 구매 유도 헬퍼(구독 신청·캐시 충전)는 두지 않는다 — P0-3 死배선 정리(2026-07-12).
+///   실수 재배선 방지를 위해 삭제됐으므로 되살리려면 정책 판단부터 확정할 것.
 
 Future<void> openBillingManageWeb(BuildContext context, {WebBridge? bridge}) async {
   final WebOpenResult r = await (bridge ?? WebBridge()).openBillingManage();

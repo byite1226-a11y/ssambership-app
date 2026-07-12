@@ -9,6 +9,7 @@ class QuestionAttachment {
     required this.id,
     required this.threadId,
     this.messageId,
+    this.authorId,
     required this.storagePath,
     this.fileName,
     this.mimeType,
@@ -18,6 +19,10 @@ class QuestionAttachment {
   final String id;
   final String threadId;
   final String? messageId;
+
+  /// 발신자(첨부 v2, 웹 117 마이그레이션). null = author 미기록 레거시
+  /// → 화면은 중립(중앙) 카드로 렌더한다.
+  final String? authorId;
 
   /// Supabase Storage 경로(화면에 그대로 노출 금지 — S6에서 서명 URL 등으로 처리).
   final String storagePath;
@@ -30,6 +35,7 @@ class QuestionAttachment {
       id: map['id'] as String,
       threadId: map['thread_id'] as String,
       messageId: map['message_id'] as String?,
+      authorId: map['author_id'] as String?,
       storagePath: (map['storage_path'] as String?) ?? '',
       fileName: map['file_name'] as String?,
       mimeType: map['mime_type'] as String?,
@@ -41,6 +47,7 @@ class QuestionAttachment {
         'id': id,
         'thread_id': threadId,
         'message_id': messageId,
+        'author_id': authorId,
         'storage_path': storagePath,
         'file_name': fileName,
         'mime_type': mimeType,

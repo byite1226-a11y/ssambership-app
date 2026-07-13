@@ -18,6 +18,11 @@
 	<!-- image_picker 촬영(S16): 카메라 사용 사유. 없으면 촬영 진입 시 크래시. -->
 	<key>NSCameraUsageDescription</key>
 	<string>문제를 촬영해 질문에 첨부하기 위해 카메라를 사용해요.</string>
+	<!-- 수출 규정(암호화) 준수: 앱은 표준 HTTPS(Supabase)만 사용 = 면제 대상 암호화.
+	     이 키가 없으면 App Store Connect 업로드마다 수출 규정 질문이 뜨고 TestFlight 배포가 지연된다.
+	     비표준 암호화를 추가하면 false 를 재검토할 것. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

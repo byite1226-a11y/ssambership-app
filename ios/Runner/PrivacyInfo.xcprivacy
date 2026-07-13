@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  앱 수준 개인정보 매니페스트 (Apple 요구, 2024~).
+  Flutter 엔진 및 1st-party 플러그인(image_picker/url_launcher/shared_preferences/
+  path_provider)은 각자 .xcprivacy 를 동봉하므로 여기서는 앱 바이너리 관점만 선언한다.
+
+  - NSPrivacyTracking: 이 앱은 광고/추적 없음(Commerce-Zero) → false.
+  - NSPrivacyAccessedAPITypes: '필수 사유 API' 선언. 아래 두 가지는 실제 사용:
+      * UserDefaults(CA92.1): supabase_flutter 가 세션을 로컬에 보존.
+      * FileTimestamp(C617.1): image_picker/file_picker/pdfx/scribble 의 임시·내보내기 파일 처리.
+    업로드 후 Apple 이 다른 API(예: DiskSpace E174.1, SystemBootTime 35F9.1)에 대해
+    ITMS-91053 메일을 보내면, 해당 카테고리를 같은 형식으로 추가한다.
+  - NSPrivacyCollectedDataTypes: 수집 데이터 유형은 '앱 개인정보(App Privacy)' 설문과
+    반드시 일치해야 하는 컴플라이언스 선언이므로, 운영자가 App Store Connect 값에 맞춰 채운다.
+    (이 앱은 Supabase 계정=이메일/사용자ID, 질문·첨부=사용자 콘텐츠를 다룬다. 추적 목적 아님.)
+    Apple 의 자동 검사는 이 배열을 강제하지 않으며, App Store Connect 설문이 실제 기준이다.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

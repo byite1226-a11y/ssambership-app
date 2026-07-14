@@ -18,9 +18,9 @@ class WebBridgeConfig {
     defaultValue: 'https://ssambership-web.vercel.app',
   );
 
-  /// 결제/구독/충전/정산/프로필 웹 경로. 실제 Next.js 라우트와 대조해 확정(2026-07 실측).
-  static const String subscribePath = '/subscribe'; // app/(student)/subscribe
-  static const String rechargePath = '/wallet/charge'; // app/(student)/wallet/charge
+  /// 결제·구독 관리/정산/프로필 웹 경로. 실제 Next.js 라우트와 대조해 확정(2026-07 실측).
+  /// ★ 구독 구매(/subscribe)·충전(/wallet/charge) 경로는 Commerce-Zero 원칙상
+  ///   앱에서 열지 않으므로 상수로 두지 않는다(구매 유도 진입점 제거).
   static const String billingManagePath =
       '/subscriptions'; // app/(student)/subscriptions (구독 취소·관리)
   static const String payoutManagePath = '/mentor/payouts'; // app/(mentor)/mentor/payouts

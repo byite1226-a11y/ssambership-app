@@ -19,13 +19,15 @@
 |----|------|:---:|-----------|:---:|
 | P0-1 | 법적 고지(약관·개인정보) "초안" 해소 | 웹·사람 | Play/Apple 공통 | [ ] |
 | P0-2 | 미성년자 보호·연령등급 처리 | 웹·앱·콘솔 | Kids/Families | [ ] |
-| P0-3 | iOS UGC(1.2): 댓글 신고 + 게시 전 EULA 게이트 | 앱 | Apple 1.2 / Play UGC | [ ] |
+| P0-3 | iOS UGC(1.2): 댓글 신고 + 게시 전 EULA 게이트 | 앱 | Apple 1.2 / Play UGC | [x] 배치1 |
 | P0-4 | 심사용 데모계정 + 심사노트(멀티플랫폼·삭제경로) | 사람·콘솔 | Apple 2.1 / Play 접근 | [ ] |
 | P1-5 | Android 릴리즈 서명 최종 확인 | 사람 | Play 무결성 | [ ] |
 | P1-6 | Data Safety 양식 + 계정삭제 URL 등록 | 콘솔 | Play Data Safety | [ ] |
-| P1-7 | 번들ID 단일 확정 + iOS 표시명 통일 | 앱·사람 | 메타데이터 정합 | [ ] |
-| P1-8 | 스토어 빌드 플래그 무주입 재확인(가드) | 앱 | Commerce-Zero 유지 | [ ] |
-| P1-9 | 죽은 커머스 코드 삭제 | 앱 | 재위반 방지 | [ ] |
+| P1-7 | 번들ID 단일 확정 + iOS 표시명 통일 | 앱·사람 | 메타데이터 정합 | [~] 표시명 완료·번들ID 사람 확정 대기 |
+| P1-8 | 스토어 빌드 플래그 무주입 재확인(가드) | 앱 | Commerce-Zero 유지 | [x] 가드 기존존재 |
+| P1-9 | 죽은 커머스 코드 삭제 | 앱 | 재위반 방지 | [x] 배치1 |
+
+> **배치 1(앱 코드) 구현 완료 — 2026-07-14.** P0-3·P1-9·P1-7(표시명)·P1-8(가드 확인). 상세는 문서 하단 "배치 1 구현 기록" 참조.
 
 ---
 
@@ -202,6 +204,30 @@
 - [ ] 무주입 빌드 = Commerce-Zero 테스트 통과 (P1-8)
 - [ ] 죽은 커머스 코드 제거 (P1-9)
 - [ ] (기존 유지) INTERNET 단일권한·추적 SDK 0·개발도구 릴리즈 차단·시크릿 미커밋·targetSDK 36
+
+---
+
+# 배치 1 구현 기록 (앱 코드 · 2026-07-14)
+
+## P0-3 · iOS UGC — 댓글 신고 + 게시 전 정책 동의 게이트
+- 신규 `lib/features/community/ui/widgets/content_policy_gate.dart` — 세션 스코프 동의 게이트(의존성 추가 없음). 게시글·댓글 공통, 최초 게시 동선에서 1회 동의.
+- `comment_tile.dart` — `onReport` 콜백 추가, ⋯ 메뉴에 '신고' 노출('차단'과 병존).
+- `board_detail_screen.dart`·`shortform_detail_screen.dart` — `_reportComment()` 추가(`target_type='community_comment'`, 웹 관리자 검수와 정합), 댓글에 `onReport` 배선, `_send()`에 동의 게이트 삽입.
+- `board_write_screen.dart` — `_submit()`에 동의 게이트 삽입.
+- 신규 테스트 `test/community/content_policy_gate_test.dart` — 동의 게이트 노출/저장/취소 + 댓글 '신고' 메뉴 검증.
+
+## P1-9 · 죽은 커머스 코드 삭제
+- `web_bridge.dart`에서 `openSubscribe`/`openRecharge` 제거, `web_bridge_actions.dart`에서 `openSubscribeWeb`/`openRechargeWeb` 제거, `web_bridge_config.dart`에서 `subscribePath`/`rechargePath` 제거.
+- 관련 테스트(`test/web_bridge/*`)를 존속 메서드(`openBillingManage` 등)로 재작성.
+
+## P1-7 · iOS 표시명 통일(앱 부분)
+- `ios/Runner/Info.plist` `CFBundleDisplayName` "Ssambership App" → "쌤버십"(런처명·스토어명 일치).
+- **미결(사람 확정 필요):** 실제 빌드 파일 번들ID 불일치 — Android `com.ssambership.ssambership_app` vs iOS `com.ssambership.ssambershipApp`. 스토어 등록 후 **되돌릴 수 없어** 임의 변경하지 않음. 최종 식별자 확정 후 반영 예정.
+
+## P1-8 · 무주입 빌드 가드
+- 기존 가드 테스트 확인: `test/mypage/subs_manage_link_flag_test.dart`, `test/individual_question/iq_create_flag_test.dart`. 별도 추가 불필요.
+
+> ⚠️ **검증 한계:** 이 실행 환경에 Flutter/Dart SDK가 없어 `flutter analyze`/`flutter test`를 로컬 실행하지 못했다. 컴파일·정합은 정적 리뷰로 확인했으며, 최종 그린은 PR CI 또는 로컬 `flutter analyze && flutter test`로 확정해야 한다.
 
 ---
 

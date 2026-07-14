@@ -28,17 +28,9 @@ class WebBridge {
 
   bool get isConfigured => _baseUrl.isNotEmpty;
 
-  /// 구독(선택: 특정 멘토). mentorId 는 어떤 멘토 구독인지 맥락 전달용.
-  Future<WebOpenResult> openSubscribe({String? mentorId, String source = 'app'}) {
-    return _open(WebBridgeConfig.subscribePath, <String, String>{
-      'src': source,
-      if (mentorId != null && mentorId.isNotEmpty) 'mentor': mentorId,
-    });
-  }
-
-  /// 캐시 충전.
-  Future<WebOpenResult> openRecharge({String source = 'app'}) =>
-      _open(WebBridgeConfig.rechargePath, <String, String>{'src': source});
+  // ★ Commerce-Zero: 구매 유도(구독/충전) 진입점은 앱에 두지 않는다.
+  //   과거 openSubscribe/openRecharge 는 호출부 0(死배선)이라 재배선 시
+  //   컴플라이언스 재위반 위험이 있어 제거했다(관리·열람 경로만 유지).
 
   /// 결제·구독 관리(학생).
   Future<WebOpenResult> openBillingManage({String source = 'app'}) =>

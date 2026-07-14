@@ -7,6 +7,7 @@ import '../../../../design/typography_tokens.dart';
 import '../../../../design/widgets/primary_button.dart';
 import '../../data/community_labels.dart';
 import '../../data/community_write_repository.dart';
+import '../widgets/content_policy_gate.dart';
 import '../../../../shared/errors/friendly_error.dart';
 
 /// 게시판 글쓰기 — 제목 + 본문 + 카테고리만(이미지 없음, 즉시 공개).
@@ -44,6 +45,9 @@ class _BoardWriteScreenState extends State<BoardWriteScreen> {
       _snack('제목과 내용을 입력해 주세요.');
       return;
     }
+    // 게시 전 커뮤니티 이용 규정 동의(UGC 심사 요건). 미동의 시 등록 중단.
+    if (!await ContentPolicyGate.ensureAgreed(context)) return;
+    if (!mounted) return;
     setState(() => _submitting = true);
     try {
       await widget.write.createPost(

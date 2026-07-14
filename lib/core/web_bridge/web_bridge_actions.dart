@@ -7,22 +7,9 @@ import 'web_bridge.dart';
 /// ★ Commerce-Zero: 앱은 결제하지 않는다. 웹을 열거나(설정 완료 시) 안내만 한다(미확정 시).
 ///   [bridge] 는 테스트 주입용(기본: 실제 WebBridge — WebBridgeConfig 사용).
 
-Future<void> openSubscribeWeb(
-  BuildContext context, {
-  String? mentorId,
-  WebBridge? bridge,
-}) async {
-  final WebOpenResult r =
-      await (bridge ?? WebBridge()).openSubscribe(mentorId: mentorId);
-  if (r == WebOpenResult.opened || !context.mounted) return;
-  _showNotice(context, r, '구독은 웹에서 진행돼요. (준비 중)');
-}
-
-Future<void> openRechargeWeb(BuildContext context, {WebBridge? bridge}) async {
-  final WebOpenResult r = await (bridge ?? WebBridge()).openRecharge();
-  if (r == WebOpenResult.opened || !context.mounted) return;
-  _showNotice(context, r, '충전은 웹에서 진행돼요. (준비 중)');
-}
+// ★ Commerce-Zero: 구독/충전 등 '구매 유도' 진입점은 앱에 두지 않는다.
+//   과거 openSubscribeWeb/openRechargeWeb 는 호출부 0(死배선)이라 제거했다.
+//   관리·열람 경로(결제·구독 관리/정산/약관/개인정보/지원/탈퇴)만 유지한다.
 
 Future<void> openBillingManageWeb(BuildContext context, {WebBridge? bridge}) async {
   final WebOpenResult r = await (bridge ?? WebBridge()).openBillingManage();

@@ -23,7 +23,7 @@
 | P0-4 | 심사용 데모계정 + 심사노트(멀티플랫폼·삭제경로) | 사람·콘솔 | Apple 2.1 / Play 접근 | [ ] |
 | P1-5 | Android 릴리즈 서명 최종 확인 | 사람 | Play 무결성 | [ ] |
 | P1-6 | Data Safety 양식 + 계정삭제 URL 등록 | 콘솔 | Play Data Safety | [ ] |
-| P1-7 | 번들ID 단일 확정 + iOS 표시명 통일 | 앱·사람 | 메타데이터 정합 | [~] 표시명 완료·번들ID 사람 확정 대기 |
+| P1-7 | 번들ID 단일 확정 + iOS 표시명 통일 | 앱·사람 | 메타데이터 정합 | [x] 배치1 (com.ssambership.app 확정) |
 | P1-8 | 스토어 빌드 플래그 무주입 재확인(가드) | 앱 | Commerce-Zero 유지 | [x] 가드 기존존재 |
 | P1-9 | 죽은 커머스 코드 삭제 | 앱 | 재위반 방지 | [x] 배치1 |
 
@@ -220,9 +220,13 @@
 - `web_bridge.dart`에서 `openSubscribe`/`openRecharge` 제거, `web_bridge_actions.dart`에서 `openSubscribeWeb`/`openRechargeWeb` 제거, `web_bridge_config.dart`에서 `subscribePath`/`rechargePath` 제거.
 - 관련 테스트(`test/web_bridge/*`)를 존속 메서드(`openBillingManage` 등)로 재작성.
 
-## P1-7 · iOS 표시명 통일(앱 부분)
+## P1-7 · 번들ID 단일 확정 + iOS 표시명 통일
 - `ios/Runner/Info.plist` `CFBundleDisplayName` "Ssambership App" → "쌤버십"(런처명·스토어명 일치).
-- **미결(사람 확정 필요):** 실제 빌드 파일 번들ID 불일치 — Android `com.ssambership.ssambership_app` vs iOS `com.ssambership.ssambershipApp`. 스토어 등록 후 **되돌릴 수 없어** 임의 변경하지 않음. 최종 식별자 확정 후 반영 예정.
+- **번들ID `com.ssambership.app` 로 통일 확정(사용자 결정, 2026-07-14):**
+  - Android `build.gradle.kts` `applicationId`·`namespace` → `com.ssambership.app`, `MainActivity.kt` 를 `com/ssambership/app/` 패키지로 이동.
+  - iOS `project.pbxproj` `PRODUCT_BUNDLE_IDENTIFIER`(RunnerTests 포함) → `com.ssambership.app`.
+  - 문서 정정: `IOS_BUILD.md`·`HANDOFF.md`·`QA_RUN_RESULT_2026-07.md`·`MANUAL_QA_HUMAN_2026-07.md`·`capture-screenshots.md` 의 구 번들ID 전부 갱신.
+  - ★ 스토어 최초 등록 시 이 식별자로 App ID(Apple)·패키지(Play)를 생성해야 하며, 등록 후 변경 불가.
 
 ## P1-8 · 무주입 빌드 가드
 - 기존 가드 테스트 확인: `test/mypage/subs_manage_link_flag_test.dart`, `test/individual_question/iq_create_flag_test.dart`. 별도 추가 불필요.

@@ -32,7 +32,7 @@ flutter run                  # 기기 선택 프롬프트에서 시뮬레이터 
 ## 서명 (실기기/출시)
 1. `open ios/Runner.xcworkspace` (⚠️ .xcodeproj 아님)
 2. Runner 타깃 → Signing & Capabilities → Team 선택
-3. Bundle Identifier: `com.ssambership.ssambershipApp` (Apple Developer 에 App ID 등록)
+3. Bundle Identifier: `com.ssambership.app` (Apple Developer 에 App ID 등록)
 
 ## 출시 빌드
 ```bash

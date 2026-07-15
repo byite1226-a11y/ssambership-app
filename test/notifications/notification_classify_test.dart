@@ -46,6 +46,17 @@ void main() {
     }
   });
 
+  test('맞춤의뢰 주문방 메시지(order)는 other — message 키워드 오분류 차단(XV-CR-NOTIF)', () {
+    for (final String t in <String>[
+      'new_order_message', // 웹 정본 type — 이전엔 'message' 로 질문방 오분류됨
+      'order_message',
+      'order_accepted',
+      'order_revision_requested',
+    ]) {
+      expect(classifyNotificationType(t), NotificationKind.other, reason: t);
+    }
+  });
+
   test('개별질문(IQ) 유형으로 분류 — IQ 환불도 refund 필터보다 우선', () {
     for (final String t in <String>[
       'individual_question_answered',

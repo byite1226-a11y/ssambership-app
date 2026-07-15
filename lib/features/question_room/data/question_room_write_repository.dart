@@ -33,7 +33,9 @@ class QuestionRoomWriteRepository {
     return id;
   }
 
-  /// 스레드 생성. status 는 보내지 않고 DB 기본값('open')에 맡긴다.
+  /// 스레드 생성. 웹(questionRoomMutations.ts)과 동일하게 status='pending' 을 명시한다.
+  /// (status 를 생략하면 DB 기본값 'open' 으로 저장돼 주간 사용량 집계·답변 워크플로에서
+  ///  누락되므로 반드시 'pending' 으로 시작해야 한다.)
   /// quota 검증 없음 — 호출부가 넘긴 값으로 INSERT만 시도(위반 시 예외 전파).
   Future<QuestionThread> createThread({
     required String roomId,
@@ -45,6 +47,7 @@ class QuestionRoomWriteRepository {
         .from('question_threads')
         .insert(<String, dynamic>{
           'mentor_student_room_id': roomId,
+          'status': 'pending',
           if (title != null) 'title': title,
           if (subject != null) 'subject': subject,
           if (topic != null) 'topic': topic,

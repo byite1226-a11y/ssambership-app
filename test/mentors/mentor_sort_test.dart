@@ -31,11 +31,6 @@ void main() {
   final MentorListItem c = _m('c', created: DateTime(2026, 2, 1)); // 값 없음(가격·평점 X)
   final List<MentorListItem> src = <MentorListItem>[a, b, c];
 
-  test('인기순: 웹 정본 점수식(reviewCount*10 + avgRating) 내림차순 — XV-QUERY-2', () {
-    // a=10*10+4=104, b=2*10+5=25, c=0 → a,b,c
-    expect(_ids(sortMentors(src, MentorSort.popular)), <String>['a', 'b', 'c']);
-  });
-
   test('최신순: createdAt 내림차순', () {
     expect(_ids(sortMentors(src, MentorSort.latest)), <String>['b', 'c', 'a']);
   });
@@ -57,8 +52,7 @@ void main() {
     expect(_ids(src), <String>['a', 'b', 'c']);
   });
 
-  test('라벨 5종', () {
-    expect(mentorSortLabel(MentorSort.popular), '인기순');
+  test('라벨 4종', () {
     expect(mentorSortLabel(MentorSort.latest), '최신순');
     expect(mentorSortLabel(MentorSort.priceLow), '가격낮은순');
     expect(mentorSortLabel(MentorSort.ratingHigh), '별점높은순');

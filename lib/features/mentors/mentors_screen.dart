@@ -40,7 +40,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
 
   String _query = '';
   String? _subject; // null = 전체
-  MentorSort _sort = MentorSort.popular; // 웹 정본 기본 정렬(인기순)과 일치 — XV-QUERY-2
+  MentorSort _sort = MentorSort.latest;
 
   /// 내가 찜한 멘토 id(하트 채움·상단 카운트용). 비로그인/실패면 빈 집합.
   Set<String> _favoriteIds = <String>{};

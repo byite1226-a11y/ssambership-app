@@ -23,7 +23,7 @@
 | 1 | **`.env` 파일 부재 → 빌드 하드 실패** | `pubspec.yaml`에서 `.env`를 Flutter 에셋으로 선언(`flutter: assets: - .env`)했는데 저장소에 `.env`가 없음(`.gitignore`가 무시, `.env.example`만 존재). `main.dart`의 `dotenv.load` try/catch는 **런타임** 회복일 뿐, 에셋 번들링(빌드 단계) 실패는 못 막는다 → `flutter build appbundle`이 `No file or variants found for asset: .env`로 중단. | 빌드 머신에서 `.env.example`→`.env` 생성 후 **운영** `SUPABASE_URL=https://<ref>.supabase.co` + `SUPABASE_ANON_KEY` 기입. CI면 시크릿에서 빌드 스텝 이전에 `.env` 기록. |
 | 2 | **release keystore·`android/key.properties` 부재 → debug 서명 AAB → Play 업로드 전 트랙 거부** | `android/app/build.gradle.kts:59-63` — `key.properties` 있으면 release, 없으면 `debug` 폴백. 현재 `key.properties` 없음. debug 서명 번들은 내부 테스트 트랙 포함 **모든 트랙**에서 업로드 거부. (서명 스켈레톤 자체는 온전 = 코드 손댈 것 없음.) | `keytool`로 upload keystore 생성(오너 로컬, **키·비밀번호 레포/세션 반입 절대 금지**) → `android/key.properties` 작성 → `flutter build appbundle --release` 후 `keytool -printcert -jarfile .../app-release.aab`로 debug 아님 확인 → 첫 업로드 시 **Play App Signing 등록**. 절차: `PLAY_STORE_REVIEW_PLAN.md` §릴리즈 키 생성. |
 | 3 | **Play Console App access 테스트 계정 미등록 → 심사관이 핵심기능 검증 불가** | 인앱 가입 폼 없음(설계) + 게스트는 커뮤니티·멘토찾기만(`lib/app/entry_guard.dart:25`). 질문방 구독 멘토링(핵심)은 로그인 필요 → 계정 없으면 심사관이 못 들어가 **보류/리젝 확실**. | Play Console → App access에 **학생·멘토 각 1개** 테스트 계정 등록(로그인 가능 + 구독·질문 시드 데이터). 콘솔 작업. |
-| 4 | **Data safety 폼 미작성 → 등재 불가/사후 제재** | `docs/DATA_SAFETY_FORM.md` 부재. 수집 항목(이메일·닉네임·학년·UGC·이미지 첨부·필기)과 이미지/UGC·신고 흐름을 폼에 정합 기재해야 함. | 수집 항목표(계획서 P1-5에 초안 존재) 기준으로 `DATA_SAFETY_FORM.md` 작성 + Play Console Data safety 폼 제출. |
+| 4 | **Data safety 폼 미제출 → 등재 불가/사후 제재** | ~~`docs/DATA_SAFETY_FORM.md` 부재~~ → **초안 작성 완료**(PR #28, 2026-07-16 머지 — 수집 항목별 코드 근거 파일:라인·콘솔 입력 체크리스트 포함). 콘솔 설문 제출은 여전히 미완. | `docs/DATA_SAFETY_FORM.md` §2 항목표 기준으로 Play Console Data safety 폼 제출(사람·콘솔 작업 잔여). |
 
 > 추가 환경 사실: 이 컨테이너에 Flutter 3.44.6을 설치해 analyze·test는 실제로 돌렸으나(부록 B), **Android SDK가 없고 그 배포처(dl.google.com)가 egress 정책으로 차단돼 AAB는 이 환경에서 만들 수 없다.** 빌드는 `flutter doctor`의 Android toolchain ✓인 오너 PC 또는 CI에서 수행해야 한다(`docs/ANDROID_BUILD.md`).
 
@@ -60,7 +60,7 @@
 | '알림 받기' 토글 무동작 | OS 푸시 미전달(POST_NOTIFICATIONS 미선언·FCM 휴면), DB 선호값만 저장. `notification_enabled` 컬럼 미보장 시 "준비 중" 스낵바가 로그인 심사관에게 노출 가능 | 운영 DB에 `users.notification_enabled`(+본인 update RLS) 실재 확인, 또는 토글 라벨을 "인앱 알림 선호"로 축소. 푸시 실도입은 백로그 |
 | 16KB 페이지 정렬 미검증 | Android 15+ 타깃 신규앱 요건. Flutter 엔진이 처리하나 이 환경에서 실산출 검증 불가 | 빌드 머신에서 AAB 산출 후 정렬 확인 또는 Play Console 사전출시 리포트로 확인, 오래된 네이티브 플러그인 `.so` 업데이트 |
 | 버전명 `0.1.0` | 리젝 사유는 아니나 베타/미완성 인상 | 정식 프로덕션 트랙이면 `1.0.0+1` 승격 검토. 비공개/내부 테스트면 현행 무방 |
-| '정산 관리(웹)' 외부 링크 | `web_bridge_config` baseUrl 운영 확정으로 실제 외부 이동. 멘토 **출금** 관리(소비자 결제 아님)라 방어 가능 | 정책 확정 전까지 유지 가능. 리스크 최소화 원하면 payout 링크도 dart-define flag화. `/mentor/payouts`에 결제 UI 없음 확인 |
+| '정산 관리(웹)' 외부 링크 | `web_bridge_config` baseUrl 운영 확정으로 실제 외부 이동. 멘토 **출금** 관리(소비자 결제 아님)라 방어 가능 | **해소(2026-07-16, PR #28 머지)**: payout 링크도 `kPayoutManageLinkEnabled`(dart-define, 스토어 빌드 기본 off)로 flag화 — off 시 안내 카드 대체. 무주입 빌드에서는 외부 이동 자체가 없음 |
 | 세션 토큰 평문 SharedPreferences | 앱 샌드박스라 Data safety 신고·리젝 대상 아님(Supabase 기본 동작) | (선택·출시 후) `flutter_secure_storage` 하드닝 |
 | 계획서 내부 스테일 | `PLAY_STORE_REVIEW_PLAN.md` 재판정 총괄표(line 23)가 P0-5를 아직 🔴로 표기하고 존재하지 않는 `:32` debug 라인 인용(최신 배치표는 🔶로 갱신됨) · `supabase/sql/115` 헤더 "라이브 미적용" 주석 낡음 | 두 주석 정정(문서 정합성, 제출 무관) |
 

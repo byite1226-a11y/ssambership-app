@@ -2,7 +2,7 @@
 
 > 질문: "지금 안드로이드 빌드를 만들어 Google Play 심사에 제출하는 것이 적절한가?"
 > 방법: 7개 차원 준비도 감사(빌드가능성·서명·매니페스트/권한·버전/SDK·스토어정책·개인정보/데이터안전·문서교차검증) → 블로커 후보 적대적 2중 검증. 정본 계획서 `docs/PLAY_STORE_REVIEW_PLAN.md`의 "해소(✅)" 주장을 현재 실제 코드와 대조.
-> 환경 한계: 이 검증 컨테이너에는 **Flutter/Dart SDK가 없어 실제 `flutter build appbundle`을 돌리지 못했다.** 판정은 "빌드 설정이 구조적으로 온전한가 + 제출을 막는 요소가 무엇인가"로 했다. AAB 실산출·서명 확인·`flutter test`는 Flutter 툴체인이 있는 오너 PC/CI에서 수행해야 한다.
+> 환경 업데이트(2026-07-16 추가 검증): 이후 컨테이너에 **Flutter 3.44.6 stable을 설치해 `flutter pub get`·`flutter analyze`·`flutter test`를 실제로 실행했다**(전부 통과 — 부록 B). 다만 **`flutter build appbundle`은 Android SDK가 없고, Android SDK 배포처 `dl.google.com`이 이 세션의 egress 정책으로 차단(403)되어 설치가 불가능해 실행하지 못했다.** 즉 AAB 실산출·서명·정렬 확인은 여전히 Android SDK가 갖춰진 오너 PC/CI에서 수행해야 한다.
 
 ---
 
@@ -25,7 +25,7 @@
 | 3 | **Play Console App access 테스트 계정 미등록 → 심사관이 핵심기능 검증 불가** | 인앱 가입 폼 없음(설계) + 게스트는 커뮤니티·멘토찾기만(`lib/app/entry_guard.dart:25`). 질문방 구독 멘토링(핵심)은 로그인 필요 → 계정 없으면 심사관이 못 들어가 **보류/리젝 확실**. | Play Console → App access에 **학생·멘토 각 1개** 테스트 계정 등록(로그인 가능 + 구독·질문 시드 데이터). 콘솔 작업. |
 | 4 | **Data safety 폼 미작성 → 등재 불가/사후 제재** | `docs/DATA_SAFETY_FORM.md` 부재. 수집 항목(이메일·닉네임·학년·UGC·이미지 첨부·필기)과 이미지/UGC·신고 흐름을 폼에 정합 기재해야 함. | 수집 항목표(계획서 P1-5에 초안 존재) 기준으로 `DATA_SAFETY_FORM.md` 작성 + Play Console Data safety 폼 제출. |
 
-> 추가 환경 사실: **이 컨테이너엔 Flutter SDK가 없어 여기서 AAB를 만들 수 없다.** 빌드는 `flutter doctor` 통과한 오너 PC 또는 CI에서 수행해야 한다(`docs/ANDROID_BUILD.md`).
+> 추가 환경 사실: 이 컨테이너에 Flutter 3.44.6을 설치해 analyze·test는 실제로 돌렸으나(부록 B), **Android SDK가 없고 그 배포처(dl.google.com)가 egress 정책으로 차단돼 AAB는 이 환경에서 만들 수 없다.** 빌드는 `flutter doctor`의 Android toolchain ✓인 오너 PC 또는 CI에서 수행해야 한다(`docs/ANDROID_BUILD.md`).
 
 ---
 
@@ -75,7 +75,7 @@
 5. **Play Console 등록**: App access 테스트 계정(학생·멘토), Data safety 폼, 개인정보/약관 URL, 계정삭제 URL(`/account/delete`).
 6. (선택) `-Xmx` 하향, 알림 토글 문구, 버전명 승격, 스테일 주석 정정.
 
-**한 줄 판정**: 앱 코드는 심사 제출 준비가 됐다. 지금 "부적절"한 이유는 코드가 아니라 **키·`.env`·콘솔 등록이라는 코드 밖 선행작업이 아직 안 됐기 때문**이며, 이 컨테이너에서는 Flutter SDK 부재로 빌드 자체가 불가능하다. 위 4개 사람작업을 마치고 Flutter 툴체인이 있는 환경에서 빌드하면 제출 가능하다.
+**한 줄 판정**: 앱 코드는 심사 제출 준비가 됐다(실 툴체인에서 analyze 에러 0·test 331개 통과 — 부록 B). 지금 "부적절"한 이유는 코드가 아니라 **키·`.env`·콘솔 등록이라는 코드 밖 선행작업이 아직 안 됐기 때문**이며, 이 컨테이너에서는 Android SDK 부재+배포처 egress 차단으로 AAB 산출만 불가능하다. 위 4개 사람작업을 마치고 Android SDK가 있는 환경에서 빌드하면 제출 가능하다.
 
 ---
 
@@ -83,3 +83,19 @@
 
 - 7개 차원 병렬 감사 후, "블로커" 판정만 2개 렌즈(재현성·제출영향)로 적대적 재검증했다. 계정삭제 RPC 미적용 우려는 이 과정에서 **라이브 DB 실조회로 반박(RISK 하향)**됐다.
 - 이 저장소만으로 확인 불가한 항목(운영 DB 마이그레이션 실적용, 실제 AAB 서명·정렬)은 "제출 전 확인" 항목으로 남겼다. 코드 소스 정독 기반이라 정적 분석이며, 최종 빌드 검증은 Flutter 툴체인 환경에서 수행해야 한다.
+
+---
+
+## 부록 B: 실제 툴체인 검증 실행 결과 (2026-07-16 · Flutter 3.44.6)
+
+검증 컨테이너에 Flutter stable을 설치해 Dart 레벨 검증을 실제로 돌린 결과. (Android SDK가 필요한 단계만 환경 정책으로 막혔다.)
+
+| 단계 | 결과 | 비고 |
+|---|---|---|
+| Flutter 설치 | ✅ 3.44.6 stable (Dart 3.12.2) | 프로젝트 기대치(3.44.x, pubspec `>=3.22.0`·Dart `<4.0.0`)와 동일 시리즈 |
+| `flutter pub get` | ✅ 성공 | 의존성 정상 해결(18개 상위 버전은 제약상 미상향 — 정상) |
+| `flutter analyze lib/` | ✅ **에러 0 · 경고 0** · info 린트 67건 | HANDOFF의 "analyze 에러 0" 주장 실증. 린트는 `prefer_const_constructors` 56 · `deprecated_member_use` 8 등 전부 info(비블로커). 이번에 수정한 `createThread` 파일 관련 이슈 0건 |
+| `flutter test` | ✅ **331개 전부 통과** (실패 0) | HANDOFF의 "250개" 상회(스위트 성장). 헤드리스 셰이더 이슈 재현 없음. `createThread status:'pending'` 수정이 어떤 테스트도 깨지 않음 |
+| `flutter build appbundle --release` | ⛔ **실행 불가** — `No Android SDK found` | 빌드가 `.env` 에셋·Dart 엔진 단계는 통과 후 Android SDK 탐지에서 중단. Android SDK 배포처 `dl.google.com`이 세션 egress 정책으로 **403 차단**되어 SDK 설치 자체가 불가(정책 거부는 재시도 대상 아님). AAB 실산출은 Android SDK가 있는 환경에서 수행 필요 |
+
+**해석**: 앱의 Dart/Flutter 소스는 실제 툴체인에서 **분석·테스트 모두 그린**이다(코드 품질·기능 무결성 실증 완료). 이번 세션의 `createThread` 수정도 analyze·test로 검증됐다. 남은 미검증은 **네이티브 Android 빌드 산출물(AAB)뿐**이며, 그 이유는 앱 결함이 아니라 (1) 이 환경에 Android SDK 부재 + (2) SDK 설치처 egress 차단이다. 제출 전 Android SDK가 갖춰진 오너 PC/CI에서 `flutter build appbundle` 1회 성공 + 서명 주체(debug 아님)·16KB 정렬을 확인하면 된다.

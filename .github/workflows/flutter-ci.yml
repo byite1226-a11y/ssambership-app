@@ -3,10 +3,12 @@
 # 정책:
 # - analyze: 에러·경고 0 게이트(flutter analyze 기본 동작 — info 린트는 비차단).
 # - test: 전체 스위트(현재 331+개, DB 비의존).
-# - appbundle: '빌드 파이프라인이 살아있는지'만 검증(continue-on-error).
+# - appbundle: '빌드 파이프라인이 살아있는지'만 검증(게이트 아님 — 결과만 보고).
 #   ★ .env 는 .env.example 복사(자리표시 값) — 시크릿 아님. 산출 AAB 는
 #   debug 서명+예시 env 라 스토어 제출물이 아니며, 아티팩트로 업로드하지 않는다.
 #   실제 제출용 AAB 는 오너 로컬(운영 .env + release keystore)에서 빌드한다.
+# - 각 단계 로그는 `ci-logs` 브랜치(일회용, force-push)로 발행 — API 없이
+#   git fetch 만으로 실패 원인을 확인할 수 있게 한다.
 name: flutter-ci
 
 on:
@@ -15,6 +17,9 @@ on:
   pull_request:
     branches: [master]
   workflow_dispatch:
+
+permissions:
+  contents: write # ci-logs 브랜치 발행용(GITHUB_TOKEN)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,16 +45,55 @@ jobs:
           cache: true
 
       - name: flutter pub get
-        run: flutter pub get
+        run: flutter pub get 2>&1 | tee /tmp/pubget.log
 
       - name: flutter analyze (에러·경고 0 게이트)
-        run: flutter analyze
-
-      - name: flutter test
-        run: flutter test
-
-      - name: flutter build appbundle (파이프라인 검증 — 실패 허용)
+        id: analyze
         continue-on-error: true
         run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee /tmp/analyze.log
+
+      - name: flutter test
+        id: test
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee /tmp/test.log
+
+      - name: flutter build appbundle (파이프라인 검증 — 게이트 아님)
+        id: build
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
           cp .env.example .env
-          flutter build appbundle --release
+          flutter build appbundle --release 2>&1 | tee /tmp/build.log
+
+      - name: 로그 발행 (ci-logs 브랜치 — 일회용/force)
+        if: always()
+        env:
+          GH_TOKEN_PUSH: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/cilogs && cd /tmp/cilogs
+          {
+            echo "run_id=${GITHUB_RUN_ID} sha=${GITHUB_SHA}"
+            echo "analyze=${{ steps.analyze.outcome }}"
+            echo "test=${{ steps.test.outcome }}"
+            echo "appbundle=${{ steps.build.outcome }} (게이트 아님)"
+          } > summary.txt
+          cp /tmp/analyze.log . 2>/dev/null || true
+          tail -c 300000 /tmp/test.log  > test.log  2>/dev/null || true
+          tail -c 300000 /tmp/build.log > build.log 2>/dev/null || true
+          cp /tmp/pubget.log . 2>/dev/null || true
+          git init -q -b ci-logs
+          git config user.name "flutter-ci" && git config user.email "ci@users.noreply.github.com"
+          git add -A && git commit -qm "ci logs run=${GITHUB_RUN_ID} sha=${GITHUB_SHA}"
+          git push -qf "https://x-access-token:${GH_TOKEN_PUSH}@github.com/${GITHUB_REPOSITORY}.git" ci-logs:ci-logs
+
+      - name: 게이트 판정 (analyze+test 필수 그린)
+        if: always()
+        run: |
+          echo "analyze=${{ steps.analyze.outcome }} test=${{ steps.test.outcome }} appbundle=${{ steps.build.outcome }}"
+          test "${{ steps.analyze.outcome }}" = "success" -a "${{ steps.test.outcome }}" = "success"

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ssambership_app/features/community/ui/board/board_write_screen.dart';
+import 'package:ssambership_app/features/community/ui/widgets/content_policy_gate.dart';
 
 import 'fakes.dart';
 
@@ -18,7 +19,11 @@ void main() {
     expect(fake.postCalls, 0);
   });
 
-  testWidgets('제출 성공: createPost 호출 + pop(true)', (WidgetTester tester) async {
+  testWidgets('제출 성공: 정책 동의 게이트 통과 → createPost 호출 + pop(true)',
+      (WidgetTester tester) async {
+    // P0-3(UGC): 첫 게시 전 커뮤니티 이용 규정 동의 다이얼로그가 뜬다.
+    // 게이트 자체의 상세 동작은 content_policy_gate_test 에서 검증.
+    ContentPolicyGate.agreedThisSession = false;
     final FakeCommunityWrite fake = FakeCommunityWrite();
     bool? popResult;
 
@@ -47,6 +52,12 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), '오답노트 공유');
     await tester.enterText(find.byType(TextField).at(1), '이렇게 정리했어요.');
     await tester.tap(find.text('등록'));
+    await tester.pumpAndSettle();
+
+    // 게시 전 정책 동의 게이트(최초 1회) → 동의하고 계속.
+    expect(find.text('커뮤니티 이용 규정'), findsOneWidget);
+    expect(fake.postCalls, 0); // 동의 전엔 게시되지 않는다.
+    await tester.tap(find.text('동의하고 계속'));
     await tester.pumpAndSettle();
 
     expect(fake.postCalls, 1);

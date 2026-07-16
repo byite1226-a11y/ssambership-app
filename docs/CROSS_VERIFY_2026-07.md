@@ -166,4 +166,18 @@ RLS 구멍 **0건**. 저심각 1건: question_attachments INSERT의 author_id NU
 
 ---
 
+## §9 후속 반영 (2026-07-16 — 앱 저장소 머지분, 본문 판정 불변)
+
+본 문서 확정 이후 앱 저장소(master)에 머지된 픽스로 §2·§7 중 **앱 소관 항목**의 현재 상태가 다음과 같이 갱신됐다. (본문은 검증 시점 스냅샷으로 보존 — 판정 근거·재현 절차는 수정하지 않는다.)
+
+- **XV-CR-NOTIF — 해소(앱 PR #31 머지).** `classifyNotificationType` CR 제외 토큰에 `order` 추가 — `new_order_message` 등 주문방 알림이 질문방으로 오분류되던 경로 차단(회귀 테스트 포함). §7-6 의 'CR 알림 노출' 부분 완료.
+- **XV-QUERY-1 — 해소(앱 PR #31 머지).** 앱 질문 스레드 정렬을 `updated_at desc` 로 변경 — 웹 정본(questionRoomQueries)과 일치.
+- **XV-QUERY-2 — 의도적 유지(앱 PR #31 내 revert).** 멘토 목록 기본 정렬을 웹 인기순에 맞추는 변경은 심층리뷰 반영으로 철회 — 앱 기본 '최신순' 유지 결정(비대칭은 인지된 상태로 존속).
+- **XV-PRICE(앱측) — 반영(앱 PR #22 머지).** 앱 요금제 라벨을 canon '라이트/스탠다드/프리미엄' 확정값으로 주입(웹 subscribePlanCatalog 와 동일 표기). 웹 카피 잔존('베이직' — 약관·FAQ·MentorsListBody)은 웹 레포 소관으로 미해결.
+- **XV-MENTOR-NOTICE — 잔존.** #31 은 CR 오분류만 차단 — `mentor_pause_notice`/`mentor_termination_notice` 누락(§2 P3)은 별도 보정 필요.
+
+**게이트 판정(NO-GO)은 불변** — XV-01(가입 INSERT 경로 admin provisioning)은 웹/DB 소관(`handle_new_auth_user()` SQL 픽스)으로, 위 앱 머지들과 무관하게 미해결이다. XV-SCRAP(P1)·XV-REALTIME(P2)·XV-REFUND(P2) 등 DB/웹 소관 항목도 동일하게 잔존.
+
+---
+
 _(끝) 본 검증은 재현 DB(`ssam_verify`) 정본 기준이며, '미확인'은 통과로 승격하지 않았다. 제품 코드·스키마 변경 0건, 산출물은 본 문서뿐이다. 적대 검토 반영으로 게이트는 **NO-GO**(XV-01 가입 경로 P0)로 확정됐다._

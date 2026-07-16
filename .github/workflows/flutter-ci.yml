@@ -53,12 +53,20 @@ jobs:
       - name: flutter pub get
         run: flutter pub get 2>&1 | tee /tmp/pubget.log
 
-      - name: flutter analyze (에러·경고 0 게이트)
+      # ★ Flutter 3.44 의 `flutter analyze` 는 info 린트만 있어도 exit 1 을 반환한다
+      #   (CI 실측 2026-07-16: 73건 전부 info·error 0·warning 0 인데 exit 1).
+      #   저장소 게이트 정책은 '에러·경고 0, info 비차단'이므로 출력 파싱으로 판정한다.
+      - name: flutter analyze (에러·경고 0 게이트 — info 비차단)
         id: analyze
         continue-on-error: true
         run: |
-          set -o pipefail
-          flutter analyze 2>&1 | tee /tmp/analyze.log
+          flutter analyze > /tmp/analyze.log 2>&1 || true
+          cat /tmp/analyze.log
+          grep -qE "issues found|No issues found" /tmp/analyze.log # analyze 실행 자체 확인
+          if grep -qE "^[[:space:]]*(error|warning) •" /tmp/analyze.log; then
+            echo "::error::flutter analyze: error/warning 발견 — 게이트 실패"
+            exit 1
+          fi
 
       - name: flutter test
         id: test

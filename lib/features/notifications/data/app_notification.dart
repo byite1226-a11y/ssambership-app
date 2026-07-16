@@ -36,8 +36,12 @@ NotificationKind classifyNotificationType(String? type) {
   }
 
   // 앱 범위 밖: 맞춤의뢰(CR)·환불.
+  // ★ 'order' 포함 — 웹은 맞춤의뢰 주문방 메시지를 type='new_order_message' 로 보낸다.
+  //   'message' 키워드가 아래 질문방 분기에 걸려 오분류되던 문제(XV-CR-NOTIF) 차단.
+  //   앱 범위 유형(question/subscription/IQ)에는 'order' 가 없어 오탐 위험 없음.
   if (t.contains('custom_request') ||
       t.contains('custom_order') ||
+      t.contains('order') ||
       t.contains('refund') ||
       t.startsWith('cr_')) {
     return NotificationKind.other;

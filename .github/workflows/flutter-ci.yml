@@ -1,0 +1,55 @@
+# Flutter CI — master 푸시/PR마다 analyze·test 게이트 + AAB 빌드 파이프라인 검증.
+#
+# 정책:
+# - analyze: 에러·경고 0 게이트(flutter analyze 기본 동작 — info 린트는 비차단).
+# - test: 전체 스위트(현재 331+개, DB 비의존).
+# - appbundle: '빌드 파이프라인이 살아있는지'만 검증(continue-on-error).
+#   ★ .env 는 .env.example 복사(자리표시 값) — 시크릿 아님. 산출 AAB 는
+#   debug 서명+예시 env 라 스토어 제출물이 아니며, 아티팩트로 업로드하지 않는다.
+#   실제 제출용 AAB 는 오너 로컬(운영 .env + release keystore)에서 빌드한다.
+name: flutter-ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: analyze · test · appbundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17' # 저장소 표준(AGP 9.0.1·Gradle 9.1.0·JDK17 — ANDROID_BUILD.md)
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.6 # 검증 기준 버전(ANDROID_SUBMISSION_READINESS 부록 B)
+          cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter analyze (에러·경고 0 게이트)
+        run: flutter analyze
+
+      - name: flutter test
+        run: flutter test
+
+      - name: flutter build appbundle (파이프라인 검증 — 실패 허용)
+        continue-on-error: true
+        run: |
+          cp .env.example .env
+          flutter build appbundle --release

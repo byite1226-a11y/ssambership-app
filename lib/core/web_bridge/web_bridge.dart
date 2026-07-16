@@ -8,11 +8,12 @@ enum WebOpenResult { opened, notConfigured, failed }
 /// URL 열기 함수(주입 가능 — 테스트에서 fake).
 typedef UrlLauncher = Future<bool> Function(Uri uri);
 
-/// 웹 브릿지 서비스 — 결제/구독/충전/정산/프로필 동선을 '웹으로만' 연다(Commerce-Zero).
+/// 웹 브릿지 서비스 — 관리/정보/계정 동선을 '웹으로만' 연다(Commerce-Zero).
 ///
 /// ★ 앱은 결제/가격입력/구매를 하지 않는다. 이 서비스는 결제 행위를 하지 않고,
 ///   웹의 해당 페이지를 외부 브라우저로 여는 것뿐이다. URL 은 [WebBridgeConfig] 한 곳에서 온다.
 ///   baseUrl 미확정이면 아무 URL 도 만들지 않고 [WebOpenResult.notConfigured] 를 돌려준다(날조 없음).
+/// ★ 구매 유도 동선(구독 신청·캐시 충전)은 두지 않는다 — P0-3 死배선 정리(2026-07-12).
 class WebBridge {
   WebBridge({UrlLauncher? launcher, String? baseUrl})
       : _launcher = launcher ?? _defaultLauncher,
@@ -27,18 +28,6 @@ class WebBridge {
   }
 
   bool get isConfigured => _baseUrl.isNotEmpty;
-
-  /// 구독(선택: 특정 멘토). mentorId 는 어떤 멘토 구독인지 맥락 전달용.
-  Future<WebOpenResult> openSubscribe({String? mentorId, String source = 'app'}) {
-    return _open(WebBridgeConfig.subscribePath, <String, String>{
-      'src': source,
-      if (mentorId != null && mentorId.isNotEmpty) 'mentor': mentorId,
-    });
-  }
-
-  /// 캐시 충전.
-  Future<WebOpenResult> openRecharge({String source = 'app'}) =>
-      _open(WebBridgeConfig.rechargePath, <String, String>{'src': source});
 
   /// 결제·구독 관리(학생).
   Future<WebOpenResult> openBillingManage({String source = 'app'}) =>

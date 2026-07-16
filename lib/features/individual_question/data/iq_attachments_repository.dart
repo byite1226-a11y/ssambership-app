@@ -15,7 +15,7 @@ import 'models/individual_question_models.dart';
 ///
 /// ★ 쓰기 규약: 이 DB 의 IQ 테이블은 SELECT-only — 행 등록은 반드시
 ///   SECURITY DEFINER RPC `add_individual_question_attachment` 로 한다
-///   (supabase/migrations/20260707T0100_add_iq_attachment_rpc.sql, 적용 대기).
+///   (supabase/migrations/20260707T0100 v1 운영 적용 확인, 20260707T1500 v2 보강).
 abstract class IqAttachmentsPort {
   /// 준비 여부(RPC 적용·버킷). false 면 upload 는 안내 에러.
   bool get isReady;

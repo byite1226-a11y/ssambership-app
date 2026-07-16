@@ -18,7 +18,7 @@ if (hasReleaseKeystore) {
 }
 
 android {
-    namespace = "com.ssambership.ssambership_app"
+    namespace = "com.ssambership.app"
     // 명시 고정(P0-6): Google Play 신규 앱 요건 = 2026-08-31부터 targetSdk 36
     // (Android 16) 이상. Flutter 3.44.4 기본값과 동일 값을 위임 대신 고정해
     // SDK 업그레이드가 조용히 타깃을 바꾸지 못하게 한다.
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ssambership.ssambership_app"
+        applicationId = "com.ssambership.app"
         // 명시 고정(P0-6). minSdk 24 = Flutter 3.44 기본(Android 7.0).
         minSdk = 24
         targetSdk = 36

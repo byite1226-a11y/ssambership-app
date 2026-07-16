@@ -1,4 +1,4 @@
-package com.ssambership.ssambership_app
+package com.ssambership.app
 
 import io.flutter.embedding.android.FlutterActivity
 

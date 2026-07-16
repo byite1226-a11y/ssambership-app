@@ -7,11 +7,17 @@ import '../../../../shared/format/formatters.dart';
 import '../../data/community_models.dart';
 
 /// 댓글 한 줄. 이니셜아바타 + 작성자명 + 시간 + 본문. 내부 id 비노출.
-/// [onBlock] 지정 시 우측 ⋯ 메뉴에 '이 사용자 차단' 노출.
+/// [onReport] 지정 시 ⋯ 메뉴에 '신고', [onBlock] 지정 시 '이 사용자 차단' 노출.
 class CommentTile extends StatelessWidget {
-  const CommentTile({super.key, required this.comment, this.onBlock});
+  const CommentTile({
+    super.key,
+    required this.comment,
+    this.onReport,
+    this.onBlock,
+  });
 
   final CommunityComment comment;
+  final VoidCallback? onReport;
   final VoidCallback? onBlock;
 
   @override
@@ -40,17 +46,22 @@ class CommentTile extends StatelessWidget {
               ],
             ),
           ),
-          if (onBlock != null)
+          if (onReport != null || onBlock != null)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz_rounded,
                   size: 18, color: ColorTokens.muted),
               tooltip: '더보기',
               onSelected: (String v) {
-                if (v == 'block') onBlock!();
+                if (v == 'report') onReport?.call();
+                if (v == 'block') onBlock?.call();
               },
-              itemBuilder: (BuildContext ctx) => const <PopupMenuEntry<String>>[
-                PopupMenuItem<String>(
-                    value: 'block', child: Text('이 사용자 차단')),
+              itemBuilder: (BuildContext ctx) => <PopupMenuEntry<String>>[
+                if (onReport != null)
+                  const PopupMenuItem<String>(
+                      value: 'report', child: Text('신고')),
+                if (onBlock != null)
+                  const PopupMenuItem<String>(
+                      value: 'block', child: Text('이 사용자 차단')),
               ],
             ),
         ],

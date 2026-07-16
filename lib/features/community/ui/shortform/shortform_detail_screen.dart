@@ -11,6 +11,7 @@ import '../../data/community_read_repository.dart';
 import '../../data/community_write_repository.dart';
 import '../widgets/block_author_action.dart';
 import '../widgets/comment_tile.dart';
+import '../widgets/content_policy_gate.dart';
 import '../widgets/reaction_bar.dart';
 import '../widgets/report_sheet.dart';
 import '../widgets/thumbnail_view.dart';
@@ -131,6 +132,22 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
     }
   }
 
+  /// 댓글 신고 → content_reports(target_type='community_comment').
+  Future<void> _reportComment(String commentId) async {
+    final String? reason = await showReportSheet(context);
+    if (reason == null) return;
+    try {
+      await widget.write.report(
+        targetType: 'community_comment',
+        targetId: commentId,
+        reason: reason,
+      );
+      _snack('신고가 접수되었어요. 운영팀이 검토할게요.');
+    } catch (e) {
+      _snack('신고 접수에 실패했어요. ${friendlyError(e)}');
+    }
+  }
+
   /// 숏폼 작성자 차단 → 성공 시 상세를 닫아 목록으로(목록은 재조회 시 숨겨짐).
   Future<void> _blockPostAuthor() async {
     final bool blocked = await confirmAndBlockAuthor(
@@ -159,6 +176,9 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
   Future<void> _send() async {
     final String body = _input.text.trim();
     if (body.isEmpty || _busy) return;
+    // 게시 전 커뮤니티 이용 규정 동의(UGC 심사 요건). 미동의 시 등록 중단.
+    if (!await ContentPolicyGate.ensureAgreed(context)) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       await widget.write.addComment(
@@ -291,6 +311,7 @@ class _ShortformDetailScreenState extends State<ShortformDetailScreen> {
                       height: 1, thickness: 0.5, color: ColorTokens.border),
                 CommentTile(
                   comment: comments[i],
+                  onReport: () => _reportComment(comments[i].id),
                   onBlock: () => _blockCommentAuthor(comments[i].id),
                 ),
               ],

@@ -44,6 +44,12 @@ jobs:
           flutter-version: 3.44.6 # 검증 기준 버전(ANDROID_SUBMISSION_READINESS 부록 B)
           cache: true
 
+      # .env 는 gitignore 대상이지만 pubspec 에셋으로 선언돼 있어(asset_does_not_exist)
+      # 없으면 analyze 가 warning(fatal)으로, test 가 에셋 번들 실패로 죽는다.
+      # 자리표시 값(.env.example — 시크릿 아님)을 만들어 로컬 개발 상태와 동일하게 맞춘다.
+      - name: .env 자리표시 생성 (analyze/test 에셋 요건)
+        run: cp .env.example .env
+
       - name: flutter pub get
         run: flutter pub get 2>&1 | tee /tmp/pubget.log
 
@@ -68,7 +74,6 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          cp .env.example .env
           flutter build appbundle --release 2>&1 | tee /tmp/build.log
 
       - name: 로그 발행 (ci-logs 브랜치 — 일회용/force)

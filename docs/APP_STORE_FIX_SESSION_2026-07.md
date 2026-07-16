@@ -22,7 +22,7 @@
 | P0-3 | iOS UGC(1.2): 댓글 신고 + 게시 전 EULA 게이트 | 앱 | Apple 1.2 / Play UGC | [x] 배치1 |
 | P0-4 | 심사용 데모계정 + 심사노트(멀티플랫폼·삭제경로) | 사람·콘솔 | Apple 2.1 / Play 접근 | [ ] |
 | P1-5 | Android 릴리즈 서명 최종 확인 | 사람 | Play 무결성 | [ ] |
-| P1-6 | Data Safety 양식 + 계정삭제 URL 등록 | 콘솔 | Play Data Safety | [ ] |
+| P1-6 | Data Safety 양식 + 계정삭제 URL 등록 | 콘솔 | Play Data Safety | [ ] 문서초안은 #28로 완료, 콘솔 제출 잔여 |
 | P1-7 | 번들ID 단일 확정 + iOS 표시명 통일 | 앱·사람 | 메타데이터 정합 | [x] 배치1 (com.ssambership.app 확정) |
 | P1-8 | 스토어 빌드 플래그 무주입 재확인(가드) | 앱 | Commerce-Zero 유지 | [x] 가드 기존존재 |
 | P1-9 | 죽은 커머스 코드 삭제 | 앱 | 재위반 방지 | [x] 배치1 |
@@ -131,7 +131,7 @@
 
 ## P1-6 · Data Safety 양식 + 계정삭제 URL 등록  ‹담당: 콘솔›
 
-**문제.** `docs/DATA_SAFETY_FORM.md` 미작성, Play Data Safety/Apple 영양성분표 미제출.
+**문제.** ~~`docs/DATA_SAFETY_FORM.md` 미작성~~(→ **초안 작성 완료** — PR #28, 2026-07-16 머지: 수집 항목별 코드 근거·콘솔 입력 체크리스트 포함), Play Data Safety/Apple 영양성분표는 여전히 미제출(콘솔 작업 잔여).
 
 **조치.**
 1. (콘솔) **Play Data Safety / Apple App Privacy** 작성 — 수집: 이메일·이름/닉네임·학년(계정), 사진/첨부(사용자 콘텐츠). 목적: 앱 기능. **공유 없음·추적 없음·판매 없음.** HTTPS 암호화 전송.
@@ -231,7 +231,8 @@
 ## P1-8 · 무주입 빌드 가드
 - 기존 가드 테스트 확인: `test/mypage/subs_manage_link_flag_test.dart`, `test/individual_question/iq_create_flag_test.dart`. 별도 추가 불필요.
 
-> ⚠️ **검증 한계:** 이 실행 환경에 Flutter/Dart SDK가 없어 `flutter analyze`/`flutter test`를 로컬 실행하지 못했다. 컴파일·정합은 정적 리뷰로 확인했으며, 최종 그린은 PR CI 또는 로컬 `flutter analyze && flutter test`로 확정해야 한다.
+> ~~⚠️ **검증 한계:** 이 실행 환경에 Flutter/Dart SDK가 없어 `flutter analyze`/`flutter test`를 로컬 실행하지 못했다.~~
+> **정정(2026-07-16):** 위 한계는 해소됐다 — 이후 별도 검증 세션에서 실 툴체인(Flutter 3.44.6 stable · Dart 3.12.2)으로 `flutter pub get`·`flutter analyze`(에러·경고 0, info 린트만)·`flutter test`(331개 전부 통과)를 실제 실행해 확인했다(상세: `docs/ANDROID_SUBMISSION_READINESS_2026-07.md` 부록 B — 단, 해당 런의 베이스는 `c1b005f`라 이 배치1 코드 자체는 미포함). 배치1 포함 최종 그린은 머지된 master 에서 `flutter analyze && flutter test` 재실행으로 확정한다.
 
 ---
 

@@ -56,13 +56,33 @@ class _AccountDeleteScreenState extends State<AccountDeleteScreen> {
   /// 서버가 취소 불가(창 경과/처리 진행)를 알려온 뒤에는 취소 버튼을 없앤다.
   bool _cancelClosed = false;
 
-  /// 42501 — 앱 경로 미개방 → 웹 폴백 카드 노출.
+  /// 42501 — 앱 경로 미개방 → 웹 폴백 카드 노출(self RPC 미배포 환경 방어).
   bool _unavailable = false;
 
   bool get _pending =>
       widget.pendingOverride ??
       AuthService.instance.accountState.kind ==
           AccountStatusKind.deletionPending;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_pending) _loadStatus();
+  }
+
+  /// pending 진입 시 서버 판정(can_cancel)으로 취소 버튼 노출을 확정한다.
+  /// (취소창 경과·locked 이후엔 버튼 자체를 만들지 않음 — 로컬 추정 금지.)
+  Future<void> _loadStatus() async {
+    try {
+      final DeletionStatusResult s = await widget.port.fetchStatus();
+      if (!mounted) return;
+      if (!s.canCancel) setState(() => _cancelClosed = true);
+    } on AccountDeletionUnavailable {
+      if (mounted) setState(() => _unavailable = true);
+    } catch (_) {
+      // 조회 실패 → 버튼은 유지하되 실제 취소는 서버가 재판정한다.
+    }
+  }
 
   Future<void> _signOut() =>
       (widget.signOutOverride ?? AuthService.instance.signOut)();

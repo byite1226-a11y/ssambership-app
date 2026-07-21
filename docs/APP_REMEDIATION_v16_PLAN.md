@@ -48,11 +48,17 @@ where table_schema='public' and table_name = ANY(ARRAY['account_deletion_jobs','
 select policyname, cmd from pg_policies where schemaname='storage' and tablename='objects'
   and (qual ilike '%question-room-attachments%' or policyname ilike '%qra%');
 ```
-> **작성 시점 실측(참고, 재개 시 반드시 재확인):** 아래 게이트 대상 RPC/테이블/정책은
-> staging에 **전부 부재**했다. 직접-쓰기 정책(`qt_write_via_room`·`qt_update_via_room`·`qm_insert`·
-> `fqu_insert_own`·`question_attachments_insert_via_room`)은 **살아있어** 현행 직접-쓰기 앱이 정상 작동 중.
-> `question-room-attachments` 버킷에는 INSERT/SELECT 정책만 있고 **DELETE 정책 없음.**
-> `shortform_reactions_type_check = CHECK (type='like')`. `free_question_usage`에 `thread_id` 없음.
+> **~~작성 시점 실측~~ (2026-07-21 재기준화로 폐기):** 위 문단은 웹·DB 구현 **전** 실측이라 더 이상
+> 사실이 아니다. SQL 160까지 적용된 staging 실정의 기준 최신 계약은
+> **`docs/APP_V16_SERVER_CONTRACT_SNAPSHOT.md`** 가 정본이다. 요약:
+> - 질문방 RPC 5종(`qna_create_question_thread`/`qna_create_free_question_thread`(위임 래퍼)/
+>   `qna_append_message`/`qna_confirm_thread`/`qna_flag_wrong_answer`/`qna_register_attachment`) **배포됨** → 트랙 B 게이트 충족.
+> - `question-room-attachments` **DELETE 정책 배포됨**(본인 소유·미등록 객체만) + `question_attachments.storage_path` UNIQUE.
+> - `shortform_reactions_type_check = CHECK (type in ('like','scrap'))` + RLS 배포 → 트랙 F 게이트 충족.
+> - `device_tokens`·`notification_deliveries`·`notification_settings`(실명 주의)·`mark_all_notifications_read()` 존재 → 트랙 C 기반 확인.
+> - `account_deletion_jobs` + `account_deletion_request/cancel` + `account_deletion_write_blocked` 배포 → 트랙 D 게이트 충족.
+> - **최소 앱 버전 API는 여전히 부재** → 트랙 E(댓글 정본 전환)만 WAITING_SERVER_GATE.
+> - `subjects` 정본 catalog 35종 확정. 질문 생성 RPC는 catalog 밖 subject를 **조용히 NULL 처리**.
 
 ---
 

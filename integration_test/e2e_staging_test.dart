@@ -35,6 +35,14 @@ void main() {
     } catch (e, st) {
       _mark('FAILURE: $e');
       _mark('STACK: ${st.toString().split('\n').take(10).join(' § ')}');
+      // 실패 시점 화면의 텍스트 덤프 — 어떤 화면에 멈췄는지 식별용.
+      final String texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((Text t) => t.data ?? '')
+          .where((String s) => s.isNotEmpty)
+          .take(40)
+          .join(' | ');
+      _mark('SCREEN: $texts');
       rethrow;
     }
   }, timeout: const Timeout(Duration(minutes: 12)));
@@ -58,7 +66,7 @@ Future<void> _scenario(WidgetTester tester) async {
     // ── 1. 학생 로그인 → 홈 셸(5탭) ─────────────────────────────────────────
     await _login(tester, _studentEmail, _studentPw);
     await _pumpUntil(tester, find.byType(NavigationBar),
-        reason: '학생 로그인 후 홈 셸');
+        timeout: const Duration(seconds: 45), reason: '학생 로그인 후 홈 셸');
     for (final String tab in <String>['질문방', '커뮤니티', '멘토 찾기', '알림', '개별질문']) {
       expect(find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)),
           findsOneWidget, reason: '하단 탭 "$tab" 존재');
@@ -241,6 +249,7 @@ Future<void> _pumpUntil(
     await tester.pump(const Duration(milliseconds: 400));
     if (tester.any(finder)) return;
   }
+  _mark('TIMEOUT: ${reason ?? finder.toString()}');
   expect(finder, findsWidgets, reason: reason ?? '대기 시간 초과');
 }
 

@@ -31,6 +31,10 @@ class FirebasePushGateway implements PushGatewayPort {
   @override
   Future<bool> initialize() async {
     if (_ready) return true;
+    // 웹은 푸시 대상이 아니다(타깃은 Android/iOS). 웹에서 initializeApp 은
+    // gstatic firebasejs 를 dynamic import 하는데, 이 실패가 Dart try/catch 밖의
+    // unhandled promise 로 새어 나온다 — 시도 자체를 하지 않는다.
+    if (kIsWeb) return false;
     try {
       await Firebase.initializeApp();
       FirebaseMessaging.onBackgroundMessage(firebasePushBackgroundHandler);

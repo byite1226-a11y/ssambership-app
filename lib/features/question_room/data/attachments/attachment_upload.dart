@@ -142,9 +142,11 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
   QnaAttachmentBackend get _backend =>
       _backendOverride ?? const SupabaseQnaAttachmentBackend();
 
-  String? get _currentUserId => _currentUserIdProvider != null
-      ? _currentUserIdProvider!()
-      : SupabaseInit.clientOrNull?.auth.currentUser?.id;
+  String? get _currentUserId {
+    final String? Function()? provider = _currentUserIdProvider;
+    if (provider != null) return provider();
+    return SupabaseInit.clientOrNull?.auth.currentUser?.id;
+  }
 
   @override
   bool get isReady => _storageReady;

@@ -19,6 +19,7 @@ import '../data/iq_annotation_repository.dart';
 import '../data/iq_attachment_url_resolver.dart';
 import '../data/models/individual_question_models.dart';
 import 'widgets/iq_widgets.dart';
+import '../../../shared/errors/app_error.dart';
 import '../../../shared/errors/friendly_error.dart';
 
 /// 상세 화면 데이터 묶음(질문 + 메시지 + 첨부 + 멘토 표시명).
@@ -51,6 +52,7 @@ class IqDetailScreen extends StatefulWidget {
     this.annotationsOverride,
     this.annotateLauncherOverride,
     this.urlResolverOverride,
+    this.repositoryOverride,
   });
 
   final String questionId;
@@ -71,6 +73,9 @@ class IqDetailScreen extends StatefulWidget {
 
   /// 테스트용 서명 URL 리졸버 주입(P3-6). null 이면 Supabase 기본.
   final IqAttachmentUrlResolver? urlResolverOverride;
+
+  /// 테스트용 레포 주입(환불/정산 계약 검증). null 이면 Supabase 기본.
+  final IndividualQuestionRepository? repositoryOverride;
 
   @override
   State<IqDetailScreen> createState() => _IqDetailScreenState();
@@ -98,8 +103,8 @@ class IqAnnotateRequest {
 }
 
 class _IqDetailScreenState extends State<IqDetailScreen> {
-  final IndividualQuestionRepository _repo =
-      const IndividualQuestionRepository();
+  IndividualQuestionRepository get _repo =>
+      widget.repositoryOverride ?? const IndividualQuestionRepository();
   final MentorLookupRepository _mentorLookup = const MentorLookupRepository();
   final TextEditingController _answerController = TextEditingController();
 
@@ -224,8 +229,14 @@ class _IqDetailScreenState extends State<IqDetailScreen> {
     );
     if (!ok || !mounted) return;
     await _runAction(() async {
-      await _repo.refund(widget.questionId);
-      _snack('질문을 취소했어요. 캐시가 지갑으로 돌아왔어요.');
+      // P0-5: 공개 wrapper(refund_individual_question)만 호출. 로컬 선반영 없음 —
+      // 성공/멱등(already_refunded)만 성공 취급, 그 외 ok=false 는 실패로 던진다.
+      final IqEscrowResult r = await _repo.refund(widget.questionId);
+      final bool alreadyRefunded = r.code.contains('already_refunded');
+      if (!r.ok && !alreadyRefunded) {
+        throw AppError(iqFailureMessage(r.code));
+      }
+      _snack(alreadyRefunded ? '이미 환불된 질문이에요.' : '질문을 취소했어요. 캐시가 지갑으로 돌아왔어요.');
     });
   }
 

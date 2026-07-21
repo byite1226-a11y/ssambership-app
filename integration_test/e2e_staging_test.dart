@@ -78,8 +78,7 @@ Future<void> _scenario(WidgetTester tester) async {
 
     _mark('step2-community');
     // ── 2. 커뮤니티: 게시판 read + 댓글 1건 write(가역 — 사후 SQL 정리) ────────
-    await tester.tap(find.descendant(
-        of: find.byType(NavigationBar), matching: find.text('커뮤니티')));
+    await _tapTab(tester, '커뮤니티');
     await _pumpUntil(tester, find.text('게시판'), reason: '커뮤니티 탭 진입');
     // 게시판 탭 전환 — 전환의 증거('작성' FAB, 게시판 탭 전용)가 보일 때까지 재시도.
     for (int i = 0; i < 4 && !tester.any(find.text('작성')); i++) {
@@ -114,32 +113,42 @@ Future<void> _scenario(WidgetTester tester) async {
         await _type(tester, commentField, body, label: 'comment');
         await tester.pump(const Duration(milliseconds: 300));
         await tester.tap(find.byIcon(Icons.send_rounded));
-        // 서버 왕복(comments INSERT → 목록 재조회) 후 본문이 목록에 나타나야 한다.
-        await _pumpUntil(tester, find.textContaining(_commentTag),
+        await tester.pump(const Duration(milliseconds: 500));
+        // 게시 전 정책 동의 다이얼로그(ContentPolicyGate) — '동의하고 계속' 탭.
+        if (tester.any(find.text('동의하고 계속'))) {
+          _mark('policy-gate shown');
+          await tester.tap(find.text('동의하고 계속'));
+          await tester.pump(const Duration(milliseconds: 500));
+        }
+        // 서버 왕복(comments INSERT → 목록 재조회) 후 본문이 '댓글 목록의 Text'
+        // 로 나타나야 한다. 입력 필드(EditableText)를 오탐하지 않도록 Text 한정.
+        final Finder posted = find.byWidgetPredicate((Widget w) =>
+            w is Text && (w.data?.contains(_commentTag) ?? false));
+        await _pumpUntil(tester, posted,
             timeout: const Duration(seconds: 25),
             reason: '작성한 댓글이 목록에 반영');
         commentWritten = true;
+        _mark('comment-posted-confirmed');
       }
-      // 상세 닫기.
+      // 상세 닫기 — 홈 셸(NavigationBar)로 복귀할 때까지.
       await _goBack(tester);
+      await _pumpUntil(tester, find.byType(NavigationBar),
+          reason: '게시글 상세에서 홈 셸 복귀');
       await _settle(tester, seconds: 2);
     }
     debugPrint('E2E-MARK commentWritten=$commentWritten');
 
     _mark('step3-tabs');
     // ── 3. 멘토 찾기 / 알림 / 개별질문 read ─────────────────────────────────
-    await tester.tap(find.descendant(
-        of: find.byType(NavigationBar), matching: find.text('멘토 찾기')));
+    await _tapTab(tester, '멘토 찾기');
     await _settle(tester, seconds: 6);
     _expectNoErrorText(tester, where: '멘토 찾기 탭');
 
-    await tester.tap(find.descendant(
-        of: find.byType(NavigationBar), matching: find.text('알림')));
+    await _tapTab(tester, '알림');
     await _pumpUntil(tester, find.text('안 읽음'), reason: '알림 탭 헤더');
     _expectNoErrorText(tester, where: '알림 탭');
 
-    await tester.tap(find.descendant(
-        of: find.byType(NavigationBar), matching: find.text('개별질문')));
+    await _tapTab(tester, '개별질문');
     await _settle(tester, seconds: 6);
     _expectNoErrorText(tester, where: '개별질문 탭');
 
@@ -199,6 +208,15 @@ Future<void> _type(WidgetTester tester, Finder field, String text,
     await tester.pump(const Duration(milliseconds: 100));
   }
   _mark('typed $label len=${tf.controller?.text.length ?? -1}');
+}
+
+/// 하단 탭 전환 — NavigationBar 안의 라벨을 찾을 때까지 폴링 후 탭.
+Future<void> _tapTab(WidgetTester tester, String label) async {
+  final Finder tab = find.descendant(
+      of: find.byType(NavigationBar), matching: find.text(label));
+  await _pumpUntil(tester, tab, reason: '하단 탭 "$label" 대기');
+  await tester.tap(tab);
+  await tester.pump(const Duration(milliseconds: 400));
 }
 
 /// 로그인 화면에서 이메일/비밀번호 입력 → 로그인 버튼.

@@ -39,6 +39,8 @@ dependencies:
   video_player: ^2.13.0
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3
+  # 최소 지원 버전 게이트: 현재 빌드번호(buildNumber, 정수) 조회용.
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:

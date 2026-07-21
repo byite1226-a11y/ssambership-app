@@ -58,8 +58,19 @@ flutter build apk           # 직접 배포용 .apk (필요 시)
   없이(또는 `-PallowInsecureSigning=true` 로) 빌드된 것 — 업로드 금지, release 키로 재빌드.
 
 ## 알려진 상태 / 후속 작업
-- **푸시 알림**: 골격만 존재·비활성 (`device_tokens` 테이블 미생성). 활성화 시
-  firebase_messaging 도입 + `google-services.json` 추가 + POST_NOTIFICATIONS 권한(API 33+) 필요.
+- **푸시 알림(FCM)**: 코드·서버 계약 완료, **`WAITING_EXTERNAL_FIREBASE_CONFIG`** — 앱에
+  Firebase 설정 파일이 없어서 런타임 비활성 상태로 대기한다(절차: `lib/core/push/HANDOFF.md`).
+  - 구현: `firebase_core`/`firebase_messaging`(`pubspec.yaml:40-41`), `FirebasePushGateway`
+    (`lib/core/push/firebase_push_gateway.dart`), device token 등록/철회
+    (`SupabaseDeviceTokenRegistrar` — RPC `register_device_token`, 스테이징 검증 2026-07-21),
+    `POST_NOTIFICATIONS` 권한(`android/app/src/main/AndroidManifest.xml`) 모두 반영됨.
+  - **활성화 조건**: `android/app/google-services.json`(+ Gradle `com.google.gms.google-services`
+    플러그인)이 있어야 `FirebasePushGateway.initialize()` 가 성공한다. 파일이 없으면
+    `initialize()` 가 조용히 실패(`ready=false`)해 토큰을 발급/등록하지 않고 앱은 그대로 동작한다.
+  - ⚠️ **Data safety 영향**: 설정 파일 **없이** 빌드한 AAB 는 device token(FCM ID)을 수집하지
+    않지만, 설정 파일을 **포함**해 빌드한 AAB 는 로그인 사용자의 device token 을 수집·등록한다.
+    푸시 포함 빌드로 제출할 때는 `docs/DATA_SAFETY_FORM.md` §2 '기기 또는 기타 ID = 예' 기준으로
+    콘솔 설문을 기입할 것.
 - **딥링크**: placeholder. 활성화 시 intent-filter(App Links) 추가.
 
 ## 트러블슈팅

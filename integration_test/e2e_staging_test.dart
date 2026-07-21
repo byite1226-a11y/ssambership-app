@@ -180,11 +180,14 @@ Future<void> _login(WidgetTester tester, String email, String pw) async {
   await tester.enterText(fields.at(0), email);
   await tester.enterText(fields.at(1), pw);
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(find.widgetWithText(ElevatedButton, '로그인').hitTestable(),
-      warnIfMissed: false);
-  // PrimaryButton 이 ElevatedButton 계열이 아닐 수 있어 텍스트 탭 폴백.
-  if (tester.any(find.text('로그인 중…')) == false) {
-    await tester.tap(find.text('로그인').last, warnIfMissed: false);
+  // PrimaryButton 의 실제 위젯은 FilledButton (design/widgets/primary_button.dart).
+  final Finder loginButton =
+      find.widgetWithText(FilledButton, '로그인').hitTestable();
+  if (tester.any(loginButton)) {
+    await tester.tap(loginButton.first);
+  } else {
+    // 폴백: 버튼 라벨 텍스트 직접 탭(0매치 tap 은 예외라 사전 확인 필수).
+    await tester.tap(find.text('로그인').hitTestable().last);
   }
   await tester.pump(const Duration(seconds: 1));
 }

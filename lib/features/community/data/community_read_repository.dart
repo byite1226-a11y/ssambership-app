@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/errors/app_error.dart';
+import 'comments_gateway.dart';
 import 'community_models.dart';
 import 'user_blocks_repository.dart';
 
@@ -10,7 +11,12 @@ import 'user_blocks_repository.dart';
 /// ★ 차단(user_blocks): 목록·댓글에서 내가 차단한 작성자(author_id)의 콘텐츠는
 ///   결과에서 숨긴다(모델엔 author_id 를 노출하지 않고 raw 행에서 필터).
 class CommunityReadRepository {
-  const CommunityReadRepository();
+  const CommunityReadRepository(
+      {CommentsGateway gateway = const CommentsGateway()})
+      : _gateway = gateway;
+
+  /// 댓글 원천 테이블 접근 통로(테스트 seam — 계약 검증용 가짜 주입 가능).
+  final CommentsGateway _gateway;
 
   final UserBlocksRepository _blocks = const UserBlocksRepository();
 
@@ -87,23 +93,31 @@ class CommunityReadRepository {
         items: items, rawCount: rows.length, offset: offset, limit: limit);
   }
 
-  /// 글/숏폼의 댓글(공개=visible, 대화순=오름차순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
+  /// 글/숏폼의 댓글(대화순=오름차순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
+  ///
+  /// v16 정본 전환 — 게시판: 정본 `comments` 에서 post_id 로만 조회
+  /// (삭제 댓글 제외 is_deleted=false 는 서버 RLS 가 보장, 앱 필터 불필요).
+  /// 숏폼: 기존 `community_comments`(post_type='shortform', status='visible') 유지.
   Future<List<CommunityComment>> comments(
     CommunityPostType type,
     String postId, {
     int? limit,
     int offset = 0,
   }) async {
-    dynamic q = _client
-        .from('community_comments')
-        .select('*')
-        .eq('post_type', type.code)
-        .eq('post_id', postId)
-        .eq('status', 'visible')
-        .order('created_at', ascending: true);
-    if (limit != null) q = q.range(offset, offset + limit - 1);
+    final Map<String, Object> filters = type == CommunityPostType.board
+        ? <String, Object>{'post_id': postId}
+        : <String, Object>{
+            'post_type': type.code,
+            'post_id': postId,
+            'status': 'visible',
+          };
     final Future<Set<String>> blockedF = _blocks.myBlockedIds();
-    final List<Map<String, dynamic>> rows = await q;
+    final List<Map<String, dynamic>> rows = await _gateway.selectComments(
+      table: type.commentsTable,
+      filters: filters,
+      limit: limit,
+      offset: offset,
+    );
     return _dropBlocked(rows, await blockedF)
         .map(CommunityComment.fromMap)
         .toList();

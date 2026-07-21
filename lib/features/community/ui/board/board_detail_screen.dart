@@ -142,13 +142,14 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
     if (blocked && mounted) Navigator.of(context).pop(true);
   }
 
-  /// 댓글 신고 → content_reports(target_type='community_comment').
+  /// 댓글 신고 → content_reports(target_type='comment' — 정본 comments 행.
+  /// v16 정본 전환: 게시판 댓글의 신고 대상 테이블은 comments).
   Future<void> _reportComment(String commentId) async {
     final String? reason = await showReportSheet(context);
     if (reason == null) return;
     try {
       await widget.write.report(
-        targetType: 'community_comment',
+        targetType: 'comment',
         targetId: commentId,
         reason: reason,
       );
@@ -159,10 +160,11 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
   }
 
   /// 댓글 작성자 차단 → 성공 시 댓글 목록 재조회(차단 작성자 댓글 숨김).
+  /// 게시판 댓글은 정본 comments 행에서 author_id 를 찾는다(v16 정본 전환).
   Future<void> _blockCommentAuthor(String commentId) async {
     final bool blocked = await confirmAndBlockAuthor(
       context,
-      table: 'community_comments',
+      table: 'comments',
       contentId: commentId,
     );
     if (blocked && mounted) {

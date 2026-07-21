@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ssambership_app/features/community/data/community_models.dart';
 import 'package:ssambership_app/features/community/ui/shortform/shortform_detail_screen.dart';
 import 'package:ssambership_app/features/community/ui/shortform/shortform_video_port.dart';
+import 'package:ssambership_app/features/community/ui/widgets/content_policy_gate.dart';
 import 'package:ssambership_app/features/community/ui/widgets/thumbnail_view.dart';
 
 import 'fakes.dart';
@@ -60,12 +61,13 @@ void _bigSurface(WidgetTester tester) {
 
 ShortformDetailScreen _screen({
   ShortformPost? post,
+  FakeCommunityRead? read,
   FakeCommunityWrite? write,
   ShortformVideoControllerFactory? videoFactory,
 }) {
   return ShortformDetailScreen(
     post: post ?? sampleShortform(),
-    read: const FakeCommunityRead(),
+    read: read ?? const FakeCommunityRead(),
     write: write ?? FakeCommunityWrite(),
     videoControllerFactory: videoFactory ?? (Uri url) => FakeShortformVideo(),
   );
@@ -225,5 +227,46 @@ void main() {
     await tester.pumpWidget(_wrap(_screen()));
     await tester.pumpAndSettle();
     expect(find.text('숏폼 설명'), findsOneWidget);
+  });
+
+  group('숏폼 댓글 경로(정본 전환 무관 — legacy 유지)', () {
+    testWidgets('댓글 신고 대상은 community_comment 그대로', (WidgetTester tester) async {
+      _bigSurface(tester);
+      final FakeCommunityWrite write = FakeCommunityWrite();
+      await tester.pumpWidget(_wrap(_screen(
+        read: FakeCommunityRead(
+            commentsList: <CommunityComment>[sampleComment()]),
+        write: write,
+      )));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('신고'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('신고 접수'));
+      await tester.pumpAndSettle();
+
+      expect(write.lastReportTargetType, 'community_comment'); // ★ 미전환
+      expect(write.lastReportTargetId, 'c1');
+    });
+
+    testWidgets('댓글 등록은 shortform 타입으로 호출된다(게시판과 분리)',
+        (WidgetTester tester) async {
+      _bigSurface(tester);
+      ContentPolicyGate.agreedThisSession = true;
+      addTearDown(() => ContentPolicyGate.agreedThisSession = false);
+      final FakeCommunityWrite write = FakeCommunityWrite();
+      await tester.pumpWidget(_wrap(_screen(write: write)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '숏폼 댓글');
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pumpAndSettle();
+
+      expect(write.commentCalls, 1);
+      expect(write.lastCommentPostType, CommunityPostType.shortform);
+      expect(write.lastCommentParentId, isNull);
+    });
   });
 }

@@ -87,8 +87,48 @@ void main() {
     });
   });
 
+  group('CommunityComment.fromMap 본문(정본 content 우선·legacy body 폴백)', () {
+    Map<String, dynamic> row({String? content, String? body, String? parent}) =>
+        <String, dynamic>{
+          'id': 'c1',
+          if (content != null) 'content': content,
+          if (body != null) 'body': body,
+          if (parent != null) 'parent_id': parent,
+          'author_label': '익명2',
+          'created_at': '2026-07-20T00:00:00Z',
+        };
+
+    test('content 가 있으면 content(정본 comments 행)', () {
+      final CommunityComment c =
+          CommunityComment.fromMap(row(content: '정본', body: 'legacy'));
+      expect(c.body, '정본');
+    });
+
+    test('content 가 비면 legacy body 폴백(community_comments 행)', () {
+      expect(CommunityComment.fromMap(row(content: '  ', body: 'legacy')).body,
+          'legacy');
+      expect(CommunityComment.fromMap(row(body: 'legacy')).body, 'legacy');
+    });
+
+    test('둘 다 없으면 빈 문자열(크래시 없음)', () {
+      expect(CommunityComment.fromMap(row()).body, '');
+    });
+
+    test('parent_id → parentId(2-depth 답글 대비), 없으면 null', () {
+      expect(
+          CommunityComment.fromMap(row(content: '답글', parent: 'c0')).parentId,
+          'c0');
+      expect(CommunityComment.fromMap(row(content: '원댓글')).parentId, isNull);
+    });
+  });
+
   test('CommunityPostType.code', () {
     expect(CommunityPostType.board.code, 'board');
     expect(CommunityPostType.shortform.code, 'shortform');
+  });
+
+  test('CommunityPostType.commentsTable — 게시판=정본 comments, 숏폼=legacy 유지', () {
+    expect(CommunityPostType.board.commentsTable, 'comments');
+    expect(CommunityPostType.shortform.commentsTable, 'community_comments');
   });
 }

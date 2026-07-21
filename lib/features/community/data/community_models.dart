@@ -147,17 +147,25 @@ class ShortformPost {
   }
 }
 
-/// 커뮤니티 댓글(community_comments). post_type 로 게시판/숏폼 공용.
+/// 커뮤니티 댓글 뷰모델 — 게시판은 정본 `comments`, 숏폼은 기존
+/// `community_comments` 행을 공용으로 담는다(v16 정본 전환).
+/// 본문은 content(정본) 우선·body(legacy) 폴백으로 읽는다.
 class CommunityComment {
   const CommunityComment({
     required this.id,
     required this.body,
+    this.parentId,
     this.authorLabel,
     required this.createdAt,
   });
 
   final String id;
   final String body;
+
+  /// 부모 댓글 id(정본 comments 의 최대 2-depth 답글). 현재 UI는 평면 표시라
+  /// 렌더링에 쓰지 않지만, 향후 답글 표시를 위해 모델에 실어 둔다.
+  final String? parentId;
+
   final String? authorLabel;
   final DateTime createdAt;
 
@@ -166,7 +174,10 @@ class CommunityComment {
   factory CommunityComment.fromMap(Map<String, dynamic> m) {
     return CommunityComment(
       id: m['id'] as String,
-      body: (m['body'] as String?)?.trim() ?? '',
+      // 정본 comments 는 content, legacy community_comments 는 body(브리지 행은
+      // content 도 채워짐) — 어느 쪽 행이 와도 관대하게 읽는다.
+      body: _pickText(m, const <String>['content', 'body']) ?? '',
+      parentId: m['parent_id'] as String?,
       authorLabel: m['author_label'] as String?,
       createdAt: parseTime(m['created_at']),
     );
@@ -179,6 +190,11 @@ enum CommunityPostType {
   shortform;
 
   String get code => this == CommunityPostType.board ? 'board' : 'shortform';
+
+  /// 이 타입의 댓글 원천 테이블(v16 정본 전환) — 게시판은 정본 `comments`,
+  /// 숏폼은 기존 `community_comments`(post_type='shortform') 유지.
+  String get commentsTable =>
+      this == CommunityPostType.board ? 'comments' : 'community_comments';
 }
 
 /// 내 활동(읽기): 내가 쓴 글·좋아요·스크랩한 글.

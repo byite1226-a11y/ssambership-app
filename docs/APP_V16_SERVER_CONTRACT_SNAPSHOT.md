@@ -117,17 +117,68 @@
 
 ## 4. 후속 세션 게이트 판정용 조회 결과
 
-### 4.1 알림 (트랙 C) — 기반 테이블 배포 확인
+### 4.1 알림 (트랙 C) — 2026-07-21 세션 2 재조회로 전체 계약 확정
 
-- `device_tokens(id, user_id, token, platform, revoked_at, created_at, updated_at)` 존재.
-- `notification_deliveries(id, outbox_id, device_token_id, status, attempt_count, last_error, sent_at, ...)` 존재.
-- `notification_settings(user_id, push_enabled, groups jsonb, updated_at)` 존재
-  (계획 문서의 가칭 `user_notification_settings` 아님 — **실명 `notification_settings`**).
-- 전체 읽음 RPC: **`mark_all_notifications_read()` (인자 없음, integer 반환, AUTH_REQUIRED errcode 28000)** 배포.
-- `notifications` 테이블: `type`, `event_key`, `data`, `metadata`, 다중 수신자 컬럼(user_id/recipient_id/
-  student_id/mentor_id/target_user_id/owner_id/recipient_user_id)이 공존하는 과도기 스키마.
-- `record_domain_notification(...)`이 서버측 정본 기록 경로(qna RPC 내부에서 사용 확인).
-- → 트랙 C는 **기반 존재**. 단, 토큰 등록 RPC 유무는 다음 세션에서 별도 확인 필요.
+#### 토큰 (앱 사용 대상)
+
+- `device_tokens(id uuid PK, user_id uuid NOT NULL FK users ON DELETE CASCADE, token text NOT NULL UNIQUE,
+  platform text CHECK(ios|android|web|unknown), revoked_at, created_at, updated_at)`.
+  RLS: select_own / modify_own(ALL, user_id=auth.uid()).
+- **`register_device_token(p_token text, p_platform text='unknown') → jsonb`** (SECURITY DEFINER):
+  `ON CONFLICT (token) DO UPDATE SET user_id=auth.uid(), platform, revoked_at=null` —
+  **계정 전환 시 원자 재소유까지 서버가 수행**(WAITING_SERVER_API 아님 · 게이트 충족).
+  반환 `{ok:true, device_token_id}`. 오류: `AUTH_REQUIRED`, `TOKEN_REQUIRED`.
+  잘못된 platform 은 'unknown' 으로 정규화.
+- **`revoke_device_token(p_device_token_id uuid) → boolean`**: `revoked_at=now()` 세팅(멱등 —
+  이미 revoke 면 null 반환). 앱은 등록 때 받은 `device_token_id` 를 저장해 로그아웃 시 사용한다.
+
+#### 기록·발송 (앱 호출 금지 — 서버 전용)
+
+- `record_domain_notification(p_recipient_user_id, p_event_key, p_dedup_key, p_event_type, p_title,
+  p_body, p_link, p_metadata, p_payload)` — notifications + notification_outbox upsert.
+  **DB 트리거(com_notify_*, iq_notify_*, sbe_notify_* 등)가 호출하는 서버 내부 경로.
+  앱은 절대 호출하지 않는다(발송은 서버 outbox worker: notification_outbox_claim/mark_sent/
+  mark_failed + notification_deliveries + notification_delivery_allowed).**
+
+#### notifications 정본 컬럼 (record_domain_notification 이 쓰는 것)
+
+- 수신자 정본: **`recipient_user_id`** (+ `user_id` 미러). UNIQUE `(recipient_user_id, event_key)`.
+- 읽음 정본: **`is_read`** (+`read_at`). RLS: 다중 수신자 컬럼 OR 매칭으로 select/update 허용
+  (레거시 recipient_id/student_id/mentor_id/target_user_id/owner_id 포함).
+- 내용: `type`(이벤트 타입), `body`, `data`(`{title, link}`), `metadata`(`{event_key, link, ...타입별 ID}`).
+- 커서: `(created_at DESC, id DESC)` — 인덱스 `idx_notif_user_unread(user_id,is_read,created_at DESC)` 등.
+- 전체 읽음: **`mark_all_notifications_read()`** (인자 없음 → integer, AUTH_REQUIRED errcode 28000).
+
+#### 17종 이벤트 type (트리거 소스 실추출로 확정)
+
+| type | 발생 트리거 | link/metadata |
+|---|---|---|
+| `question_answered` | qna_append_message / qna_register_attachment | link `/question-room/{roomId}?thread={threadId}`, metadata `{room_id, thread_id}` |
+| `new_order_message` | com_notify_new_order_message | link `/custom-request/orders/{id}` |
+| `new_application` | cra_notify_new_application | link `/applications/waiting`, `/custom-request/...` |
+| `mentor_subscription_price_changed` | mplan_notify_price_changed | link `/mentors/{id}` |
+| `mentor_pause_notice` / `mentor_termination_notice` | mp_notify_activity_transition | link `/subscriptions` |
+| `mentor_termination_refund` | refund_notify_mentor_termination | link `/support/refunds` |
+| `individual_question_assigned` | iq_notify_assigned | **link 없음(null)**, metadata `{question_id}` |
+| `individual_question_claimed` / `individual_question_answered` / `individual_question_released` / `individual_question_expired_refunded` | iq_notify_status_transition | **link 없음(null)**, metadata `{question_id, status}` |
+| `individual_question_message` | iqm_notify_message | metadata `{question_id}` |
+| `subscription_renewal_upcoming` / `subscription_renewal_succeeded` / `subscription_renewal_failed_insufficient_cash` | sbe_notify_billing_event | link `/subscriptions`, `/wallet/charge` (충전 링크는 앱에서 결제 화면 금지 — Commerce-Zero 처리 필요) |
+| `subscription_expired` | sub_notify_expired | link `/subscriptions` |
+
+→ IQ 계열은 link 가 없으므로 **딥링크는 metadata 의 ID 필드(question_id/room_id/thread_id)가 정본**,
+`link` 는 보조. staging notifications 실데이터는 현재 0행.
+
+#### 설정
+
+- `notification_settings(user_id PK, push_enabled bool, groups jsonb, updated_at)`;
+  RLS select_own/modify_own. **`users.notification_enabled` 아님.**
+- 그룹 판정 정본 `notification_event_group(type)`:
+  `question_*|qna_*|connection_note*`→**qna**, `custom_*|order_*|individual_question*`→**order**,
+  `%subscription%`→**subscription**, `%refund%`→**refund**, 그 외→**system**.
+  (`individual_question_expired_refunded` 은 case 순서상 **order**.)
+- 발송 판정 `notification_delivery_allowed`: 설정 행 없음 → **허용(true)**,
+  `push_enabled AND coalesce(groups->>group, true)` — 그룹 키 부재도 허용.
+  → 앱 UI 도 "행 없음/키 없음 = ON" 의미론을 따라야 한다.
 
 ### 4.2 계정 라이프사이클 (트랙 D) — 배포 확인
 
@@ -195,7 +246,7 @@
 | 트랙 | 게이트 | 판정 |
 |---|---|---|
 | B. 질문방 원자 RPC + 첨부 보상 | 생성/append/confirm/오답/첨부 RPC + Storage DELETE 정책 | ✅ 충족 — 이번 세션 진행 |
-| C. 알림·푸시 | device_tokens·deliveries·settings·전체읽음 RPC | ✅ 기반 확인(토큰 등록 RPC는 추가 확인) — 세션 2 |
+| C. 알림·푸시 | device_tokens·deliveries·settings·전체읽음·토큰 등록/재소유/revoke RPC | ✅ **전부 충족**(register_device_token 이 계정 전환 원자 재소유 포함) — 세션 2 진행 |
 | D. 계정 라이프사이클 | deletion jobs·request/cancel RPC·write_blocked | ✅ 충족 — 상태 모델링 이번 세션 |
 | E. 댓글 정본·최소버전 | 최소버전 API | ❌ **미충족 → WAITING_SERVER_GATE** |
 | F. 숏폼 scrap | CHECK + RLS | ✅ 충족 — 이번 세션 진행 |

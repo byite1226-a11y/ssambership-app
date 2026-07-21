@@ -241,6 +241,37 @@
 
 ---
 
+## 4.6 세션 3 재조회 (2026-07-21)
+
+### 계정 탈퇴 RPC 권한 — ★앱 직접 호출 불가
+- `account_deletion_request` / `account_deletion_cancel` ACL:
+  **`{postgres, service_role}` 만 EXECUTE — authenticated 없음.**
+  → 앱이 직접 호출하면 42501(permission denied). 실탈퇴는 현재 웹(백엔드 service_role) 경유만 가능.
+  앱 내 탈퇴 UX 는 포트/fake 로 계약을 고정하고, 라이브 경로는 **WAITING_SERVER_API**
+  (`GRANT EXECUTE ... TO authenticated` 필요 — 웹·DB 측 조치).
+- `account_deletion_write_blocked` 는 authenticated EXECUTE 유(세션 2 확인과 동일).
+
+### 개별질문 환불 — 공개 wrapper 확정
+- **`refund_individual_question(p_question_id)`** → `individual_question_escrow_result`,
+  authenticated EXECUTE ✅. core `refund_individual_question_hold` 는 service_role 전용(앱 호출 금지).
+- 로직: 소유자 검사(`NOT_QUESTION_OWNER` 42501) → 이미 refunded/refund_ledger 존재 시
+  hold 위임(멱등 성공 경로) → 허용 상태 `escrowed|open|assigned|claimed` 외에는
+  `REFUND_NOT_ALLOWED: status=<x>`(P0001) → 실패 시 `INDIVIDUAL_QUESTION_REFUND_FAILED:<code>:<msg>`.
+  기타: `AUTH_REQUIRED`(28000), `INVALID_INPUT`(22023).
+
+### 리뷰 — 서버 가드 실정의
+- RLS: INSERT 는 학생 본인 + `check_review_eligibility`(유료 결제 2회 이상), UPDATE 는
+  mentor/admin 만(학생 UPDATE 정책 없음), 공개 SELECT 는 `is_hidden=false AND is_blinded=false`.
+- 트리거 `reviews_enforce_update`: 보호 컬럼(id/mentor_id/author_id/rating/body/
+  subscription_count/created_at) 불변 · **멘토 답글 1회만**(재수정 서버 거부) ·
+  멘토는 moderation 필드 변경 불가 · admin 은 답글 변경 불가.
+- → 앱 INSERT payload 정본: `mentor_id, author_id, rating, body` (student_id/content 금지).
+
+### 최소 앱 버전 (Track E) — 재확인 결과 여전히 부재
+- `%version%`/`app_config` 테이블·함수 0건 → **WAITING_SERVER_GATE 유지**.
+  요구 계약은 `docs/APP_V16_MIN_VERSION_SERVER_REQUIREMENT.md` 참조.
+- `comments` 정본 테이블 RLS 는 준비돼 있으나(visible/own/admin 7정책) 버전 게이트 없이는 전환 금지.
+
 ## 5. 게이트 판정 요약
 
 | 트랙 | 게이트 | 판정 |

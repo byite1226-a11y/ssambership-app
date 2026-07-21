@@ -81,19 +81,25 @@ Future<void> _scenario(WidgetTester tester) async {
     await tester.tap(find.descendant(
         of: find.byType(NavigationBar), matching: find.text('커뮤니티')));
     await _pumpUntil(tester, find.text('게시판'), reason: '커뮤니티 탭 진입');
-    await tester.tap(find.text('게시판'));
-    await _settle(tester, seconds: 6);
+    // 게시판 탭 전환 — 전환의 증거('작성' FAB, 게시판 탭 전용)가 보일 때까지 재시도.
+    for (int i = 0; i < 4 && !tester.any(find.text('작성')); i++) {
+      await tester.tap(find.text('게시판').hitTestable().first,
+          warnIfMissed: false);
+      await _settle(tester, seconds: 2);
+    }
+    expect(find.text('작성'), findsWidgets, reason: '게시판 탭 전환(작성 FAB 노출)');
+    await _settle(tester, seconds: 5);
     _expectNoErrorText(tester, where: '게시판 목록');
 
-    final Finder firstCard = find.byType(Card).first.hitTestable();
-    final Finder anyListCard = find.textContaining('', findRichText: true);
-    expect(anyListCard, findsWidgets, reason: '게시판 목록에 콘텐츠 존재');
-
-    // 첫 게시글 열기 — BoardPostCard 는 AppCard(onTap) 이므로 InkWell 기반 탐색.
-    final Finder postOpen = find.byWidgetPredicate((Widget w) =>
-        w is InkWell && w.onTap != null).first;
+    // 첫 게시글 열기 — 목록(ListView) 내부의 탭 가능한 InkWell 만 대상으로 한다.
+    final Finder postOpen = find
+        .descendant(
+            of: find.byType(ListView),
+            matching: find.byWidgetPredicate(
+                (Widget w) => w is InkWell && w.onTap != null))
+        .first;
     // 게시글 목록이 비어 있으면(운영 데이터 기준) 댓글 시나리오는 건너뛴다.
-    final bool hasPost = tester.any(postOpen) || tester.any(firstCard);
+    final bool hasPost = tester.any(postOpen);
     bool commentWritten = false;
     if (hasPost) {
       await tester.tap(postOpen);

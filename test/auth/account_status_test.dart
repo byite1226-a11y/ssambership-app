@@ -7,19 +7,39 @@ class _FakeGateway implements AccountStatusGateway {
   _FakeGateway({
     this.userRow,
     this.jobRows = const <Map<String, dynamic>>[],
+    this.writeBlocked = false,
     this.userThrows = false,
     this.jobThrows = false,
+    this.writeBlockedThrows = false,
   });
 
   final Map<String, dynamic>? userRow;
   final List<Map<String, dynamic>> jobRows;
+  final bool writeBlocked;
   final bool userThrows;
   final bool jobThrows;
+  final bool writeBlockedThrows;
 
   @override
   Future<Map<String, dynamic>?> fetchUserRow(String userId) async {
     if (userThrows) throw Exception('network down');
     return userRow;
+  }
+
+  @override
+  Future<bool> fetchWriteBlocked(String userId) async {
+    if (writeBlockedThrows) throw Exception('rpc down');
+    // 실서버(SECURITY DEFINER RPC)와 동일한 판정을 흉내: 잡 행 기반 또는 강제 플래그.
+    if (writeBlocked) return true;
+    const Set<String> blocked = <String>{
+      'locked',
+      'purging',
+      'storage_purged',
+      'finalized',
+      'auth_soft_deleted',
+    };
+    return jobRows.any((Map<String, dynamic> r) =>
+        blocked.contains((r['state'] as String?)?.trim().toLowerCase()));
   }
 
   @override
@@ -172,11 +192,41 @@ void main() {
       expect(s.kind, AccountStatusKind.deletionLocked);
     });
 
-    test('잡 select 이 RLS 등으로 throw → 잡 없음으로 흡수(status 로만 판정)', () async {
+    test('★fail-closed: 잡 행 select throw → fetchFailed(빈 목록 흡수 금지)', () async {
       final AccountState s = await resolve(_FakeGateway(
         userRow: activeUser(),
         jobThrows: true,
       ));
+      expect(s.kind, AccountStatusKind.fetchFailed);
+      expect(s.allowsAppUse, isFalse); // purging 일 수 있음 — 통과 금지
+      expect(s.isRetryable, isTrue); // 재시도 가능한 차단으로 표시
+    });
+
+    test('★fail-closed: write-block RPC throw → fetchFailed(active 통과 금지)',
+        () async {
+      final AccountState s = await resolve(_FakeGateway(
+        userRow: activeUser(),
+        writeBlockedThrows: true,
+      ));
+      expect(s.kind, AccountStatusKind.fetchFailed);
+      expect(s.allowsAppUse, isFalse);
+      expect(s.isRetryable, isTrue);
+    });
+
+    test('write-block RPC true(직접 select 은 RLS 로 0행이어도) → deletionLocked',
+        () async {
+      // 스테이징 실측: account_deletion_jobs 는 정책 0개라 행 조회가 항상 비어 있다.
+      // 그래도 RPC 가 true 면 차단해야 한다(정본은 RPC).
+      final AccountState s = await resolve(_FakeGateway(
+        userRow: activeUser(),
+        writeBlocked: true,
+        jobRows: const <Map<String, dynamic>>[], // RLS 로 가려진 상황
+      ));
+      expect(s.kind, AccountStatusKind.deletionLocked);
+    });
+
+    test('잡 0행 + write-block false → 정상 active(유일한 통과 경로)', () async {
+      final AccountState s = await resolve(_FakeGateway(userRow: activeUser()));
       expect(s.kind, AccountStatusKind.active);
     });
 

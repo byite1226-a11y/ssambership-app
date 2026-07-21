@@ -92,6 +92,14 @@ class AttachmentRegistrationFailure extends AppError {
       '${compensationError == null ? '' : ', compensationError=$compensationError'})';
 }
 
+/// 23505 재시도 수용 실패 — 같은 storage_path 에 '다른 의미'의 등록행이 존재.
+///
+/// 이미 등록된 객체일 수 있으므로 보상 DELETE 도 하지 않는다(성공 위장 금지).
+class AttachmentRegistrationConflict extends AppError {
+  const AttachmentRegistrationConflict({super.cause})
+      : super('이미 등록된 첨부와 충돌했어요. 새로고침 후 다시 시도해 주세요.');
+}
+
 /// 첨부 업로드 포트. Storage 업로드 + 서버 RPC 등록을 담당.
 abstract class AttachmentUploaderPort {
   /// 준비 여부(스토리지 버킷·정책). false 면 [upload] 은 안내 에러를 던진다.
@@ -107,13 +115,17 @@ abstract class AttachmentUploaderPort {
 
 /// Supabase Storage 업로드 구현.
 ///
-/// ★ 인프라(실사 확인됨): Storage 버킷 [bucket] 과 정책
-///   `user_is_room_party_for_qra_path` 가 존재한다. 정책은 '경로 첫 세그먼트가
-///   mentor_student_rooms.id(room UUID)일 때만 insert/select 허용'이며, 버킷이
-///   비어 있어 이 정의가 유일한 규약이다 → 업로드 경로 첫 세그먼트는 반드시 roomId.
+/// ★ 인프라(스테이징 정본, 2026-07 실측): Storage 버킷 [bucket] 의 INSERT 정책은
+///   `qra_storage_insert_party`(방 당사자 + thread writable + 경로 적격 +
+///   탈퇴 write-block 아님), DELETE 정책은 `qra_storage_delete_unregistered_owner`
+///   (본인 소유·미등록 객체만 — 보상 삭제 전용). 경로 규약은
+///   '{roomId}/{threadId}/...' 로 서버 RPC(STORAGE_PATH_MISMATCH)와 동일하게 강제된다.
 class SupabaseAttachmentUploader implements AttachmentUploaderPort {
-  const SupabaseAttachmentUploader({QnaAttachmentBackend? backend})
-      : _backendOverride = backend;
+  const SupabaseAttachmentUploader({
+    QnaAttachmentBackend? backend,
+    String? Function()? currentUserIdProvider,
+  })  : _backendOverride = backend,
+        _currentUserIdProvider = currentUserIdProvider;
 
   /// 실제 버킷명(Supabase 실사로 확인 — 웹과 공유).
   static const String bucket = 'question-room-attachments';
@@ -124,8 +136,15 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
   /// 테스트 주입용 백엔드(없으면 Supabase 구현).
   final QnaAttachmentBackend? _backendOverride;
 
+  /// 현재 사용자 id 공급자(테스트 주입 지점 — 기본은 Supabase 세션).
+  final String? Function()? _currentUserIdProvider;
+
   QnaAttachmentBackend get _backend =>
       _backendOverride ?? const SupabaseQnaAttachmentBackend();
+
+  String? get _currentUserId => _currentUserIdProvider != null
+      ? _currentUserIdProvider!()
+      : SupabaseInit.clientOrNull?.auth.currentUser?.id;
 
   @override
   bool get isReady => _storageReady;
@@ -192,14 +211,26 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
         messageId: messageId,
       );
     } catch (e) {
-      // 동일 storage_path 재시도로 이미 등록된 경우(UNIQUE 23505) — 중복 메타행을
-      // 만들지 않고 기존 행을 성공으로 수용한다(보상 삭제 금지: 등록된 객체).
+      // 동일 storage_path 재시도로 이미 등록된 경우(UNIQUE 23505) — 기존 행이
+      // '같은 시도'였음을 의미까지 확인한 뒤에만 멱등 성공으로 수용한다.
+      // (백엔드 조회가 필터를 무시하고 엉뚱한 행을 돌려줘도 여기서 걸러진다.)
       if (isUniqueViolation(e)) {
         final QuestionAttachment? existing = await _findRegistered(objectPath);
         if (existing != null) {
-          return AttachmentUploadResult(
-              attachment: existing, answeredTransition: false);
+          if (_matchesAttempt(
+            existing,
+            objectPath: objectPath,
+            threadId: threadId,
+            messageId: messageId,
+          )) {
+            return AttachmentUploadResult(
+                attachment: existing, answeredTransition: false);
+          }
+          // 의미 불일치: 성공 위장 금지. 이미 등록된 객체일 수 있으므로
+          // 보상 DELETE 도 하지 않는다(서버 정책도 등록 객체 삭제를 거부).
+          throw AttachmentRegistrationConflict(cause: e);
         }
+        // 23505 인데 행 자체가 안 보임 → 기존 실패 흐름(미등록 객체 보상 삭제).
       }
       throw await _compensate(objectPath, registrationError: e);
     }
@@ -250,6 +281,24 @@ class SupabaseAttachmentUploader implements AttachmentUploaderPort {
         compensated: false,
       );
     }
+  }
+
+  /// 23505 멱등 수용 판정 — 기존 행이 '이번 시도'와 의미까지 일치해야 한다.
+  /// storage_path·thread_id 정확 일치, message_id 동일, author_id 는 기록돼
+  /// 있으면 현재 로그인 사용자와 일치(레거시 null 은 판정 불가 → 허용).
+  bool _matchesAttempt(
+    QuestionAttachment existing, {
+    required String objectPath,
+    required String threadId,
+    String? messageId,
+  }) {
+    if (existing.storagePath != objectPath) return false;
+    if (existing.threadId != threadId) return false;
+    if (existing.messageId != messageId) return false;
+    final String? author = existing.authorId;
+    final String? uid = _currentUserId;
+    if (author != null && uid != null && author != uid) return false;
+    return true;
   }
 
   /// storage_path 로 기존 등록 행 조회(UNIQUE 재시도 수용용). 실패하면 null.

@@ -115,8 +115,19 @@ abstract class AccountStatusGateway {
   /// users 본인 행({'status', 'suspended_until'}). 행 없음 → null. 실패 → throw.
   Future<Map<String, dynamic>?> fetchUserRow(String userId);
 
-  /// account_deletion_jobs 본인 행들([{'state': …}]). 실패 → throw.
-  /// (RLS 가 select 를 막는 환경이면 throw 되고, 판정부가 '잡 없음'으로 흡수한다.)
+  /// 서버 write-block 판정(RPC account_deletion_write_blocked — authenticated
+  /// EXECUTE 실측 확인). locked|purging|storage_purged|finalized|auth_soft_deleted
+  /// 면 true. 실패 → throw(판정부가 fetchFailed 로 fail-closed).
+  ///
+  /// ★ 이 RPC 가 정본이다: account_deletion_jobs 는 RLS enabled + 정책 0개라
+  ///   앱 직접 SELECT 는 항상 0행(오류 아님)으로 나와 행 조회만으로는
+  ///   purging 사용자를 걸러낼 수 없다(스테이징 실측 2026-07-21).
+  Future<bool> fetchWriteBlocked(String userId);
+
+  /// account_deletion_jobs 본인 행들([{'state': …}]). 실패 → throw
+  /// (판정부가 fetchFailed 로 fail-closed — 빈 목록 흡수 금지).
+  /// 현 스테이징 RLS 에선 항상 빈 목록이지만, 정책이 열리면 completed/pending
+  /// 구분에 쓰인다(전방 호환).
   Future<List<Map<String, dynamic>>> fetchDeletionJobRows(String userId);
 }
 
@@ -134,6 +145,17 @@ class SupabaseAccountStatusGateway implements AccountStatusGateway {
         .select('status, suspended_until')
         .eq('id', userId)
         .maybeSingle();
+  }
+
+  @override
+  Future<bool> fetchWriteBlocked(String userId) async {
+    final Object? result = await _client.rpc(
+      'account_deletion_write_blocked',
+      params: <String, dynamic>{'p_user_id': userId},
+    );
+    if (result is bool) return result;
+    // 예상 밖 반환형 — 판정 불가로 취급(fail-closed).
+    throw StateError('unexpected write_blocked result');
   }
 
   @override
@@ -179,12 +201,26 @@ class AccountStatusReader {
     }
     if (userRow == null) return AccountState.fetchFailed;
 
-    // 2) 탈퇴 잡 — RLS 등으로 select 이 막히면 '잡 없음'으로 본다(보수 판정은 status 로).
-    List<Map<String, dynamic>> jobRows = const <Map<String, dynamic>>[];
+    // 2) 탈퇴 write-block 판정 — 정본은 SECURITY DEFINER RPC(직접 select 은
+    //    정책 0개라 항상 0행). ★fail-closed: 조회 실패를 '잡 없음'으로 흡수하면
+    //    purging 사용자가 active 로 통과한다 → 실패는 fetchFailed(재시도 차단).
+    final bool writeBlocked;
+    try {
+      writeBlocked = await gateway.fetchWriteBlocked(userId);
+    } catch (_) {
+      return AccountState.fetchFailed;
+    }
+    if (writeBlocked) {
+      return const AccountState(kind: AccountStatusKind.deletionLocked);
+    }
+
+    // 3) 탈퇴 잡 행 — completed/pending 세분(현 스테이징 RLS 에선 항상 0행이지만
+    //    정책이 열리면 사용). 조회 실패도 fail-closed(fetchFailed) — 0행만 정상.
+    final List<Map<String, dynamic>> jobRows;
     try {
       jobRows = await gateway.fetchDeletionJobRows(userId);
     } catch (_) {
-      jobRows = const <Map<String, dynamic>>[];
+      return AccountState.fetchFailed;
     }
 
     bool jobLocked = false;
@@ -205,7 +241,7 @@ class AccountStatusReader {
       return const AccountState(kind: AccountStatusKind.deleted);
     }
 
-    // 3) status — 서버와 동일하게 lower() 비교. 'banned'/'suspended' 외에는 전부 active.
+    // 4) status — 서버와 동일하게 lower() 비교. 'banned'/'suspended' 외에는 전부 active.
     final String status =
         (userRow['status'] as String?)?.trim().toLowerCase() ?? '';
     if (status == 'banned') {

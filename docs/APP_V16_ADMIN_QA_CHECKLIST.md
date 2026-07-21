@@ -1,8 +1,8 @@
 # v16 관리자 통합 QA 체크리스트
 
-> 상태: **ADMIN_QA_READY_NOT_EXECUTED** — 이 환경에는 관리자 테스트 계정 로그인 수단이
-> 없고, 계정/DB 임의 수정은 금지 사항이다. 정적 검증(코드 레벨)은 아래 §1에 기록,
-> 실행 QA 는 관리자 계정이 준비된 환경에서 §2 를 수행한다.
+> 상태: **서버측 행동 검증 PASS(§1.5) + ADMIN_QA_READY_NOT_EXECUTED(§2)** —
+> 관리자 권한 경계는 staging DB 에서 rollback-only fixture 로 직접 실행해 검증 완료(§1.5).
+> 관리자 계정 실로그인이 필요한 화면·웹 교차 항목(§2)만 미실행으로 남는다.
 
 ## 1. 정적 검증(이번 세션 코드 레벨 확인 — 완료)
 
@@ -17,6 +17,32 @@
   앱은 리뷰 UPDATE 경로 자체가 없다.
 - **민감 서류 URL**: 멘토 승인 서류 등은 앱 화면에 노출 경로 없음(관리자 웹 전용).
   실행 QA 에서 admin 계정으로 재확인할 것.
+
+## 1.5 서버측 행동 검증 (2026-07-21 staging 실행 — 전부 PASS)
+
+> 방식: staging(`lbeqxarxothkmzqvpudy`) 에서 MCP execute_sql 단일 트랜잭션,
+> fixture 계정 4종(admin/mentor/student×2) + 리뷰 2건 생성 후
+> `request.jwt.claims` + `set local role authenticated` 로 각 역할을 시뮬레이션.
+> 마지막에 무조건 `raise exception` 으로 트랜잭션 전체를 중단시켜 **잔존 데이터 0**
+> (실행 후 baseline 재조회로 fixture 사용자/리뷰/신고/오브젝트 0건 확인).
+> 판정은 예외 문구만이 아니라 **row_count 를 함께 단언**한다(아래 A5 참고).
+
+- [x] **A1** 관리자 리뷰 블라인드(1행) → 일반 사용자 조회 0건, 관리자 조회 1건
+- [x] **A2** 관리자가 rating 등 보호필드 변경 시도 → `reviews: protected columns are immutable`
+- [x] **A3** 관리자가 mentor_reply 변경 시도 → `reviews: admin must not change mentor reply fields`
+- [x] **A4** 비관리자 언블라인드 시도 → RLS 0행(블라인드 유지)
+- [x] **A5** 멘토 답글 1회 성공(1행) → 2회 시도 `mentor reply already set (one-time only)`,
+      moderation 필드 시도 `mentor must not change moderation fields`, 최종 답글 = 첫 답글 유지
+- [x] **A6** 신고(content_reports): 신고자 본인 조회 1건·상태 변경 0행, 타 사용자 조회 0건,
+      관리자 조회 1건·상태 변경 1행
+- [x] **A7** student-id-images(비공개 버킷): 소유자 조회 1건, 타 사용자 0건, 관리자 1건
+
+**검증 중 확인된 서버 동작(결함 아님·기록)**: 리뷰가 블라인드되면 멘토 SELECT 정책이
+없어(`public_visible` 은 비블라인드만, `admin` 은 관리자만) 멘토 본인의 UPDATE(답글 포함)도
+RLS 에서 0행이 된다 — 블라인드된 리뷰에는 멘토가 답글을 달 수 없다는 의도된 격리로 판단.
+앱은 블라인드 리뷰를 아예 렌더하지 않으므로 클라이언트 영향 없음. 최초 결합 fixture 가
+이 상태에서 A5 를 실행해 오탐(FAIL)을 냈고, 답글 시나리오를 비블라인드 리뷰로 분리 +
+row_count 단언 추가로 수정했다.
 
 ## 2. 실행 QA (관리자 계정 필요 — 웹 관리자 화면 + 앱 교차)
 

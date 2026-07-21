@@ -10,6 +10,7 @@ import '../../../../features/community/ui/blocks/blocked_users_screen.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../../../../shared/errors/friendly_error.dart';
 import '../../data/notification_settings_repository.dart';
+import '../account_delete_screen.dart';
 import '../widgets/mypage_section.dart';
 
 /// 설정 섹션 — 알림 설정(마스터+그룹별)·약관/개인정보·앱 버전·로그아웃.
@@ -109,33 +110,14 @@ class _SettingsSectionState extends State<SettingsSection> {
     }
   }
 
-  /// 회원 탈퇴 — 웹 열기 전에 되돌릴 수 없음 고지 + 재확인(P0-1 앱측 잔여).
-  /// '계속'을 눌러야만 기존 웹 브릿지 액션을 그대로 호출한다.
+  /// 회원 탈퇴 — 인앱 탈퇴 화면(P1-10)으로 진입한다.
+  /// 위험 고지·재확인·서버 RPC 요청·취소·웹 폴백은 전부 AccountDeleteScreen 담당.
   Future<void> _confirmAccountDelete() async {
-    final bool? proceed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('회원 탈퇴'),
-        content: const Text('탈퇴하면 계정과 데이터가 삭제되며 되돌릴 수 없어요.\n'
-            '탈퇴 절차는 웹 페이지에서 진행돼요. 계속할까요?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              '계속',
-              style: TextStyle(color: ColorTokens.danger),
-            ),
-          ),
-        ],
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AccountDeleteScreen(),
       ),
     );
-    if (proceed == true && mounted) {
-      await openAccountDeleteWeb(context);
-    }
   }
 
   // ── 알림 설정 영역 ──────────────────────────────────────────────

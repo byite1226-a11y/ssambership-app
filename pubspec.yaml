@@ -45,6 +45,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # e2e(integration_test) — flutter drive + chromedriver(web)로 실서버(staging) 검증.
+  integration_test:
+    sdk: flutter
   flutter_lints: ^4.0.0
   # 런처 아이콘 생성(브랜딩) — 소스 PNG 1개에서 Android/iOS 아이콘 생성.
   flutter_launcher_icons: ^0.13.1

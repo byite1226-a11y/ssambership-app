@@ -27,14 +27,34 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('학생→멘토→관리자 순 실서버 왕복 시나리오', (WidgetTester tester) async {
+    // release/profile 웹 드라이버가 실패 상세를 비워 보내는 문제 대응 —
+    // 진행 마커·실패 원인을 브라우저 콘솔로 직접 남긴다(CDP 로 수집).
+    try {
+      await _scenario(tester);
+      _mark('ALL-DONE');
+    } catch (e, st) {
+      _mark('FAILURE: $e');
+      _mark('STACK: ${st.toString().split('\n').take(10).join(' § ')}');
+      rethrow;
+    }
+  }, timeout: const Timeout(Duration(minutes: 12)));
+}
+
+// ignore: avoid_print
+void _mark(String msg) => print('E2E-MARK $msg');
+
+Future<void> _scenario(WidgetTester tester) async {
+    final WidgetTester _ = tester;
     expect(_studentEmail.isNotEmpty && _mentorEmail.isNotEmpty,
         isTrue, reason: 'E2E 자격증명(--dart-define)이 주입되지 않았다');
 
+    _mark('boot');
     app.main();
     // 부팅(스플래시 → 세션 판정 → 로그인 화면). 실네트워크라 고정 대기 대신 폴링.
     await _pumpUntil(tester, find.text('로그인'),
         reason: '부팅 후 로그인 화면 도달');
 
+    _mark('step1-student-login');
     // ── 1. 학생 로그인 → 홈 셸(5탭) ─────────────────────────────────────────
     await _login(tester, _studentEmail, _studentPw);
     await _pumpUntil(tester, find.byType(NavigationBar),
@@ -48,6 +68,7 @@ void main() {
     await _settle(tester, seconds: 6);
     _expectNoErrorText(tester, where: '질문방 탭');
 
+    _mark('step2-community');
     // ── 2. 커뮤니티: 게시판 read + 댓글 1건 write(가역 — 사후 SQL 정리) ────────
     await tester.tap(find.descendant(
         of: find.byType(NavigationBar), matching: find.text('커뮤니티')));
@@ -91,6 +112,7 @@ void main() {
     }
     debugPrint('E2E-MARK commentWritten=$commentWritten');
 
+    _mark('step3-tabs');
     // ── 3. 멘토 찾기 / 알림 / 개별질문 read ─────────────────────────────────
     await tester.tap(find.descendant(
         of: find.byType(NavigationBar), matching: find.text('멘토 찾기')));
@@ -107,6 +129,7 @@ void main() {
     await _settle(tester, seconds: 6);
     _expectNoErrorText(tester, where: '개별질문 탭');
 
+    _mark('step4-mypage');
     // ── 4. 마이페이지: 알림 설정 토글 왕복(가역 write) → 로그아웃 ─────────────
     await _openMyPage(tester);
     final Finder masterLabel = find.text('알림 받기');
@@ -124,6 +147,7 @@ void main() {
 
     await _logoutFromMyPage(tester);
 
+    _mark('step5-mentor');
     // ── 5. 멘토 로그인 → 동일 셸 → 로그아웃 ────────────────────────────────
     await _login(tester, _mentorEmail, _mentorPw);
     await _pumpUntil(tester, find.byType(NavigationBar),
@@ -133,6 +157,7 @@ void main() {
     await _openMyPage(tester);
     await _logoutFromMyPage(tester);
 
+    _mark('step6-admin');
     // ── 6. 관리자 로그인 → 차단 화면(학생·멘토 전용) → 로그아웃 ───────────────
     if (_adminEmail.isNotEmpty) {
       await _login(tester, _adminEmail, _adminPw);
@@ -145,7 +170,6 @@ void main() {
       await tester.tap(find.text('로그아웃'));
       await _pumpUntil(tester, find.text('로그인'), reason: '차단 화면 로그아웃 복귀');
     }
-  }, timeout: const Timeout(Duration(minutes: 12)));
 }
 
 /// 로그인 화면에서 이메일/비밀번호 입력 → 로그인 버튼.

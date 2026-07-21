@@ -124,11 +124,14 @@ abstract class AccountStatusGateway {
   ///   purging 사용자를 걸러낼 수 없다(스테이징 실측 2026-07-21).
   Future<bool> fetchWriteBlocked(String userId);
 
-  /// account_deletion_jobs 본인 행들([{'state': …}]). 실패 → throw
-  /// (판정부가 fetchFailed 로 fail-closed — 빈 목록 흡수 금지).
-  /// 현 스테이징 RLS 에선 항상 빈 목록이지만, 정책이 열리면 completed/pending
-  /// 구분에 쓰인다(전방 호환).
-  Future<List<Map<String, dynamic>>> fetchDeletionJobRows(String userId);
+  /// 본인 탈퇴 잡 상태(RPC account_deletion_status_self — SQL 161, authenticated
+  /// EXECUTE). {'ok','exists','state','write_blocked','can_cancel'}. 실패 → throw
+  /// (판정부가 fetchFailed 로 fail-closed).
+  ///
+  /// ★ 2026-07-21 e2e 실측: account_deletion_jobs 직접 SELECT 는 테이블 GRANT
+  ///   자체가 없어(ACL: postgres·service_role 뿐) 403 이 난다 — "정책 0개면
+  ///   0행" 이라는 종전 스냅샷 전제는 오측. 직접 조회는 금지, self RPC 가 정본.
+  Future<Map<String, dynamic>> fetchDeletionSelfStatus();
 }
 
 /// Supabase 실구현(RLS: 본인 행만).
@@ -159,12 +162,14 @@ class SupabaseAccountStatusGateway implements AccountStatusGateway {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchDeletionJobRows(String userId) async {
-    final List<dynamic> rows = await _client
-        .from('account_deletion_jobs')
-        .select('state')
-        .eq('user_id', userId);
-    return rows.cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> fetchDeletionSelfStatus() async {
+    final Object? result =
+        await _client.rpc('account_deletion_status_self');
+    if (result is Map && result['ok'] == true) {
+      return Map<String, dynamic>.from(result);
+    }
+    // 예상 밖 반환형/ok=false — 판정 불가(fail-closed).
+    throw StateError('unexpected status_self result');
   }
 }
 
@@ -214,11 +219,13 @@ class AccountStatusReader {
       return const AccountState(kind: AccountStatusKind.deletionLocked);
     }
 
-    // 3) 탈퇴 잡 행 — completed/pending 세분(현 스테이징 RLS 에선 항상 0행이지만
-    //    정책이 열리면 사용). 조회 실패도 fail-closed(fetchFailed) — 0행만 정상.
-    final List<Map<String, dynamic>> jobRows;
+    // 3) 본인 탈퇴 잡 상태 — self RPC 정본(SQL 161). completed/pending 세분.
+    //    조회 실패도 fail-closed(fetchFailed) — 잡 없음(exists=false)만 정상 통과.
+    //    (구버전의 account_deletion_jobs 직접 SELECT 는 테이블 GRANT 부재로 403 —
+    //     e2e 실측으로 확인되어 제거했다.)
+    final Map<String, dynamic> selfStatus;
     try {
-      jobRows = await gateway.fetchDeletionJobRows(userId);
+      selfStatus = await gateway.fetchDeletionSelfStatus();
     } catch (_) {
       return AccountState.fetchFailed;
     }
@@ -226,10 +233,13 @@ class AccountStatusReader {
     bool jobLocked = false;
     bool jobCompleted = false;
     bool jobPending = false;
-    for (final Map<String, dynamic> row in jobRows) {
+    if (selfStatus['exists'] == true) {
       final String state =
-          (row['state'] as String?)?.trim().toLowerCase() ?? '';
-      if (_writeBlockedJobStates.contains(state)) jobLocked = true;
+          (selfStatus['state'] as String?)?.trim().toLowerCase() ?? '';
+      if (_writeBlockedJobStates.contains(state) ||
+          selfStatus['write_blocked'] == true) {
+        jobLocked = true;
+      }
       if (state == 'completed') jobCompleted = true;
       if (state == 'pending') jobPending = true;
       // canceled / failed / 미지 상태는 무시(없던 일로).

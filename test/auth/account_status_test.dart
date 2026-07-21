@@ -43,9 +43,46 @@ class _FakeGateway implements AccountStatusGateway {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchDeletionJobRows(String userId) async {
-    if (jobThrows) throw Exception('RLS: permission denied');
-    return jobRows;
+  Future<Map<String, dynamic>> fetchDeletionSelfStatus() async {
+    if (jobThrows) throw Exception('RPC: permission denied');
+    // 서버 status_self 는 본인 잡 1건의 상태를 돌려준다 — 우선순위(write-block >
+    // completed > pending > 기타)로 대표 상태를 뽑아 서버 의미를 흉내낸다.
+    const Set<String> blocked = <String>{
+      'locked',
+      'purging',
+      'storage_purged',
+      'finalized',
+      'auth_soft_deleted',
+    };
+    String? state;
+    for (final Map<String, dynamic> r in jobRows) {
+      final String s = (r['state'] as String?)?.trim().toLowerCase() ?? '';
+      if (blocked.contains(s)) {
+        state = s;
+        break;
+      }
+    }
+    state ??= jobRows
+        .map((Map<String, dynamic> r) =>
+            (r['state'] as String?)?.trim().toLowerCase() ?? '')
+        .firstWhere((String s) => s == 'completed',
+            orElse: () => jobRows
+                .map((Map<String, dynamic> r) =>
+                    (r['state'] as String?)?.trim().toLowerCase() ?? '')
+                .firstWhere((String s) => s == 'pending',
+                    orElse: () => jobRows.isEmpty
+                        ? ''
+                        : (jobRows.first['state'] as String?)
+                                ?.trim()
+                                .toLowerCase() ??
+                            ''));
+    return <String, dynamic>{
+      'ok': true,
+      'exists': jobRows.isNotEmpty,
+      'state': state.isEmpty ? null : state,
+      'write_blocked': blocked.contains(state),
+      'can_cancel': state == 'pending',
+    };
   }
 }
 

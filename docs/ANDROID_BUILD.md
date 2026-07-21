@@ -35,7 +35,12 @@ flutter run
    ```
 2. `android/key.properties.example` → `android/key.properties` 복사 후 값 입력
    (storeFile 경로·비밀번호·alias). `.gitignore` 가 커밋을 차단한다.
-3. key.properties 가 없으면 release 빌드는 debug 서명으로 폴백 — **스토어 업로드 전 release 키 서명 여부 확인 필수**.
+3. key.properties 가 없으면 release 산출물(`flutter build appbundle`/`apk`) 빌드가
+   **즉시 실패**한다 — debug 서명 AAB 가 실수로 Play 에 첫 업로드돼 잘못된 업로드 인증서가
+   등록되는 사고를 원천 차단한다.
+   - CI 파이프라인 검증처럼 debug 서명 폴백이 **의도된** 경우에만
+     `-PallowInsecureSigning=true` (또는 env `ORG_GRADLE_PROJECT_allowInsecureSigning=true`)
+     로 빌드한다. 이 산출물은 스토어 제출 불가(NOT-for-submission).
 
 ## 출시 빌드
 ```bash
@@ -43,7 +48,14 @@ flutter build appbundle     # Play Store 업로드용 .aab → build/app/outputs
 flutter build apk           # 직접 배포용 .apk (필요 시)
 ```
 - 업로드마다 `pubspec.yaml` 의 `version: x.y.z+N` 에서 **+N(versionCode) 반드시 증가**.
+  (첫 내부 테스트 업로드는 `0.1.0+1` 그대로 사용 가능.)
 - targetSdk 36 고정 — Google Play 2026-08-31 신규 앱 요건 충족.
+- 업로드 전 **서명 인증서 확인**(debug 아님):
+  ```bash
+  keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
+  ```
+  출력의 인증서 소유자에 `CN=Android Debug` 가 **없어야** 한다. 있으면 key.properties
+  없이(또는 `-PallowInsecureSigning=true` 로) 빌드된 것 — 업로드 금지, release 키로 재빌드.
 
 ## 알려진 상태 / 후속 작업
 - **푸시 알림**: 골격만 존재·비활성 (`device_tokens` 테이블 미생성). 활성화 시

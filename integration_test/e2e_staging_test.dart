@@ -105,7 +105,7 @@ Future<void> _scenario(WidgetTester tester) async {
       if (tester.any(commentField)) {
         final String body =
             '$_commentTag ${DateTime.now().toIso8601String()}';
-        await tester.enterText(commentField, body);
+        await _type(tester, commentField, body, label: 'comment');
         await tester.pump(const Duration(milliseconds: 300));
         await tester.tap(find.byIcon(Icons.send_rounded));
         // 서버 왕복(comments INSERT → 목록 재조회) 후 본문이 목록에 나타나야 한다.
@@ -180,13 +180,28 @@ Future<void> _scenario(WidgetTester tester) async {
     }
 }
 
+/// 텍스트 입력 — enterText 가 웹(profile/release)에서 컨트롤러에 반영되지 않는
+/// 사례가 있어(서버로 빈 값 전송 확인), 반영 여부를 검증하고 컨트롤러 직접 세팅으로
+/// 폴백한다. 값 자체는 로그에 남기지 않는다(길이만).
+Future<void> _type(WidgetTester tester, Finder field, String text,
+    {required String label}) async {
+  await tester.enterText(field, text);
+  await tester.pump(const Duration(milliseconds: 100));
+  final TextField tf = tester.widget<TextField>(field);
+  if ((tf.controller?.text ?? '') != text) {
+    tf.controller?.text = text;
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  _mark('typed $label len=${tf.controller?.text.length ?? -1}');
+}
+
 /// 로그인 화면에서 이메일/비밀번호 입력 → 로그인 버튼.
 Future<void> _login(WidgetTester tester, String email, String pw) async {
   await _pumpUntil(tester, find.text('로그인'), reason: '로그인 화면 표시');
   final Finder fields = find.byType(TextField);
   expect(fields, findsNWidgets(2), reason: '이메일/비밀번호 입력 필드');
-  await tester.enterText(fields.at(0), email);
-  await tester.enterText(fields.at(1), pw);
+  await _type(tester, fields.at(0), email, label: 'email');
+  await _type(tester, fields.at(1), pw, label: 'pw');
   await tester.pump(const Duration(milliseconds: 300));
   // PrimaryButton 의 실제 위젯은 FilledButton (design/widgets/primary_button.dart).
   final Finder loginButton =

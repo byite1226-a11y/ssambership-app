@@ -272,6 +272,37 @@
   요구 계약은 `docs/APP_V16_MIN_VERSION_SERVER_REQUIREMENT.md` 참조.
 - `comments` 정본 테이블 RLS 는 준비돼 있으나(visible/own/admin 7정책) 버전 게이트 없이는 전환 금지.
 
+## 4.7 최종 수렴 세션 (2026-07-21) — 서버 게이트 3종 staging 배포 완료 (SQL 161~163)
+
+### 계정 탈퇴 self RPC (SQL 161) — WAITING_SERVER_API 해소
+- `account_deletion_request_self(p_cancelable_minutes=30, p_dry_run=false)` →
+  `{ok, existing, job_id, state, cancelable_until, dry_run}` — 사용자 ID 는 서버가
+  auth.uid() 로만 도출(p_user_id 인자 없음), advisory xact lock 으로 동시 요청 직렬화.
+- `account_deletion_cancel_self()` → raw cancel 위임(NOT_FOUND|NOT_CANCELABLE|CANCEL_WINDOW_PASSED).
+- `account_deletion_status_self()` → `{ok, exists, state, cancelable_until, write_blocked, can_cancel}`
+  (worker 내부 정보 미반환).
+- ACL: self 3종 authenticated/service_role. **raw request/cancel 은 service_role 전용 불변**
+  (호출자–p_user_id 일치 검사가 없어 GRANT 금지 — 타인 job 조작 방지).
+
+### 모바일 최소버전 정책 (SQL 162) — Track E 게이트 1 충족
+- `mobile_app_version_policies(platform PK, min_supported_build int, latest_build int,
+  minimum_version_name, store_url CHECK(HTTPS+Play/AppStore 호스트), message, updated_at)` —
+  write 는 service_role 전용(RLS on·정책 0·테이블 권한 revoke).
+- `get_mobile_app_version_policy(p_platform)` → jsonb, **anon+authenticated**(로그인 전 게이트),
+  platform allowlist(INVALID_PLATFORM), 행 부재 시 비차단 기본값(min=1).
+- seed: android/ios min=1/latest=1 — 현재 앱 비차단(실상향은 운영 절차로만).
+
+### 게시판 댓글 정본 브리지 (SQL 163) — Track E 게이트 2 충족
+- 실측: 웹·구 앱 모두 board 댓글을 `community_comments` 에 write, 양 테이블 0행(백필 불필요).
+- **양방향 멱등 동기화**: legacy(board)↔`comments` (body↔content, status↔is_deleted,
+  매핑 `comments.legacy_comment_id`/`community_comments.canonical_comment_id` 부분 UNIQUE,
+  GUC 재귀 방지). DELETE 는 양방향 모두 soft 처리(자동 삭제 없음). 숏폼은 동기화 제외.
+- 정본 write 가드: 최대 2-depth(`COMMENT_DEPTH_EXCEEDED`), 타 post 부모
+  (`COMMENT_PARENT_POST_MISMATCH`), 보호필드 불변(`COMMENT_PROTECTED_FIELDS_IMMUTABLE` —
+  content/is_deleted 만 수정 가능), 비관리자 hard DELETE 거부(`COMMENT_HARD_DELETE_FORBIDDEN`),
+  legacy_comment_id 위조 거부.
+- comment_count 는 기존 `trg_comments_refresh_count`(comments 기준)로 웹·신구 앱 일치.
+
 ## 5. 게이트 판정 요약
 
 | 트랙 | 게이트 | 판정 |

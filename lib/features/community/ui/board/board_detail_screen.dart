@@ -186,6 +186,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
         postId: widget.post.id,
         body: body,
       );
+      if (!mounted) return; // ★ await 중 화면이 닫혔으면 상태 갱신 금지
       _input.clear();
       setState(() {
         _comments =
@@ -200,8 +201,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -232,7 +232,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                 Row(
                   children: <Widget>[
                     AppBadge(
-                        label: communityCategoryLabel(p.category), tinted: true),
+                        label: communityCategoryLabel(p.category),
+                        tinted: true),
                     const Spacer(),
                     Text(Formatters.relativeKorean(p.createdAt),
                         style: AppType.caption),
@@ -252,7 +253,9 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                 ),
                 const SizedBox(height: AppSpacing.s16),
                 Text(
-                  p.body?.trim().isNotEmpty == true ? p.body!.trim() : '(내용 없음)',
+                  p.body?.trim().isNotEmpty == true
+                      ? p.body!.trim()
+                      : '(내용 없음)',
                   style: AppType.body,
                 ),
                 const SizedBox(height: AppSpacing.s24),
@@ -352,7 +355,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
             ),
             IconButton(
               icon: Icon(Icons.send_rounded,
-                  color: _busy ? ColorTokens.muted : AppAccent.of(context).accent),
+                  color:
+                      _busy ? ColorTokens.muted : AppAccent.of(context).accent),
               onPressed: _busy ? null : _send,
             ),
           ],

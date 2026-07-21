@@ -33,13 +33,29 @@ class CommunityReadRepository {
         .toList();
   }
 
+  /// 페이지 결과 조립 — 오프셋 전진 기준은 필터 '전' 행 수(P2-21: 차단 필터로
+  /// items 가 줄어도 다음 페이지가 행을 건너뛰거나 중복하지 않도록).
+  CommunityPage<T> _page<T>({
+    required List<T> items,
+    required int rawCount,
+    required int offset,
+    required int? limit,
+  }) {
+    return CommunityPage<T>(
+      items: items,
+      rawCount: rawCount,
+      nextOffset: offset + rawCount,
+      hasMore: limit != null && rawCount == limit,
+    );
+  }
+
   /// 게시판 글 목록(공개=published, 최신순). category 지정 시 그 분류만.
   /// [limit] 지정 시 [offset]부터 그만큼만(페이징). null 이면 전체(하위 호환).
-  Future<List<BoardPost>> boards({String? category, int? limit, int offset = 0}) async {
-    dynamic q = _client
-        .from('community_posts')
-        .select('*')
-        .eq('status', 'published');
+  /// ★ 반환 페이지의 nextOffset/rawCount 로만 페이징을 전진할 것(items.length 금지).
+  Future<CommunityPage<BoardPost>> boards(
+      {String? category, int? limit, int offset = 0}) async {
+    dynamic q =
+        _client.from('community_posts').select('*').eq('status', 'published');
     if (category != null && category.isNotEmpty) {
       q = q.eq('category', category);
     }
@@ -47,11 +63,16 @@ class CommunityReadRepository {
     if (limit != null) q = q.range(offset, offset + limit - 1);
     final Future<Set<String>> blockedF = _blocks.myBlockedIds();
     final List<Map<String, dynamic>> rows = await q;
-    return _dropBlocked(rows, await blockedF).map(BoardPost.fromMap).toList();
+    final List<BoardPost> items =
+        _dropBlocked(rows, await blockedF).map(BoardPost.fromMap).toList();
+    return _page<BoardPost>(
+        items: items, rawCount: rows.length, offset: offset, limit: limit);
   }
 
   /// 숏폼 목록(공개=published, 최신순). [limit]/[offset] 로 페이징(하위 호환: null=전체).
-  Future<List<ShortformPost>> shortforms({int? limit, int offset = 0}) async {
+  /// ★ 반환 페이지의 nextOffset/rawCount 로만 페이징을 전진할 것(items.length 금지).
+  Future<CommunityPage<ShortformPost>> shortforms(
+      {int? limit, int offset = 0}) async {
     dynamic q = _client
         .from('shortform_posts')
         .select('*')
@@ -60,9 +81,10 @@ class CommunityReadRepository {
     if (limit != null) q = q.range(offset, offset + limit - 1);
     final Future<Set<String>> blockedF = _blocks.myBlockedIds();
     final List<Map<String, dynamic>> rows = await q;
-    return _dropBlocked(rows, await blockedF)
-        .map(ShortformPost.fromMap)
-        .toList();
+    final List<ShortformPost> items =
+        _dropBlocked(rows, await blockedF).map(ShortformPost.fromMap).toList();
+    return _page<ShortformPost>(
+        items: items, rawCount: rows.length, offset: offset, limit: limit);
   }
 
   /// 글/숏폼의 댓글(공개=visible, 대화순=오름차순). [limit]/[offset] 로 페이징(하위 호환: null=전체).

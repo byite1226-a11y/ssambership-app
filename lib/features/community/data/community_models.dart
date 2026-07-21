@@ -15,6 +15,39 @@ String communityAuthorName(String? authorLabel, String? authorRole) {
   }
 }
 
+/// 여러 텍스트 컬럼 중 [keys] 순서대로 처음 나오는 비어 있지 않은 값(트림).
+/// (스키마 과도기: content/body/description 컬럼 혼재 — 우선순위를 한곳에서.)
+String? _pickText(Map<String, dynamic> m, List<String> keys) {
+  for (final String k in keys) {
+    final Object? v = m[k];
+    if (v is String && v.trim().isNotEmpty) return v.trim();
+  }
+  return null;
+}
+
+/// 목록 페이지 결과 — 차단 필터로 [items] 가 줄어도, 다음 페이지 오프셋은
+/// DB에서 실제로 가져온 행 수([rawCount]) 기준으로 전진해야 행 누락·중복이 없다(P2-21).
+class CommunityPage<T> {
+  const CommunityPage({
+    required this.items,
+    required this.rawCount,
+    required this.nextOffset,
+    required this.hasMore,
+  });
+
+  /// 차단 작성자 필터 적용 '후' 화면에 표시할 항목.
+  final List<T> items;
+
+  /// 필터 '전' DB에서 가져온 행 수 — 오프셋 전진 기준(★ items.length 아님).
+  final int rawCount;
+
+  /// 다음 페이지 요청 오프셋(= 요청 offset + rawCount).
+  final int nextOffset;
+
+  /// 다음 페이지 존재 가능성(rawCount == limit). limit 미지정(전체 조회)이면 false.
+  final bool hasMore;
+}
+
 /// 게시판 글(community_posts). 열람 전용 뷰모델.
 class BoardPost {
   const BoardPost({
@@ -49,10 +82,8 @@ class BoardPost {
       title: (m['title'] as String?)?.trim().isNotEmpty == true
           ? (m['title'] as String).trim()
           : '(제목 없음)',
-      // 스키마상 body/content 둘 다 존재 — 있는 쪽을 본문으로.
-      body: (m['content'] as String?)?.trim().isNotEmpty == true
-          ? (m['content'] as String).trim()
-          : (m['body'] as String?)?.trim(),
+      // 스키마상 body/content 둘 다 존재 — 게시판은 legacy content 우선(기존 계약 유지).
+      body: _pickText(m, const <String>['content', 'body']),
       category: m['category'] as String?,
       authorLabel: m['author_label'] as String?,
       authorRole: m['author_role'] as String?,
@@ -100,7 +131,10 @@ class ShortformPost {
       title: (m['title'] as String?)?.trim().isNotEmpty == true
           ? (m['title'] as String).trim()
           : '(제목 없음)',
-      description: (m['description'] as String?)?.trim(),
+      // 본문/설명: 숏폼은 'body' 우선, legacy 'content' 폴백(서버 계약),
+      // 구(舊) 'description' 컬럼만 있는 행은 그대로 표시(최종 폴백).
+      description:
+          _pickText(m, const <String>['body', 'content', 'description']),
       category: m['category'] as String?,
       authorLabel: m['author_label'] as String?,
       authorRole: m['author_role'] as String?,
@@ -161,4 +195,3 @@ class MyActivity {
 
   bool get isEmpty => myPosts.isEmpty && liked.isEmpty && scrapped.isEmpty;
 }
-

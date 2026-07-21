@@ -54,6 +54,39 @@ void main() {
     expect(s.viewCount, 69);
   });
 
+  group('ShortformPost.fromMap 본문 우선순위(서버 계약: body 우선·content 폴백)', () {
+    Map<String, dynamic> row({String? body, String? content, String? desc}) =>
+        <String, dynamic>{
+          'id': 's1',
+          'title': '숏폼',
+          if (body != null) 'body': body,
+          if (content != null) 'content': content,
+          if (desc != null) 'description': desc,
+          'created_at': '2026-06-28T00:00:00Z',
+        };
+
+    test('body 가 있으면 body(다른 컬럼 무시)', () {
+      final ShortformPost s = ShortformPost.fromMap(
+          row(body: '본문', content: 'legacy', desc: '구설명'));
+      expect(s.description, '본문');
+    });
+
+    test('body 가 비면 legacy content 폴백', () {
+      final ShortformPost s = ShortformPost.fromMap(
+          row(body: '  ', content: 'legacy', desc: '구설명'));
+      expect(s.description, 'legacy');
+    });
+
+    test('body/content 모두 없으면 구 description 컬럼(최종 폴백)', () {
+      final ShortformPost s = ShortformPost.fromMap(row(desc: '구설명'));
+      expect(s.description, '구설명');
+    });
+
+    test('셋 다 없으면 null', () {
+      expect(ShortformPost.fromMap(row()).description, isNull);
+    });
+  });
+
   test('CommunityPostType.code', () {
     expect(CommunityPostType.board.code, 'board');
     expect(CommunityPostType.shortform.code, 'shortform');

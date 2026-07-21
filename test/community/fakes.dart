@@ -16,29 +16,41 @@ class FakeCommunityRead extends CommunityReadRepository {
   final List<CommunityComment> commentsList;
   final MyActivity activity;
 
+  /// 실제 repo 와 같은 페이지 계약: nextOffset 은 필터 전 행 수 기준(여긴 필터 없음).
+  CommunityPage<T> _page<T>(List<T> all, int? limit, int offset) {
+    final List<T> items;
+    if (limit == null) {
+      items = all;
+    } else {
+      final int start = offset.clamp(0, all.length);
+      final int end = (offset + limit).clamp(0, all.length);
+      items = all.sublist(start, end);
+    }
+    return CommunityPage<T>(
+      items: items,
+      rawCount: items.length,
+      nextOffset: offset + items.length,
+      hasMore: limit != null && items.length == limit,
+    );
+  }
+
   @override
-  Future<List<BoardPost>> boards(
+  Future<CommunityPage<BoardPost>> boards(
       {String? category, int? limit, int offset = 0}) async {
     final List<BoardPost> all = category == null
         ? boardsList
         : boardsList.where((BoardPost p) => p.category == category).toList();
-    if (limit == null) return all;
-    final int start = offset.clamp(0, all.length);
-    final int end = (offset + limit).clamp(0, all.length);
-    return all.sublist(start, end);
+    return _page<BoardPost>(all, limit, offset);
   }
 
   @override
-  Future<List<ShortformPost>> shortforms({int? limit, int offset = 0}) async {
-    if (limit == null) return shortformsList;
-    final int start = offset.clamp(0, shortformsList.length);
-    final int end = (offset + limit).clamp(0, shortformsList.length);
-    return shortformsList.sublist(start, end);
+  Future<CommunityPage<ShortformPost>> shortforms(
+      {int? limit, int offset = 0}) async {
+    return _page<ShortformPost>(shortformsList, limit, offset);
   }
 
   @override
-  Future<List<CommunityComment>> comments(
-          CommunityPostType type, String postId,
+  Future<List<CommunityComment>> comments(CommunityPostType type, String postId,
           {int? limit, int offset = 0}) async =>
       commentsList;
 
@@ -55,6 +67,7 @@ class FakeCommunityRead extends CommunityReadRepository {
 }
 
 /// 반응·댓글·신고 쓰기를 삼키는 가짜 레포(호출 기록만).
+/// [failReactions] 로 반응 토글 실패(서버 오류)를 흉내낼 수 있다(낙관적 롤백 검증용).
 class FakeCommunityWrite extends CommunityWriteRepository {
   FakeCommunityWrite();
 
@@ -67,6 +80,12 @@ class FakeCommunityWrite extends CommunityWriteRepository {
   String? lastPostBody;
   String? lastPostCategory;
 
+  /// true 면 반응 토글이 호출 기록 후 throw(낙관적 상태 롤백 경로 테스트).
+  bool failReactions = false;
+
+  /// 반응 토글 호출 로그('like:on' 형식) — like/scrap 독립성 검증용.
+  final List<String> reactionLog = <String>[];
+
   @override
   Future<void> toggleBoardReaction({
     required String postId,
@@ -74,6 +93,8 @@ class FakeCommunityWrite extends CommunityWriteRepository {
     required bool on,
   }) async {
     reactionCalls++;
+    reactionLog.add('$type:${on ? 'on' : 'off'}');
+    if (failReactions) throw Exception('reaction failed');
   }
 
   @override
@@ -83,6 +104,8 @@ class FakeCommunityWrite extends CommunityWriteRepository {
     required bool on,
   }) async {
     reactionCalls++;
+    reactionLog.add('$type:${on ? 'on' : 'off'}');
+    if (failReactions) throw Exception('reaction failed');
   }
 
   @override
@@ -162,6 +185,7 @@ BoardPost sampleBoard({
 ShortformPost sampleShortform({
   String id = 's1',
   String title = '숏폼 제목',
+  String? videoUrl, // null=썸네일 폴백, 지정 시 재생 경로 테스트
   int likeCount = 5,
   int viewCount = 69,
 }) {
@@ -173,7 +197,7 @@ ShortformPost sampleShortform({
     authorLabel: '멘토쌤',
     authorRole: 'mentor',
     thumbnailUrl: null, // 네트워크 미사용(폴백 렌더)
-    videoUrl: null,
+    videoUrl: videoUrl,
     likeCount: likeCount,
     viewCount: viewCount,
     createdAt: DateTime(2026, 6, 28),

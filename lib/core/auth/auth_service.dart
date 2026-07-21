@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../deeplink/deep_link_service.dart';
 import '../entitlement/entitlement.dart';
+import '../push/push_service.dart';
 import '../supabase/supabase_client.dart';
 import 'account_status.dart';
 
@@ -164,9 +166,22 @@ class AuthService extends ChangeNotifier {
 
   void _onAuthChange(AuthState data) {
     if (data.event == AuthChangeEvent.signedOut) {
+      // 푸시/딥링크 상태 정리(철회 자체는 signOut() 이 세션 유효 시점에 이미 수행).
+      PushService.instance.onSignedOut();
+      DeepLinkService.instance.onSignedOut();
       _resetProfile();
       notifyListeners();
       return;
+    }
+    if (data.event == AuthChangeEvent.signedIn ||
+        data.event == AuthChangeEvent.initialSession) {
+      final String? userId = data.session?.user.id;
+      if (userId != null) {
+        // 토큰 등록(서버가 재소유 처리 — 계정 전환도 재등록만으로 안전) +
+        // 로그인 대기 딥링크 1회 실행. 실패해도 인증 흐름은 막지 않는다.
+        unawaited(PushService.instance.onSignedIn(userId));
+        DeepLinkService.instance.onSignedIn(userId);
+      }
     }
     // signedIn / tokenRefreshed / initialSession / userUpdated 등 → 프로필 재로드.
     unawaited(_loadProfile().then((_) => notifyListeners()));
@@ -266,15 +281,30 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 로그아웃.
+  /// 로그아웃. ★ 디바이스 토큰 철회는 세션이 살아 있는 signOut '이전'에 수행
+  /// (철회 실패는 로그아웃을 막지 않는다 — PushService 가 내부에서 삼킨다).
   Future<void> signOut() async {
     final SupabaseClient? client = _client;
     _guest = false;
-    if (client != null) {
-      await client.auth.signOut();
-    }
+    DeepLinkService.instance.onSignedOut(); // 이전 사용자 대기 딥링크 폐기.
+    await performSignOut(
+      revokePushToken: PushService.instance.revokeBeforeSignOut,
+      supabaseSignOut: () async {
+        if (client != null) await client.auth.signOut();
+      },
+    );
     _resetProfile();
     notifyListeners();
+  }
+
+  /// 로그아웃 순서 보장(단위 테스트 진입점) — 철회가 반드시 signOut 보다 먼저.
+  @visibleForTesting
+  static Future<void> performSignOut({
+    required Future<void> Function() revokePushToken,
+    required Future<void> Function() supabaseSignOut,
+  }) async {
+    await revokePushToken();
+    await supabaseSignOut();
   }
 
   /// 차단/상태불명 화면에서 프로필 재시도.

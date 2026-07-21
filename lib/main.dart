@@ -26,9 +26,14 @@ Future<void> main() async {
   // 인증/세션 부팅: 세션 복원 + 프로필(role·계정상태·구독) 로드 + auth 변화 구독.
   await AuthService.instance.bootstrap();
 
-  // 딥링크/푸시 골격 초기화(자리).
+  // 딥링크 → 푸시 순서 유지: 콜드 스타트 알림 탭 메시지를 딥링크 구독자가
+  // 먼저 받을 준비를 한 뒤 게이트웨이를 초기화한다. Firebase 설정 파일이 없으면
+  // 게이트웨이가 스스로 비활성화되고(준비 경계) 앱은 그대로 켜진다.
   await DeepLinkService.instance.initialize();
-  await PushService.instance.initialize();
+  await PushService.instance.initialize(
+    // 앱 시작 시 세션이 이미 있으면(자동 로그인) 토큰 등록까지 시도.
+    userId: SupabaseInit.clientOrNull?.auth.currentSession?.user.id,
+  );
 
   runApp(const SsambershipApp());
 }

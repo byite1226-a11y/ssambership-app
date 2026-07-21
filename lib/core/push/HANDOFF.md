@@ -1,66 +1,76 @@
-# 푸시 알림 인프라 — 동업자 인수인계 (S7)
+# 푸시 알림 — 수신·토큰 등록 전용 (상태: WAITING_EXTERNAL_FIREBASE_CONFIG)
 
-이 디렉터리(`lib/core/push/`)는 **패키지·서버 없이 컴파일되는 클라이언트 골격**이다.
-포트(추상)는 기본이 `Disabled/Noop` 이라 아무 것도 전송/등록하지 않는다.
-실기기에서 실제로 동작시키려면 아래 4가지를 동업자가 채워야 한다.
+이 디렉터리(`lib/core/push/`)는 **푸시 '수신'과 '디바이스 토큰 수명주기'만** 담당한다.
 
-> 안전 원칙: 앱은 결제/서버 인프라를 만들지 않는다. 아래 DDL·Edge Function은 **미적용 명세**다.
+> **발송은 서버 outbox worker 단독**(`record_domain_notification` → `notification_outbox`
+> → deliveries). **앱은 수신·토큰 등록만 담당한다** — FCM HTTP 호출·Edge Function
+> invoke 등 클라이언트 발송 경로는 **제거됐고 다시 만들지 말 것**
+> (과거 `push_trigger.dart`/`edge_function_push_sender.dart` 는 2026-07-21 삭제).
 
-## 1) firebase_messaging 도입 (pubspec + 권한 설정)
-- `pubspec.yaml` dev와 별개로 dependencies에 추가: `firebase_core`, `firebase_messaging`.
-  (S7은 pubspec을 건드리지 않았다 — 병렬 충돌 방지.)
-- `flutterfire configure` 로 `firebase_options.dart` 생성, `Firebase.initializeApp()` 를 main에 추가.
-- Android: `android/app/google-services.json`, Gradle 플러그인, `POST_NOTIFICATIONS`(Android 13+) 권한.
-- 그 뒤 포트 구현체 작성:
-  - `PushTokenProvider` → `FirebaseMessaging.instance.getToken()` / `onTokenRefresh`.
-  - `PushPermissionPort` → `FirebaseMessaging.instance.requestPermission()` 결과를 `PushPermissionStatus`로 매핑.
-  - `PushService(instance)` 생성 시 위 구현체를 주입(또는 `instance` 정의 교체).
+## 현재 상태: WAITING_EXTERNAL_FIREBASE_CONFIG
 
-## 2) device_tokens 테이블 생성 (현재 **미존재** — introspection 확인됨)
-`SupabaseDeviceTokenRegistrar._tableExists = false` 로 등록을 건너뛰고 있다.
-아래 DDL로 테이블을 만든 뒤 `_tableExists = true` 로 바꾸면 upsert/delete가 동작한다.
-(마이그레이션 적용은 동업자 몫 — S7은 DB를 변경하지 않았다.)
+코드는 완성돼 있고 `firebase_core`/`firebase_messaging` 의존성도 pubspec 에 있다.
+다만 **Firebase 설정 파일이 저장소에 없어**(날조·커밋 금지) `FirebasePushGateway.initialize()`
+의 `Firebase.initializeApp()` 이 실패하고, **준비 경계(ready=false)** 뒤에서 푸시만
+조용히 비활성화된 채 앱이 정상 구동한다(크래시 없음, 디버그 로그 1줄).
 
-```sql
-create table public.device_tokens (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  token text not null unique,
-  platform text not null default 'android',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.device_tokens enable row level security;
--- 본인 토큰만 등록/조회/삭제
-create policy device_tokens_self on public.device_tokens
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-```
+### 활성화 절차(외부 작업 — 이 순서 그대로)
+1. Firebase 콘솔에서 Android/iOS 앱 등록(패키지/번들 `com.ssambership.app`).
+2. **Android**: `android/app/google-services.json` 배치 +
+   `android/app/build.gradle.kts` 의 `plugins { ... }` 에
+   `id("com.google.gms.google-services")` 추가(루트 settings.gradle.kts 에 플러그인
+   버전 선언 포함). ※ json 없이 플러그인만 먼저 넣으면 빌드가 깨지므로 **지금은
+   의도적으로 미적용** 상태다.
+3. **iOS(macOS 필요)**: `ios/Runner/GoogleService-Info.plist` 를 Xcode 로 Runner 타깃에
+   추가 → Signing & Capabilities 에서 **Push Notifications** 활성화
+   (`aps-environment` entitlement 자동 생성 — entitlements 파일을 손으로 날조하지 말 것)
+   → APNs 인증 키(.p8)를 Firebase 콘솔 Cloud Messaging 에 등록 → `pod install`.
+4. 실기기에서 확인: 권한 팝업 → 토큰 등록(`device_tokens` 행) → 서버 발송 → 수신 →
+   탭 시 해당 탭 이동. (에뮬레이터는 FCM 제한. 이 저장소 CI 환경은 dl.google.com 차단으로
+   gradle 빌드 불가 — 빌드는 CI/로컬에서.)
 
-## 3) Edge Function 배포 (`send-push`)
-`EdgeFunctionPushSender._deployed = false` 라 발송을 건너뛴다.
-- `supabase functions new send-push` → 입력 `{to_user_id, title, body, data}` 를 받아
-  `device_tokens` 에서 대상 토큰을 조회하고 FCM(HTTP v1)로 전송.
-- 배포 후 `_deployed = true`.
-- 호출 인터페이스는 이미 `PushSenderPort.send()` 로 고정되어 있다(클라이언트 변경 불필요).
+설정 파일이 놓이면 **코드 수정 없이** 게이트웨이가 ready=true 로 살아난다.
 
-## 4) 발송 트리거 연결 (question_room)
-`PushTrigger` 의 아래 메서드를 이벤트 성공 직후 호출한다(현재는 호출 지점만 준비):
-- 멘토 답변 전송 성공 → `onMentorAnswered(studentUserId, threadId, threadTitle)`
-- 학생 새 질문/메시지 → `onNewQuestionForMentor(mentorUserId, threadId, ...)`
-- 멘토 새 메시지 → `onNewMessageForStudent(studentUserId, threadId, ...)`
-> 상대방 user_id 는 방(mentor_student_rooms)의 student_id/mentor_id 로 구한다.
+## 구조 (포트 + 수동 fake, DI 프레임워크 없음)
 
-## 5) 딥링크(타깃) 실행 — S8 담당
-S7은 **타깃 명세만** 정의했다: `PushPayload.data` = `{type, thread_id}`,
-`PushTarget.fromData()` 가 `thread_id` → `PushTargetKind.questionThread` 로 매핑.
-푸시 탭 시 이 타깃을 받아 **실제 화면 이동**은 S8(notifications/deeplink)이 수행한다.
-(사용자에게 thread id 등 내부 경로는 노출하지 않는다.)
+| 파일 | 역할 |
+|---|---|
+| `push_ports.dart` | 추상 경계: `PushPermissionPort`/`PushPermissionStatus`(설정 화면이 import — **이름·API 유지**), `PushGatewayPort`, `DeviceTokenRegistrarPort` |
+| `firebase_push_gateway.dart` | `FirebasePushGateway`(준비 경계 + FCM 스트림/토큰), `FirebasePushPermission`(권한 매핑), top-level `firebasePushBackgroundHandler`(`@pragma('vm:entry-point')`, no-op 안전) |
+| `push_payload.dart` | 수신 payload 파싱 — `type` 은 정본 17종(`notification_types.dart`) 정확 일치, id(room/thread/question) + dedup 키(notification_id/event_key). **link/url 필드는 버린다** |
+| `device_token_registrar.dart` | 서버 계약 구현(아래) |
+| `push_service.dart` | 오케스트레이션: 수신 스트림 노출 + 토큰 수명주기 + 권한 요청 API |
 
-## 6) 마이페이지 재요청 연결 지점
-권한 거부 후 재요청은 `PushService.instance.requestPermissionAgain(userId: ...)`.
-마이페이지(S11) 설정에 "알림 다시 켜기" 항목을 추가해 이 함수를 호출하면 된다.
-(S7은 `features/mypage/` 를 건드리지 않았다 — 연결만 문서화.)
+딥링크 소비는 `lib/core/deeplink/`(`NotificationDeepLinkController` 순수 로직 +
+`DeepLinkService` 배선). 허용 목적지는 `notificationDestinationOf` 의 탭뿐 —
+payload 로 URL/외부 scheme 을 실행하지 않는다.
 
-## 실기기 검증(동업자)
-Firebase 프로젝트 + 실제 Android 기기(에뮬레이터는 FCM 제한)에서
-권한 팝업 → 토큰 발급 → device_tokens 등록 → 답변 이벤트 → 수신 → 탭 시 스레드 이동.
+## 서버 계약 (스테이징 검증 2026-07-21 — 정본)
+
+- **등록**: RPC `register_device_token(p_token text, p_platform text)` → jsonb
+  `{ok, device_token_id}`. SECURITY DEFINER. `ON CONFLICT(token)` 시 현재 `auth.uid()`
+  로 **원자적 재소유 + revoked_at 해제** → **계정 전환은 새 로그인 후 재등록만으로 끝**.
+  platform 은 `ios|android|web`(그 외 서버가 'unknown' 저장). 오류: AUTH_REQUIRED/TOKEN_REQUIRED.
+- **철회**: `revoke_device_token` RPC 는 **authenticated EXECUTE 권한이 없다 — 호출 금지**.
+  대신 본인 행 직접 UPDATE(RLS `device_tokens_modify_own`):
+  `UPDATE device_tokens SET revoked_at=now(), updated_at=now() WHERE token=<token> AND user_id=auth.uid()`.
+  **반드시 `auth.signOut()` '이전'**(세션 유효 시점)에 — `AuthService.signOut()` 이
+  `PushService.revokeBeforeSignOut()` 를 먼저 await 하도록 이미 배선됨(실패해도
+  로그아웃 비차단).
+- **수신 data 계약**: `type`(17종 코드) + 선택 `room_id`/`thread_id`/`question_id` +
+  dedup 용 `notification_id`/`event_key`.
+
+## 지뢰(하지 말 것)
+
+- 앱에서 푸시 **발송** 경로 복원 금지(위 원칙).
+- `google-services.json`/`GoogleService-Info.plist`/entitlements **날조·커밋 금지**.
+- 토큰 문자열·device_token_id 를 **로그/화면/스냅샷에 남기지 말 것**.
+- `permission_handler` 추가 금지 — '영구 거부' 구분은 firebase_messaging 만으로는
+  제한적(Android 13+ 2회 거부 후에도 API 는 denied 만 반환)임을 수용하고,
+  재요청 UI 는 '설정에서 켜기' 안내로 폴백한다.
+- `PushPermissionPort`/`PushPermissionStatus` 시그니처 변경 금지(설정 라인이 import).
+
+## 테스트
+
+`test/push/`(수명주기·권한·준비 경계·수신 스트림) + `test/deeplink/`(목적지 매핑·
+dedup·pending TTL·계정 전환·외부 링크 무시) — 전부 수동 fake, 실제 Firebase 미접촉.

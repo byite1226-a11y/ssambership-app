@@ -167,7 +167,7 @@ flutter build appbundle
 ### 3-6. 빌드·출시
 - **pubspec.lock 은 커밋한다**(앱 저장소 표준 — 팀·CI·출시 빌드가 같은 의존성 해석을 재현. 2026-07-07 S19 에서 .gitignore 제외를 제거하고 정책 전환).
 - **네이티브 폴더**: `android/`·`ios/` (현재 untracked 상태로 존재). 없거나 갱신 필요 시:
-  `flutter create . --org com.ssambership --project-name ssambership_app --platforms=android,ios` (기존 `lib/`·`pubspec.yaml` 보존, 누락 폴더만 생성). 패키지명 `com.ssambership.app` 확정(2026-07 — Android applicationId·iOS 번들ID 통일).
+  `flutter create . --org com.ssambership --project-name ssambership_app --platforms=android,ios` (기존 `lib/`·`pubspec.yaml` 보존, 누락 폴더만 생성). 패키지 계약(2026-07-22 갱신): **Android** applicationId/namespace=`com.ssambership.edu` (Play 등록 package — 기존 `com.ssambership.app` 은 Play 요구로 `.edu` 로 수렴), **iOS** 번들ID=`com.ssambership.app` (이번 Android 작업에서 변경 없음). Firebase Android 앱 등록 시 package 는 반드시 `com.ssambership.edu`.
 - **.env 원격 전환**(출시): 로컬 → 원격 production 값 교체(README 참조)
   `SUPABASE_URL=https://<project-ref>.supabase.co` / `SUPABASE_ANON_KEY=<remote-anon-key>`. 원격이면 플랫폼 분기 없이 그대로 사용.
 - **Android**: 릴리스 빌드·서명 키·Play Store 등록. **iOS**: 번들ID·서명·App Store 등록.

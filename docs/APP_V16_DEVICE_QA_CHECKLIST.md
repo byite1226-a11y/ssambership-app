@@ -6,7 +6,7 @@
 
 ## 0. 사전 조건
 
-- [ ] `android/app/google-services.json` 배치 (Firebase Android 앱: `com.ssambership.app`)
+- [ ] `android/app/google-services.json` 배치 (Firebase Android 앱: `com.ssambership.edu`)
 - [ ] `ios/Runner/GoogleService-Info.plist` 배치 (Firebase iOS 앱: `com.ssambership.app`)
 - [ ] `android/app/build.gradle.kts` plugins 에 `com.google.gms.google-services` 추가
 - [ ] (iOS) Xcode Push Notifications capability + `aps-environment` entitlement + APNs 키 등록

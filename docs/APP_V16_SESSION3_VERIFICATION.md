@@ -60,8 +60,8 @@
 
 - `google-services.json`/`GoogleService-Info.plist` 부재 재확인. CI(flutter-ci.yml)에
   Firebase secret 주입 경로 없음(GITHUB_TOKEN 뿐).
-- 앱 ID 계약: Android `applicationId=com.ssambership.app` = iOS
-  `PRODUCT_BUNDLE_IDENTIFIER=com.ssambership.app` — Firebase 콘솔 앱 등록 시 이 값 사용.
+- 앱 ID 계약(2026-07-22 갱신 — 플랫폼별 상이): Android `applicationId=com.ssambership.edu`,
+  iOS `PRODUCT_BUNDLE_IDENTIFIER=com.ssambership.app` — Firebase Android 앱 등록 시 `com.ssambership.edu`, iOS 는 `com.ssambership.app`.
 - 값 날조·타 프로젝트 복사 없음. gradle google-services 플러그인 의도적 미적용
   (파일 없이 켜면 빌드 실패). readiness 경계 + fake 테스트 유지(세션 2).
 - 배치 절차: `lib/core/push/HANDOFF.md` + `APP_V16_DEVICE_QA_CHECKLIST.md` §0 —

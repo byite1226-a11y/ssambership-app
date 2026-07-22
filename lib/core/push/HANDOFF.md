@@ -15,7 +15,7 @@
 조용히 비활성화된 채 앱이 정상 구동한다(크래시 없음, 디버그 로그 1줄).
 
 ### 활성화 절차(외부 작업 — 이 순서 그대로)
-1. Firebase 콘솔에서 Android/iOS 앱 등록(패키지/번들 `com.ssambership.app`).
+1. Firebase 콘솔에서 앱 등록 — **Android** package `com.ssambership.edu`, **iOS** 번들 `com.ssambership.app` (플랫폼별 앱 ID 상이).
 2. **Android**: `android/app/google-services.json` 배치 +
    `android/app/build.gradle.kts` 의 `plugins { ... }` 에
    `id("com.google.gms.google-services")` 추가(루트 settings.gradle.kts 에 플러그인

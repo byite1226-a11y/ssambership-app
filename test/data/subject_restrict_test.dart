@@ -3,9 +3,10 @@ import 'package:ssambership_app/data/mappings/subject_labels.dart';
 
 /// A1: 질문 과목 후보 제한 규칙(순수 함수, DB·네트워크 미접촉).
 ///
-/// ★ 실측 정합: DB `mentor_profiles.teaching_subjects` 는 한글 라벨(수학·영어…)로 저장된다.
-///   과거 구현은 앱 전용 영문코드(math_common…)로만 매칭해 한글 라벨을 전부 탈락시켜
-///   '항상 전체 폴백'되는 버그가 있었다. 아래는 정본(코드/라벨) 어휘로 실제 제한됨을 검증.
+/// ★ 계약(2026-07 갱신): DB `mentor_profiles.teaching_subjects` 는 canonical 코드
+///   (`math`)·한글 라벨(`수학`)·레거시 값이 **혼재**할 수 있다(구가정 "항상 한글" 폐기 —
+///   스테이징 실측상 현재는 코드로 저장). 앱은 이를 정본 코드로 정규화해 제한하며,
+///   아래는 코드 입력·라벨 입력 어느 쪽이든 동일하게 제한됨을 검증한다.
 void main() {
   test('멘토 담당과목이 한글 라벨(수학·영어)이면 그 과목만 후보로 정규화(math·english)', () {
     // 로컬 실데이터: mentor 5b6dc968… teaching_subjects = {수학,영어}

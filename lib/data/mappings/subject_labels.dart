@@ -1,10 +1,11 @@
 /// 과목 정본(단일 소스) — 웹 `lib/subjects/subjectCatalog.ts` 와 code/label/parent 를 맞춘다.
 ///
-/// ★ 왜 이 어휘인가(실측): DB `mentor_profiles.teaching_subjects` 는 **한글 대분류 라벨**
-///   (예: `수학`,`영어`,`과학`)로 저장되고, `question_threads.subject` 는 **정본 코드**
-///   (예: `math`,`korean`,`english`)로 저장된다. 과거 이 파일은 이 둘 어디에도 없는
-///   제3의 코드(`math_common` 등)를 써서 A1 과목 제한이 항상 전체 폴백되었다(멘토 과목
-///   `수학`을 못 알아봄). 이제 웹 정본과 동일 어휘 + 라벨↔코드 정규화로 일치시킨다.
+/// ★ 왜 이 어휘인가(실측): DB `mentor_profiles.teaching_subjects` 는 **정본 코드·한글 라벨·
+///   레거시 값이 혼재**할 수 있고(스테이징 실측 2026-07: 현재는 `math`,`math_calculus`
+///   같은 코드로 저장), `question_threads.subject` 는 **정본 코드**(예: `math`,`korean`)로
+///   저장된다. 과거 이 파일은 이 둘 어디에도 없는 제3의 코드(`math_common` 등)를 써서 A1
+///   과목 제한이 항상 전체 폴백되었다(멘토 과목 `수학`을 못 알아봄). 이제 웹 정본과 동일
+///   어휘 + 라벨↔코드 정규화로 일치시킨다(코드든 한글 라벨이든 정본 코드로 수렴).
 ///
 /// 화면에는 영문 코드를 노출하지 않는다 — 코드는 [subjectLabel] 로 한글 라벨화한다.
 library;

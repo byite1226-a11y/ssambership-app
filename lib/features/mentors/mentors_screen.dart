@@ -10,11 +10,12 @@ import '../../design/tokens/color_tokens.dart';
 import '../../design/typography_tokens.dart';
 import '../../design/widgets/chip_scroll.dart';
 import '../../design/widgets/empty_state.dart';
-import '../../design/widgets/secondary_button.dart';
 import 'data/mentor_directory_repository.dart';
+import 'data/mentor_directory_view.dart';
 import 'data/mentor_favorites_repository.dart';
 import 'data/mentor_models.dart';
 import 'data/mentor_sort.dart';
+import 'data/mentor_subject.dart';
 import 'ui/mentor_detail_screen.dart';
 import 'ui/widgets/mentor_card.dart';
 import '../../shared/errors/friendly_error.dart';
@@ -22,7 +23,9 @@ import '../../shared/errors/friendly_error.dart';
 /// 멘토 찾기 탭(공개·열람 전용). HomeShell 이 AppBar/하단탭을 제공하므로
 /// 이 화면은 본문만 구성한다(자체 Scaffold 없음).
 ///
-/// ★ Commerce-Zero: 가격은 '표시'만, 결제·구매 UI 없음. '구독하기'는 웹 브릿지.
+/// ★ Commerce-Zero: 가격은 표시하지 않고 결제·구매 UI 없음. '구독하기'는 웹 브릿지.
+/// ★ 전체 로드: 공개 멘토를 한 번에(검증된 상한 200) 불러와 검색·과목 필터·정렬을
+///   전체 집합에 적용한다 — 최신 N명 창에서만 검색되던 문제를 제거한다.
 class MentorsScreen extends StatefulWidget {
   const MentorsScreen({super.key});
 
@@ -34,12 +37,10 @@ class _MentorsScreenState extends State<MentorsScreen> {
   final MentorDirectoryRepository _repo = const MentorDirectoryRepository();
   final MentorFavoritesRepository _favRepo = const MentorFavoritesRepository();
 
-  static const int _pageSize = 20;
-  int _limit = _pageSize;
   late Future<List<MentorListItem>> _future;
 
   String _query = '';
-  String? _subject; // null = 전체
+  String? _subjectKey; // canonical key(= MentorSubject.key). null = 전체
   MentorSort _sort = MentorSort.latest;
 
   /// 내가 찜한 멘토 id(하트 채움·상단 카운트용). 비로그인/실패면 빈 집합.
@@ -48,13 +49,13 @@ class _MentorsScreenState extends State<MentorsScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _repo.list(limit: _limit);
+    _future = _repo.listComplete();
     _loadFavorites();
   }
 
   // 블록 바디: setState(() => _future = future)는 Future를 반환해 리빌드가 취소된다.
   void _reload() => setState(() {
-        _future = _repo.list(limit: _limit);
+        _future = _repo.listComplete();
       });
 
   Future<void> _loadFavorites() async {
@@ -77,7 +78,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
     final bool ok =
         wasFav ? await _favRepo.remove(mentorId) : await _favRepo.add(mentorId);
     if (!ok && mounted) {
-      setState(() => _favoriteIds = _withToggle(_favoriteIds, mentorId, wasFav));
+      setState(
+          () => _favoriteIds = _withToggle(_favoriteIds, mentorId, wasFav));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('찜 처리에 실패했어요. 잠시 후 다시 시도해 주세요.')),
       );
@@ -95,13 +97,6 @@ class _MentorsScreenState extends State<MentorsScreen> {
     return next;
   }
 
-  void _loadMore() {
-    setState(() {
-      _limit += _pageSize;
-      _future = _repo.list(limit: _limit);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -114,7 +109,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
             onChanged: (String v) => setState(() => _query = v.trim()),
             decoration: InputDecoration(
               hintText: '과목·이름·학교 검색',
-              prefixIcon: const Icon(Icons.search_rounded, color: ColorTokens.muted),
+              prefixIcon:
+                  const Icon(Icons.search_rounded, color: ColorTokens.muted),
               filled: true,
               fillColor: ColorTokens.elevated,
               border: OutlineInputBorder(
@@ -153,7 +149,8 @@ class _MentorsScreenState extends State<MentorsScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return _ErrorView(message: '멘토 목록을 불러오지 못했어요.\n${friendlyError(snap.error!)}');
+          return _ErrorView(
+              message: '멘토 목록을 불러오지 못했어요.\n${friendlyError(snap.error!)}');
         }
         final List<MentorListItem> all = snap.data ?? <MentorListItem>[];
         if (all.isEmpty) {
@@ -164,8 +161,14 @@ class _MentorsScreenState extends State<MentorsScreen> {
           );
         }
 
-        final List<String> subjects = _distinctSubjects(all);
-        final List<MentorListItem> items = _apply(all);
+        // 전체 로드 집합 기준 canonical 과목 칩 · 필터/검색/정렬 결과.
+        final List<MentorSubject> subjects = distinctSubjects(all);
+        final List<MentorListItem> items = filterSearchSortMentors(
+          all: all,
+          query: _query,
+          subjectKey: _subjectKey,
+          sort: _sort,
+        );
 
         return Column(
           children: <Widget>[
@@ -174,14 +177,17 @@ class _MentorsScreenState extends State<MentorsScreen> {
                 // 좌우 여백은 ChipScroll 내부(스크롤 영역)로 넘겨 끝 칩이 잘리지 않게 한다.
                 padding: const EdgeInsets.only(bottom: 6),
                 child: ChipScroll(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.screenH),
-                  labels: <String>['전체', ...subjects],
-                  // _subject 가 목록에 없으면 indexOf=-1 → +1=0 → '전체' 선택.
-                  selectedIndex:
-                      _subject == null ? 0 : subjects.indexOf(_subject!) + 1,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenH),
+                  // 칩은 한글 라벨만 노출(raw 코드 노출 금지).
+                  labels: <String>[
+                    '전체',
+                    for (final MentorSubject s in subjects) s.label,
+                  ],
+                  // 선택 상태는 canonical key 로 유지 — 목록에 없으면 '전체'.
+                  selectedIndex: _selectedChipIndex(subjects),
                   onSelected: (int i) => setState(
-                    () => _subject = i == 0 ? null : subjects[i - 1],
+                    () => _subjectKey = i == 0 ? null : subjects[i - 1].key,
                   ),
                 ),
               ),
@@ -202,28 +208,20 @@ class _MentorsScreenState extends State<MentorsScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 600),
                         child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.screenH, 4, AppSpacing.screenH, 16),
-                      itemCount: items.length + (_canLoadMore(all) ? 1 : 0),
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.cardGap),
-                      itemBuilder: (BuildContext context, int i) {
-                        if (i >= items.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: SecondaryButton(
-                              label: '더 많은 멘토 보기',
-                              onPressed: _loadMore,
-                            ),
-                          );
-                        }
-                        return MentorCard(
-                          item: items[i],
-                          onOpen: () => _open(items[i]),
-                          favorited: _favoriteIds.contains(items[i].id),
-                          onToggleFavorite: () => _toggleFavorite(items[i].id),
-                        );
-                      },
+                          padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.screenH, 4, AppSpacing.screenH, 16),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: AppSpacing.cardGap),
+                          itemBuilder: (BuildContext context, int i) {
+                            return MentorCard(
+                              item: items[i],
+                              onOpen: () => _open(items[i]),
+                              favorited: _favoriteIds.contains(items[i].id),
+                              onToggleFavorite: () =>
+                                  _toggleFavorite(items[i].id),
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -234,30 +232,13 @@ class _MentorsScreenState extends State<MentorsScreen> {
     );
   }
 
-  /// 더보기 노출 조건: 마지막으로 요청한 개수만큼 꽉 찼고(=더 있을 수 있음),
-  /// 필터/검색이 걸려 있지 않을 때만(필터 중엔 클라이언트 결과라 의미 없음).
-  bool _canLoadMore(List<MentorListItem> all) =>
-      _query.isEmpty && _subject == null && all.length >= _limit;
-
-  List<String> _distinctSubjects(List<MentorListItem> all) {
-    final Set<String> set = <String>{};
-    for (final MentorListItem m in all) {
-      set.addAll(m.subjects);
+  /// 현재 선택된 과목 key 의 칩 인덱스(+1은 '전체' 오프셋). key 가 목록에 없으면 0('전체').
+  int _selectedChipIndex(List<MentorSubject> subjects) {
+    if (_subjectKey == null) return 0;
+    for (int i = 0; i < subjects.length; i++) {
+      if (subjects[i].key == _subjectKey) return i + 1;
     }
-    final List<String> list = set.toList()..sort();
-    return list;
-  }
-
-  List<MentorListItem> _apply(List<MentorListItem> all) {
-    Iterable<MentorListItem> it = all;
-    if (_subject != null) {
-      it = it.where((MentorListItem m) => m.subjects.contains(_subject));
-    }
-    if (_query.isNotEmpty) {
-      it = it.where((MentorListItem m) => m.searchHaystack.contains(_query));
-    }
-    // 필터된 결과를 정렬(순수 함수 재사용 — 최신/가격/별점/리뷰).
-    return sortMentors(it.toList(), _sort);
+    return 0;
   }
 
   Future<void> _open(MentorListItem item) async {
@@ -277,7 +258,7 @@ class _MentorsScreenState extends State<MentorsScreen> {
 }
 
 /// 정렬 선택 바(데이터로 뒷받침되는 항목만 제공). 인기/추천순은 공개 지표가
-/// 없어 제외한다(가짜 순위 금지).
+/// 없어 제외한다(가짜 순위 금지). 가격은 앱에서 노출하지 않아 가격순도 없다.
 class _SortBar extends StatelessWidget {
   const _SortBar({
     required this.sort,

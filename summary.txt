@@ -1,0 +1,4 @@
+run_id=30092635993 sha=d4b7b40bf8875aa4e3ca077f0f6da83c2d1f7b85
+analyze=success
+test=success
+appbundle=success (게이트 아님)

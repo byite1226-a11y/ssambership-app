@@ -1,0 +1,103 @@
+Resolving dependencies...
+Downloading packages...
+  app_links 7.2.0 (7.2.1 available)
+  app_links_platform_interface 2.0.3 (2.0.4 available)
+  cli_util 0.4.2 (0.5.2 available)
+  dbus 0.7.13 (0.7.14 available)
+  extension 0.6.0 (1.0.0 available)
+  flutter_dotenv 5.2.1 (6.0.1 available)
+  flutter_launcher_icons 0.13.1 (0.14.4 available)
+  flutter_lints 4.0.0 (6.0.0 available)
+  freezed_annotation 2.4.4 (3.1.0 available)
+  go_router 14.8.1 (17.3.0 available)
+  lints 4.0.0 (6.1.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.18.0 (1.19.0 available)
+  package_info_plus 9.0.1 (10.2.1 available)
+  package_info_plus_platform_interface 3.2.1 (4.1.0 available)
+  passkeys_platform_interface 2.8.0 (2.9.0 available)
+  posix 6.5.0 (6.5.2 available)
+  shared_preferences_android 2.4.26 (2.4.27 available)
+  synchronized 3.4.1 (3.4.1+1 available)
+  test_api 0.7.11 (0.7.13 available)
+  uuid 4.5.3 (4.6.0 available)
+  vector_math 2.2.0 (2.4.1 available)
+  win32 5.15.0 (6.3.0 available)
+Got dependencies!
+23 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing ssambership-app...                                    
+
+   info • 'anonKey' is deprecated and shouldn't be used. Use publishableKey instead. anonKey will be removed in a future major version. Try replacing the use of the deprecated member with the replacement • lib/core/supabase/supabase_client.dart:16:7 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/design/widgets/app_badge.dart:27:21 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/design/widgets/initial_avatar.dart:37:21 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/design/widgets/skeleton.dart:44:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/design/widgets/status_pill.dart:70:18 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/auth/login_screen.dart:175:17 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/board/board_detail_screen.dart:296:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/board/board_detail_screen.dart:307:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/board/board_detail_screen.dart:345:29 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/board/board_detail_screen.dart:349:27 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/shortform/shortform_detail_screen.dart:376:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/shortform/shortform_detail_screen.dart:387:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/shortform/shortform_detail_screen.dart:425:29 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/shortform/shortform_detail_screen.dart:429:27 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/content_policy_gate.dart:44:14 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/content_policy_gate.dart:45:16 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes. Try adding 'const' before the literal • lib/features/community/ui/widgets/content_policy_gate.dart:48:19 • prefer_const_literals_to_create_immutables
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/content_policy_gate.dart:49:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/content_policy_gate.dart:55:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/report_sheet.dart:49:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/community/ui/widgets/report_sheet.dart:52:13 • prefer_const_constructors
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement • lib/features/community/ui/widgets/report_sheet.dart:63:17 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement • lib/features/community/ui/widgets/report_sheet.dart:65:17 • deprecated_member_use
+   info • Use 'const' for final variables initialized to a constant value. Try replacing 'final' with 'const' • lib/features/dev/dev_flags.dart:5:1 • prefer_const_declarations
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/s3_data_inspector.dart:210:9 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/s3_data_inspector.dart:214:9 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/s3_data_inspector.dart:266:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/s3_data_inspector.dart:340:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:60:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:73:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:84:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:97:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:115:20 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/dev/widget_gallery.dart:147:22 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mentors/mentors_screen.dart:144:25 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mentors/mentors_screen.dart:150:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/mypage_screen.dart:132:22 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/account_delete_screen.dart:222:7 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/account_delete_screen.dart:251:7 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/profile_edit_screen.dart:86:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/profile_edit_screen.dart:96:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/profile_edit_screen.dart:134:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/sections/cash_section.dart:45:13 • prefer_const_constructors
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/features/mypage/ui/sections/cash_section.dart:95:34 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/mypage/ui/sections/student_subscription_section.dart:46:17 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/onboarding/onboarding_screen.dart:19:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/question_room_screen.dart:136:25 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/question_room_screen.dart:142:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/connection_notes_screen.dart:150:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/connection_notes_screen.dart:161:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/connection_notes_screen.dart:168:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/mentor_inbox_screen.dart:108:25 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/mentor_inbox_screen.dart:113:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/mentor_inbox_screen.dart:228:14 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/mentor_question_list_screen.dart:75:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/student_room_home_screen.dart:129:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/student_room_home_screen.dart:174:14 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/student_room_home_screen.dart:181:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor/student_room_home_screen.dart:190:11 • prefer_const_constructors
+   info • Local variables should be final. Try making the variable final • lib/features/question_room/ui/mentor_room_home_screen.dart:48:5 • prefer_final_locals
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor_room_home_screen.dart:96:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/mentor_room_home_screen.dart:125:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/new_question_screen.dart:138:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/new_question_screen.dart:146:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/new_question_screen.dart:150:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/new_question_screen.dart:208:15 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes. Try adding 'const' before the literal • lib/features/question_room/ui/question_list_screen.dart:289:17 • prefer_const_literals_to_create_immutables
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/question_list_screen.dart:293:9 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/question_list_screen.dart:300:9 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/features/question_room/ui/widgets/chat_input_bar.dart:81:31 • prefer_const_constructors
+   info • The local variable '_host' starts with an underscore. Try renaming the variable to not start with an underscore • test/community/content_policy_gate_test.dart:13:10 • no_leading_underscores_for_local_identifiers
+
+71 issues found. (ran in 15.9s)

@@ -165,7 +165,7 @@ void main() {
     expect(_badgeCount(tester), 6);
   });
 
-  testWidgets('필터 칩: 맞춤의뢰 칩 존재·동작, 기타 는 전용 칩 없음(전체에서만)',
+  testWidgets('필터 칩: 맞춤의뢰 칩 미노출(CR 게이트 OFF), 기타 는 전용 칩 없음(전체에서만)',
       (WidgetTester tester) async {
     await _tall(tester);
     await tester.pumpWidget(_wrap(NotificationsScreen(
@@ -174,17 +174,14 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    // 칩 구성: 전체/질문방/구독·결제/개별질문/맞춤의뢰 — 기타 칩은 없다.
-    for (final String label in <String>['전체', '질문방', '구독·결제', '개별질문', '맞춤의뢰']) {
+    // 칩 구성(2026-07 QA4): 전체/질문방/구독·결제/개별질문 — 맞춤의뢰 칩은
+    // CR 게이트 OFF 로 미노출(해당 이벤트 2종은 레포 쿼리에서 exact 제외),
+    // 기타 칩도 없다.
+    for (final String label in <String>['전체', '질문방', '구독·결제', '개별질문']) {
       expect(_typeChip(label), findsOneWidget, reason: label);
     }
+    expect(_typeChip('맞춤의뢰'), findsNothing);
     expect(_typeChip('기타'), findsNothing);
-
-    await tester.tap(_typeChip('맞춤의뢰'));
-    await tester.pumpAndSettle();
-    expect(find.text('D 맞춤의뢰 알림'), findsOneWidget);
-    expect(find.text('A 질문방 알림'), findsNothing);
-    expect(find.text('G 미지 알림'), findsNothing);
 
     await tester.tap(_typeChip('질문방'));
     await tester.pumpAndSettle();

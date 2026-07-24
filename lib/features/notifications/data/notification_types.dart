@@ -2,7 +2,19 @@
 /// (docs/APP_V16_SERVER_CONTRACT_SNAPSHOT.md §4.1). 키워드 포함 매칭 금지:
 /// 정확한 문자열 일치만 사용하고, 목록 밖 타입은 [unknown](일반 알림 표시 ·
 /// 이동 없음)으로 다룬다. 내부 영문 코드는 화면에 노출하지 않는다.
+///
+/// ★ 서버 계약 vs 앱 출시 표면(2026-07 CR 게이트 OFF): 정본 17종 enum·서버
+///   producer·DB 이벤트 계약은 그대로다. 다만 이번 출시에서 맞춤의뢰 CR 게이트가
+///   OFF 이므로 앱 '표시 표면'은 [kGatedNotificationTypeCodes] 2종을 목록 쿼리
+///   단계에서 제외한다(부분 문자열 아님 — exact code). 두 개념을 혼동하지 말 것.
 library;
+
+/// CR 게이트 OFF 로 앱 표면에서 노출하지 않는 맞춤의뢰 이벤트 코드(exact 2종).
+/// 서버 발송·정본 enum 은 삭제하지 않는다 — 목록 조회의 DB 단계 제외에만 쓴다.
+const Set<String> kGatedNotificationTypeCodes = <String>{
+  'new_order_message',
+  'new_application',
+};
 
 /// 서버 `notifications.type` 정확 매핑.
 enum NotificationEventType {
@@ -73,7 +85,9 @@ String notificationKindLabel(NotificationKind kind) {
   }
 }
 
-/// 타입 → 표시 분류. ★맞춤의뢰·환불 알림도 숨기지 않는다(P2-15 요건).
+/// 타입 → 표시 분류. 환불·미지 타입은 숨기지 않는다. 맞춤의뢰 2종은 CR 게이트
+/// OFF 로 목록 쿼리에서 제외되지만(kGatedNotificationTypeCodes), 분류 자체는
+/// 정본 계약으로 유지한다(게이트 재개 시 재사용·안전망).
 NotificationKind notificationKindOf(NotificationEventType type) {
   switch (type) {
     case NotificationEventType.questionAnswered:

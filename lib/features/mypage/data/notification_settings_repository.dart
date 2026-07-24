@@ -27,9 +27,11 @@ abstract final class NotificationGroups {
   ];
 
   /// 화면용 한글 라벨(영문 코드 비노출 규약).
+  /// 'order' 키는 서버 설정 호환을 위해 유지하되, CR 게이트 OFF(2026-07 출시)로
+  /// 앱이 맞춤의뢰 알림을 노출하지 않으므로 라벨은 '개별질문 알림'으로 표기한다.
   static const Map<String, String> labels = <String, String>{
     'qna': '질문방 알림',
-    'order': '맞춤의뢰·개별질문 알림',
+    'order': '개별질문 알림',
     'subscription': '구독·결제 알림',
     'refund': '환불 알림',
     'system': '기타 알림',

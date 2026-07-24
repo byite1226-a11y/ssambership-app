@@ -32,10 +32,12 @@ int appendNotificationsDeduped(
 /// 알림 센터(하단 4번째 탭). 받은 알림 조회·읽음 + 탭하면 관련 화면으로 이동(딥링크).
 /// HomeShell 이 AppBar/하단탭을 제공하므로 본문만 구성한다(자체 Scaffold 없음).
 ///
-/// ★ 조회·읽음 중심. 알림 '생성'은 서버/푸시 몫. 모든 타입을 표시한다 —
-///   맞춤의뢰(CR)·환불도 노출(P2-15), 목록 밖 타입은 '기타'로 일반 표시.
+/// ★ 조회·읽음 중심. 알림 '생성'은 서버/푸시 몫. 환불·미지 타입은 노출하고
+///   목록 밖 타입은 '기타'로 일반 표시한다. 맞춤의뢰(CR) 2종은 게이트 OFF
+///   (2026-07 출시)로 레포 쿼리 단계에서 제외돼 표시·필터·딥링크에 나타나지
+///   않는다(서버 계약 17종은 불변 — notification_types 참조).
 ///   이동은 [notificationDestinationOf] 허용 목적지(탭 수준)만 — stay 타입
-///   (맞춤의뢰·unknown)은 읽음 처리만 하고 이동하지 않는다.
+///   (unknown 등)은 읽음 처리만 하고 이동하지 않는다.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({
     super.key,
@@ -57,12 +59,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   static const int _pageSize = 20;
 
   /// 필터 칩 구성('기타' 는 전용 칩 없이 전체에서만 노출).
+  /// 맞춤의뢰 칩은 CR 게이트 OFF 로 미노출(전용 필터·카테고리 금지 — 해당
+  /// 이벤트 자체가 레포 쿼리에서 제외되므로 칩이 있어도 빈 필터가 된다).
   static const List<NotificationKind?> _chipKinds = <NotificationKind?>[
     null, // 전체
     NotificationKind.questionRoom,
     NotificationKind.subscription,
     NotificationKind.individualQuestion,
-    NotificationKind.customRequest,
   ];
 
   late final NotificationsRepository _repo;

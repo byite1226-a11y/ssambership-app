@@ -36,9 +36,11 @@ class NotificationsPage {
 
 /// 알림 조회·읽음 레포지토리(주입 가능 — 테스트에서 fake).
 ///
-/// ★ 조회·읽음만. 알림 '생성'은 서버/푸시 몫(앱은 만들지 않음).
-///   본인 알림만(RLS) 다룬다. 모든 타입을 그대로 돌려준다 — 맞춤의뢰·환불·
-///   미지 타입도 숨기지 않는다(표시 방식은 모델/화면 몫).
+/// ★ 조회·읽음만. 알림 '생성'은 서버/푸시 몫(앱은 만들지 않음). 본인 알림만
+///   (RLS) 다룬다. 환불·미지 타입은 숨기지 않는다. 단 CR 게이트 OFF(2026-07
+///   출시)로 맞춤의뢰 2종([kGatedNotificationTypeCodes])만 **DB 쿼리 단계에서
+///   exact type 제외**한다 — keyset cursor 가 필터 후 집합 위에서 동작하므로
+///   페이지 크기·hasMore·경계 무결성이 유지된다(페이지 후 클라 제거 방식 금지).
 abstract class NotificationsRepository {
   Future<NotificationsPage> fetch({NotificationCursor? after, int pageSize});
   Future<void> markRead(String id);
@@ -93,13 +95,21 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
     return c;
   }
 
+  /// CR 게이트 OFF — DB 단계 exact type 제외 목록(PostgREST `not.in`).
+  static final String _gatedTypesInList =
+      '(${kGatedNotificationTypeCodes.join(',')})';
+
   @override
   Future<NotificationsPage> fetch({
     NotificationCursor? after,
     int pageSize = 20,
   }) async {
-    PostgrestFilterBuilder<List<Map<String, dynamic>>> query =
-        _client.from('notifications').select(_columns);
+    PostgrestFilterBuilder<List<Map<String, dynamic>>> query = _client
+        .from('notifications')
+        .select(_columns)
+        // 맞춤의뢰 2종 exact 제외(부분 문자열 아님). 필터가 커서보다 먼저 적용돼
+        // 페이지 경계 중복·누락이 생기지 않는다.
+        .not('type', 'in', _gatedTypesInList);
     if (after != null) {
       query = query.or(notificationsAfterFilter(after));
     }

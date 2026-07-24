@@ -29,14 +29,19 @@ class MyPageScreen extends StatefulWidget {
     super.key,
     this.loaderOverride,
     this.onOpenQuestionsTab,
+    this.onOpenNotifications,
   });
 
   /// 테스트용 데이터 주입(실제 DB·네트워크 대신 mock). null 이면 실제 레포 사용.
   final Future<MyPageData> Function()? loaderOverride;
 
-  /// '질문하러 가기' 등에서 질문방 탭으로 보내는 핸드오프(없으면 안내).
-  /// TODO(S11): HomeShell 탭 상태가 노출되면 실제 탭 전환으로 연결.
+  /// '질문하러 가기'·'받은 질문 보기'에서 질문방 탭으로 보내는 핸드오프.
+  /// push 라우트(_MyPagePage)는 route 를 pop 하며 탭 index 를 반환하는 콜백을 주입한다
+  /// (미주입 시 TabNavigator 폴백 — push 위에서는 무반응이므로 반드시 주입할 것).
   final VoidCallback? onOpenQuestionsTab;
+
+  /// 마이페이지 '알림' 행 핸드오프 — SupportSection 의 기존 콜백을 그대로 재사용한다.
+  final VoidCallback? onOpenNotifications;
 
   @override
   State<MyPageScreen> createState() => _MyPageScreenState();
@@ -100,7 +105,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Widget _body(MyPageData data) {
     final bool signedIn = AuthService.instance.isSignedIn;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, AppSpacing.s16, 20, AppSpacing.s24),
+      padding:
+          const EdgeInsets.fromLTRB(20, AppSpacing.s16, 20, AppSpacing.s24),
       children: <Widget>[
         ProfileSection(
           profile: data.profile,
@@ -123,8 +129,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
           Center(
             child: TextButton(
               onPressed: () => context.go(EntryGuard.devS3),
-              child: Text('S3 데이터 점검 (개발용)',
-                  style: AppType.caption),
+              child: Text('S3 데이터 점검 (개발용)', style: AppType.caption),
             ),
           ),
         ],
@@ -139,7 +144,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
         onGoToQuestions: _goToQuestions,
       ),
       if (data.cash != null) CashSection(cash: data.cash!),
-      const SupportSection(),
+      // 학생: 리뷰 행 미노출(범용 '리뷰 작성' 메뉴는 폐기 — 역할 게이트).
+      SupportSection(onOpenNotifications: widget.onOpenNotifications),
     ];
   }
 
@@ -150,7 +156,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
           data: data.mentor!,
           onGoToQuestions: _goToQuestions,
         ),
-      const SupportSection(),
+      // 멘토: '받은 리뷰'(웹 /mentor/reviews — 받은 리뷰 관리 화면) 노출.
+      SupportSection(
+        onOpenNotifications: widget.onOpenNotifications,
+        showReceivedReviews: true,
+      ),
     ];
   }
 }

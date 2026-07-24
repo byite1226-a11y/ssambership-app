@@ -12,7 +12,9 @@ import 'ui/shortform/shortform_feed_view.dart';
 
 /// 커뮤니티 탭. 상단 탭(숏폼 / 게시판 / 내 활동). HomeShell 이 바깥 AppBar/하단탭 제공.
 ///
-/// ★ 게시판 '글쓰기'는 앱에서 가능(즉시 공개). 숏폼 '작성'은 웹 전용.
+/// ★ 게시판 '글쓰기'는 앱에서 가능(즉시 공개). 숏폼 '작성'은 멘토 한정
+///   인앱 WebView(웹 작성기 계약, ShortformComposeScreen)로 제공 — 진입점은
+///   숏폼 피드(ShortformFeedView)에 있다. 네이티브 숏폼 INSERT 는 없다.
 ///   레포는 테스트에서 fake 로 주입할 수 있게 optional 로 받는다(기본은 실제).
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({

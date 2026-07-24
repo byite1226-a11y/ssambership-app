@@ -5,7 +5,8 @@ import '../../../shared/errors/app_error.dart';
 import 'comments_gateway.dart';
 import 'community_models.dart';
 
-/// 커뮤니티 쓰기(반응·댓글·신고·게시판 글 작성). ★ 숏폼 '작성'만 웹 전용.
+/// 커뮤니티 쓰기(반응·댓글·신고·게시판 글 작성). ★ 숏폼 '작성'은 이 레포에 없다 —
+/// 실제 write 는 웹 작성기(인앱 WebView, ShortformComposeScreen)가 담당한다.
 /// 본인(author_id/user_id/reporter_id = 현재 사용자) 행만 다룬다(RLS도 강제).
 class CommunityWriteRepository {
   const CommunityWriteRepository(

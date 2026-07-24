@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'package:webview_flutter/webview_flutter.dart';
+
 import 'app/app.dart';
 import 'core/auth/auth_service.dart';
 import 'core/supabase/supabase_client.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/push/push_service.dart';
 import 'core/version_gate/version_gate_controller.dart';
+import 'core/web_bridge/web_session_hygiene.dart';
 
 /// 진입점.
 /// - .env 로드(없어도 앱은 구동) → Supabase 초기화(키 있으면) → 딥링크/푸시 자리 초기화.
@@ -25,6 +28,12 @@ Future<void> main() async {
 
   // Supabase 초기화(자격값이 있을 때만).
   await SupabaseInit.ensureInitialized();
+
+  // WebView 쿠키 정리 구현 등록(로그아웃·계정 전환·숏폼 작성 화면 여닫이에서 호출).
+  // 실기기 전용 플러그인이라 여기서 주입한다 — 테스트/미지원 플랫폼은 자동 no-op.
+  WebSessionHygiene.register(() async {
+    await WebViewCookieManager().clearCookies();
+  });
 
   // 인증/세션 부팅: 세션 복원 + 프로필(role·계정상태·구독) 로드 + auth 변화 구독.
   await AuthService.instance.bootstrap();

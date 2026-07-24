@@ -7,6 +7,7 @@ import '../deeplink/deep_link_service.dart';
 import '../entitlement/entitlement.dart';
 import '../push/push_service.dart';
 import '../supabase/supabase_client.dart';
+import '../web_bridge/web_session_hygiene.dart';
 import 'account_status.dart';
 
 /// 사용자 역할. 화면에는 영문 코드 대신 의미에 맞는 한글 UI를 쓴다.
@@ -169,6 +170,8 @@ class AuthService extends ChangeNotifier {
       // 푸시/딥링크 상태 정리(철회 자체는 signOut() 이 세션 유효 시점에 이미 수행).
       PushService.instance.onSignedOut();
       DeepLinkService.instance.onSignedOut();
+      // WebView 쿠키 정리 — 계정 전환 시 이전 사용자 웹 세션 재사용 차단(no-op 안전).
+      unawaited(WebSessionHygiene.clear());
       _resetProfile();
       notifyListeners();
       return;
@@ -287,6 +290,8 @@ class AuthService extends ChangeNotifier {
     final SupabaseClient? client = _client;
     _guest = false;
     DeepLinkService.instance.onSignedOut(); // 이전 사용자 대기 딥링크 폐기.
+    // 로그아웃 '전' WebView 쿠키/세션 정리 — 다음 사용자가 재사용하지 못하게.
+    await WebSessionHygiene.clear();
     await performSignOut(
       revokePushToken: PushService.instance.revokeBeforeSignOut,
       supabaseSignOut: () async {

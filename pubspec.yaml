@@ -41,6 +41,9 @@ dependencies:
   firebase_messaging: ^16.4.3
   # 최소 지원 버전 게이트: 현재 빌드번호(buildNumber, 정수) 조회용.
   package_info_plus: ^9.0.1
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.13.0
+  webview_flutter_wkwebview: ^3.26.0
 
 dev_dependencies:
   flutter_test:

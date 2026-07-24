@@ -138,6 +138,78 @@ void main() {
     });
   });
 
+  group('scope — 전체/찜한 멘토(웹 ?scope=favorite 패리티)', () {
+    final List<MentorListItem> all = <MentorListItem>[
+      _m('fav_math',
+          subjects: <String>['math'],
+          name: '김수학',
+          created: DateTime(2026, 1, 1),
+          rating: 4.0,
+          reviews: 10),
+      _m('fav_eng',
+          subjects: <String>['english'],
+          name: '박영어',
+          created: DateTime(2026, 3, 1),
+          rating: 5.0,
+          reviews: 2),
+      _m('plain_math',
+          subjects: <String>['math'],
+          name: '이수학',
+          created: DateTime(2026, 2, 1)),
+    ];
+    final Set<String> favs = <String>{'fav_math', 'fav_eng'};
+
+    test('기본값은 all — 기존 호출 계약 보존(찜 무시)', () {
+      expect(_ids(filterSearchSortMentors(all: all)).length, 3);
+    });
+
+    test('favorite scope → 찜 id 교집합만', () {
+      final List<MentorListItem> out = filterSearchSortMentors(
+          all: all, scope: MentorListScope.favorite, favoriteIds: favs);
+      expect(_ids(out)..sort(), <String>['fav_eng', 'fav_math']);
+    });
+
+    test('favorite ∩ 검색 ∩ 과목 ∩ 정렬 교집합', () {
+      // 검색 '수학' + 과목 math + 찜 → fav_math 만(plain_math 는 찜 아님).
+      final List<MentorListItem> out = filterSearchSortMentors(
+        all: all,
+        scope: MentorListScope.favorite,
+        favoriteIds: favs,
+        query: '수학',
+        subjectKey: 'math',
+        sort: MentorSort.ratingHigh,
+      );
+      expect(_ids(out), <String>['fav_math']);
+    });
+
+    test('favorite scope 정렬 위임 유지(최신순)', () {
+      final List<MentorListItem> out = filterSearchSortMentors(
+        all: all,
+        scope: MentorListScope.favorite,
+        favoriteIds: favs,
+      );
+      expect(_ids(out), <String>['fav_eng', 'fav_math']);
+    });
+
+    test('공개 목록에 없는 찜 id 는 결과에 나타나지 않음(비공개·삭제 자동 제외)', () {
+      final List<MentorListItem> out = filterSearchSortMentors(
+        all: all,
+        scope: MentorListScope.favorite,
+        favoriteIds: <String>{'fav_math', 'ghost_private'},
+      );
+      expect(_ids(out), <String>['fav_math']);
+    });
+
+    test('찜 0개 → favorite scope 는 빈 결과(전체로 새지 않음)', () {
+      final List<MentorListItem> out = filterSearchSortMentors(
+        all: all,
+        scope: MentorListScope.favorite,
+        favoriteIds: const <String>{},
+      );
+      expect(out, isEmpty);
+    });
+  });
+
   group('정렬 위임 회귀', () {
     final List<MentorListItem> all = <MentorListItem>[
       _m('a', created: DateTime(2026, 1, 1), rating: 4.0, reviews: 10),

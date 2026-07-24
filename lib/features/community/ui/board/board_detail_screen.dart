@@ -142,13 +142,14 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
     if (blocked && mounted) Navigator.of(context).pop(true);
   }
 
-  /// 댓글 신고 → content_reports(target_type='community_comment').
+  /// 댓글 신고 → content_reports(target_type='comment' — 정본 comments 행.
+  /// v16 정본 전환: 게시판 댓글의 신고 대상 테이블은 comments).
   Future<void> _reportComment(String commentId) async {
     final String? reason = await showReportSheet(context);
     if (reason == null) return;
     try {
       await widget.write.report(
-        targetType: 'community_comment',
+        targetType: 'comment',
         targetId: commentId,
         reason: reason,
       );
@@ -159,10 +160,11 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
   }
 
   /// 댓글 작성자 차단 → 성공 시 댓글 목록 재조회(차단 작성자 댓글 숨김).
+  /// 게시판 댓글은 정본 comments 행에서 author_id 를 찾는다(v16 정본 전환).
   Future<void> _blockCommentAuthor(String commentId) async {
     final bool blocked = await confirmAndBlockAuthor(
       context,
-      table: 'community_comments',
+      table: 'comments',
       contentId: commentId,
     );
     if (blocked && mounted) {
@@ -186,6 +188,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
         postId: widget.post.id,
         body: body,
       );
+      if (!mounted) return; // ★ await 중 화면이 닫혔으면 상태 갱신 금지
       _input.clear();
       setState(() {
         _comments =
@@ -200,8 +203,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -232,7 +234,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                 Row(
                   children: <Widget>[
                     AppBadge(
-                        label: communityCategoryLabel(p.category), tinted: true),
+                        label: communityCategoryLabel(p.category),
+                        tinted: true),
                     const Spacer(),
                     Text(Formatters.relativeKorean(p.createdAt),
                         style: AppType.caption),
@@ -252,7 +255,9 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
                 ),
                 const SizedBox(height: AppSpacing.s16),
                 Text(
-                  p.body?.trim().isNotEmpty == true ? p.body!.trim() : '(내용 없음)',
+                  p.body?.trim().isNotEmpty == true
+                      ? p.body!.trim()
+                      : '(내용 없음)',
                   style: AppType.body,
                 ),
                 const SizedBox(height: AppSpacing.s24),
@@ -352,7 +357,8 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
             ),
             IconButton(
               icon: Icon(Icons.send_rounded,
-                  color: _busy ? ColorTokens.muted : AppAccent.of(context).accent),
+                  color:
+                      _busy ? ColorTokens.muted : AppAccent.of(context).accent),
               onPressed: _busy ? null : _send,
             ),
           ],

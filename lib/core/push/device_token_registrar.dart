@@ -1,46 +1,55 @@
+import '../../shared/errors/app_error.dart';
 import '../supabase/supabase_client.dart';
 import 'push_ports.dart';
 
-/// 디바이스 토큰을 `device_tokens` 에 등록/해제하는 Supabase 골격.
+/// 디바이스 토큰 등록/철회 — Supabase 구현(스테이징 검증된 서버 계약, 2026-07-21).
 ///
-/// ★ introspection 결과 `device_tokens` 테이블이 아직 없다 → [isReady]=false 로 건너뛴다.
-///   테이블 생성(인수인계, HANDOFF.md의 DDL)과 firebase_messaging 도입 후 [_tableExists]=true
-///   로 바꾸면 아래 upsert/delete 가 그대로 동작한다(로직은 미리 작성됨).
+/// - 등록: RPC `register_device_token(p_token, p_platform)` (SECURITY DEFINER).
+///   반환 jsonb {ok, device_token_id}. ON CONFLICT(token) 시 현재 auth.uid() 로
+///   원자적 재소유 + revoked_at 해제 → 계정 전환은 '재등록'만으로 끝난다.
+///   platform 은 ios/android/web 만 유효(그 외 서버가 'unknown' 저장).
+/// - 철회: `revoke_device_token` RPC 는 authenticated EXECUTE 권한이 없어 호출 금지.
+///   대신 본인 행 직접 UPDATE(RLS device_tokens_modify_own) 로 revoked_at 마킹.
+///   ★ 반드시 signOut '이전'(세션 유효 시점)에 호출해야 한다.
 class SupabaseDeviceTokenRegistrar implements DeviceTokenRegistrarPort {
   const SupabaseDeviceTokenRegistrar();
 
-  /// device_tokens 테이블 존재 여부(현재 미존재). 생성 후 true 로.
-  static const bool _tableExists = false;
+  @override
+  bool get isReady => SupabaseInit.isReady;
 
   @override
-  bool get isReady => _tableExists && SupabaseInit.isReady;
-
-  @override
-  Future<void> register({
-    required String userId,
+  Future<String?> register({
     required String token,
-    String platform = 'android',
+    required String platform,
   }) async {
-    if (!isReady) return; // 테이블/백엔드 미준비 → 등록 생략(인수인계).
     final client = SupabaseInit.clientOrNull;
-    if (client == null) return;
-    // token 고유키로 upsert — 같은 기기 재로그인 시 user_id 갱신.
-    await client.from('device_tokens').upsert(
-      <String, dynamic>{
-        'user_id': userId,
-        'token': token,
-        'platform': platform,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'token',
+    if (client == null) {
+      throw const AppError('알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    }
+    final dynamic result = await client.rpc(
+      'register_device_token',
+      params: <String, dynamic>{'p_token': token, 'p_platform': platform},
     );
+    if (result is Map && result['ok'] == true) {
+      final Object? id = result['device_token_id'];
+      return id?.toString();
+    }
+    // AUTH_REQUIRED/TOKEN_REQUIRED 등 — 호출부가 재시도 가능하도록 예외로 전파.
+    // ★ 토큰 문자열/서버 원문을 메시지에 담지 않는다.
+    throw const AppError('알림 등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
   }
 
   @override
-  Future<void> unregister({required String token}) async {
-    if (!isReady) return;
+  Future<void> revoke({required String token}) async {
     final client = SupabaseInit.clientOrNull;
     if (client == null) return;
-    await client.from('device_tokens').delete().eq('token', token);
+    final String? userId = client.auth.currentUser?.id;
+    if (userId == null) return; // 세션 없음 — 철회 불가(서버 재소유 로직이 안전망).
+    final String now = DateTime.now().toUtc().toIso8601String();
+    await client
+        .from('device_tokens')
+        .update(<String, dynamic>{'revoked_at': now, 'updated_at': now})
+        .eq('token', token)
+        .eq('user_id', userId);
   }
 }

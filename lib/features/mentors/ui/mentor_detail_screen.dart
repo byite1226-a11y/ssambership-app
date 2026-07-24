@@ -10,6 +10,7 @@ import '../../../design/widgets/primary_button.dart';
 import '../data/mentor_directory_repository.dart';
 import '../data/mentor_favorites_repository.dart';
 import '../data/mentor_models.dart';
+import '../data/mentor_subject.dart';
 import 'widgets/mentor_favorite_button.dart';
 import 'widgets/mentor_meta_item.dart';
 import '../../../app/app_tabs.dart';
@@ -89,7 +90,7 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
             AppSpacing.screenH, 16, AppSpacing.screenH, 24),
         children: <Widget>[
           _Header(item: m),
-          if (m.subjects.isNotEmpty) ...<Widget>[
+          if (m.subjectViews.isNotEmpty) ...<Widget>[
             const SizedBox(height: AppSpacing.cardGap),
             _Section(
               icon: Icons.menu_book_rounded,
@@ -98,8 +99,9 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: <Widget>[
-                  for (final String s in m.subjects)
-                    AppBadge(label: s),
+                  // canonical 한글 라벨만 노출(raw 코드 노출 금지).
+                  for (final MentorSubject s in m.subjectViews)
+                    AppBadge(label: s.label),
                 ],
               ),
             ),
@@ -117,8 +119,8 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
           const SizedBox(height: AppSpacing.cardGap),
           FutureBuilder<MentorDetailExtras>(
             future: _future,
-            builder: (BuildContext context,
-                AsyncSnapshot<MentorDetailExtras> snap) {
+            builder:
+                (BuildContext context, AsyncSnapshot<MentorDetailExtras> snap) {
               final MentorDetailExtras extras =
                   snap.data ?? const MentorDetailExtras();
               return _Section(
@@ -135,8 +137,8 @@ class _MentorDetailScreenState extends State<MentorDetailScreen> {
           const SizedBox(height: AppSpacing.s24),
           FutureBuilder<MentorDetailExtras>(
             future: _future,
-            builder: (BuildContext context,
-                AsyncSnapshot<MentorDetailExtras> snap) {
+            builder:
+                (BuildContext context, AsyncSnapshot<MentorDetailExtras> snap) {
               final bool subscribed = snap.data?.alreadySubscribed ?? false;
               if (subscribed) {
                 return PrimaryButton(
